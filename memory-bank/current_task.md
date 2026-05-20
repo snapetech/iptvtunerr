@@ -1,3 +1,24 @@
+**Current (2026-05-20):** Cut `v0.1.80` and deploy current release.
+
+- Goal: commit the full dirty tree as requested, push `main`, tag `v0.1.80`, monitor release automation, and ensure the live network deployment runs the newest code.
+- Scope: include all dirty and unrelated files, including council generated files and the pre-existing `AGENTS.md` change; do not exclude unrelated work because the user explicitly requested it.
+- Assumption: next patch tag after `v0.1.79` is `v0.1.80`.
+- Done: promoted Unreleased changelog notes into `v0.1.80`.
+- Next: run release-readiness, commit, push, tag, monitor release workflow, then redeploy/verify live services.
+
+**Current (2026-05-20):** Fix stale Plex Live TV recording marker and external-user playback error.
+
+- Goal: identify why Plex shows a recording flag on current Live TV guide rows that were only recorded days ago, fix the Tunerr/Plex metadata cause, deploy, and validate Live TV is usable again.
+- Scope: live systemd/bare-metal Tunerr services, Plex/Tunerr logs, XMLTV/programme identity generation, focused tests, and deployment restart if a code/config fix is needed.
+- Assumption: the stale marker is likely caused by reusable XMLTV programme identifiers across days/timeslots or stale Plex DVR state tied to those identifiers; keep recovery scoped and avoid changing unrelated Plex proxy behavior.
+- Done: found Plex held a stale DVR subscription for `tv.plex.xmltv://movie/Live%3A%20NBA%20Basketball`, proving current rows were collapsing to a title-only movie identity.
+- Done: patched XMLTV remapping/merged-guide output to add date-specific subtitle/date plus deterministic `episode-num system="iptvtunerr"` fields for recurring event-like rows while preserving the visible title.
+- Done: broadened protection beyond the observed NBA row to cover all `Live:` rows plus generic sports event titles such as plain `NBA Basketball`, so Plex has channel/start-specific XMLTV identity instead of title-only movie identity.
+- Done: added regression coverage for both XMLTV remapping and the real merged EPG provider-import path.
+- Done: deleted the stale Plex subscription, deployed the patched binary to both live Tunerr bridge services, restarted them, and forced Plex guide reloads for both DVRs.
+- Verification: `./scripts/verify` passed; live `/guide.xml` now includes date/subtitle/episode identity fields on NBA, NWSL, wrestling, SportsCentre, and other recurring event rows; Plex subscriptions list is empty; primary/sports/proxy services are active; direct TSN 1 stream pull returned MPEG-TS bytes.
+- Next: ask affected external user to hard refresh Plex Web and retry the TSN/NBA row after Plex finishes client-side cache refresh.
+
 **Current (2026-05-18):** Cut `v0.1.79` for Plex DVR token-audit hardening.
 
 - Goal: commit current proxy/token-audit hardening, push `main`, tag `v0.1.79`, and monitor the release workflow.

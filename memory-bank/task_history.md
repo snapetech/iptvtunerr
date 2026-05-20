@@ -265,6 +265,15 @@
 - Verification: `go test -count=1 ./internal/plexlabelproxy` passed; `./scripts/verify` passed.
 - Live deploy: rebuilt and installed the proxy binary, restarted `plex-live-tv-proxy.service`, and confirmed live missing-token/fake-token probes return `403` while emitting audit lines.
 
+## 2026-05-20 - Fix stale Plex recording marker for generic live sports rows
+
+- Found Plex had a stale DVR subscription keyed only to `tv.plex.xmltv://movie/Live%3A%20NBA%20Basketball`, so every current `Live: NBA Basketball` XMLTV row could inherit the old recording marker.
+- Patched XMLTV output so recurring event-like rows keep their visible title but gain date-specific `sub-title`, `date`, and deterministic `episode-num system="iptvtunerr"` fields, preventing Plex from collapsing future events into the same title-only movie identity.
+- Broadened coverage beyond the observed NBA row to all `Live:` rows and generic sports event titles such as plain `NBA Basketball`.
+- Added regression tests for both the external XMLTV remap path and the real merged EPG provider-import path.
+- Deleted the stale Plex subscription, deployed the patched live Tunerr binary, restarted both Tunerr bridge services, and forced Plex guide reloads for both DVRs.
+- Verification: `./scripts/verify` passed; live guide rows now include date/subtitle/episode identity fields; Plex subscriptions list is empty; primary/sports/proxy services are active; direct affected TSN stream returned MPEG-TS data.
+
 ## 2026-05-12 - Harden Plex Live TV entitlement proxy
 
 - Found the live `plex-live-tv-proxy.service` was running `-elevate-all`; unauthenticated public requests to the media frontend returned `200`, so the proxy was effectively acting as an owner-token deputy for anyone who could reach it.

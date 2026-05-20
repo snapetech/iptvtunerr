@@ -536,6 +536,7 @@ func writeRemappedXMLTVWithPolicy(dst io.Writer, src io.Reader, channels []catal
 						node.XMLName = xml.Name{Local: "programme"}
 						node.Attrs = setXMLAttr(node.Attrs, "channel", ref.XMLID)
 						normalizeProgrammeText(&node, ref.GuideName, policy)
+						stabilizeRecurringEventProgramme(&node)
 						if err := enc.EncodeElement(node, xml.StartElement{Name: xml.Name{Local: "programme"}}); err != nil {
 							return err
 						}
@@ -620,6 +621,83 @@ func xmlChannelPrimaryDisplay(ch xmlChannel) string {
 		}
 	}
 	return ""
+}
+
+func stabilizeRecurringEventProgramme(node *xmlRawNode) {
+	if node == nil {
+		return
+	}
+	var p xmlProgramme
+	raw, err := xml.Marshal(*node)
+	if err != nil || xml.Unmarshal(raw, &p) != nil {
+		return
+	}
+	title := strings.TrimSpace(p.Title.Value)
+	if !isRecurringEventTitle(title) {
+		return
+	}
+	start, ok := parseXMLTVTime(strings.TrimSpace(p.Start))
+	if !ok {
+		return
+	}
+	if strings.TrimSpace(p.SubTitle.Value) == "" {
+		subtitle := start.UTC().Format("2006-01-02 15:04 UTC")
+		if strings.TrimSpace(p.Desc.Value) != "" && !strings.EqualFold(strings.TrimSpace(p.Desc.Value), title) {
+			subtitle += " - " + strings.TrimSpace(p.Desc.Value)
+		}
+		node.InnerXML += "<sub-title>" + xmlEscapeString(subtitle) + "</sub-title>"
+	}
+	if !rawXMLNodeHasChild(*node, "date") {
+		node.InnerXML += "<date>" + start.UTC().Format("20060102") + "</date>"
+	}
+	if !rawXMLNodeHasChild(*node, "episode-num") {
+		node.InnerXML += `<episode-num system="iptvtunerr">` + xmlEscapeString(recurringEventEpisodeID(p, start)) + "</episode-num>"
+	}
+}
+
+func isRecurringEventTitle(title string) bool {
+	t := strings.ToLower(strings.TrimSpace(title))
+	if strings.HasPrefix(t, "live: ") {
+		return true
+	}
+	for _, term := range []string{"basketball", "hockey", "soccer", "football", "baseball", "rugby", "tennis", "golf", "motorsport", "wrestling", "mma", "boxing", "ufc"} {
+		if strings.Contains(t, term) {
+			return true
+		}
+	}
+	return false
+}
+
+func recurringEventEpisodeID(p xmlProgramme, start time.Time) string {
+	key := strings.Join([]string{
+		strings.TrimSpace(p.Channel),
+		start.UTC().Format(time.RFC3339),
+		strings.TrimSpace(p.Stop),
+		strings.TrimSpace(p.Title.Value),
+		strings.TrimSpace(p.SubTitle.Value),
+		strings.TrimSpace(p.Desc.Value),
+	}, "\x00")
+	sum := sha1.Sum([]byte(key))
+	return "ev-" + fmt.Sprintf("%x", sum[:8])
+}
+
+func rawXMLNodeHasChild(node xmlRawNode, local string) bool {
+	dec := xml.NewDecoder(strings.NewReader("<root>" + node.InnerXML + "</root>"))
+	for {
+		tok, err := dec.Token()
+		if err != nil {
+			return false
+		}
+		if start, ok := tok.(xml.StartElement); ok && start.Name.Local == local {
+			return true
+		}
+	}
+}
+
+func xmlEscapeString(s string) string {
+	var b strings.Builder
+	_ = xml.EscapeText(&b, []byte(s))
+	return b.String()
 }
 
 func buildXMLChannel(id, displayName, guideNumber string, icons []xmlIcon) xmlChannel {

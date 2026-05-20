@@ -75,6 +75,26 @@
 - `internal/tuner/epg_pipeline.go`
 - `internal/tuner/xmltv_test.go`
 
+### Loop: Generic live sports titles can become stale Plex recording markers
+
+**Symptom**
+- Plex shows a red recording marker on current guide rows that are not being recorded, often after recording a similarly named sports block days earlier.
+- External/shared users may hit a Plex Web "Something went wrong" view when opening the row because Plex follows stale recording/subscription state instead of plain Live TV playback.
+
+**Why it's tricky**
+- Some provider XMLTV rows publish generic titles such as `Live: NBA Basketball` with no subtitle/date/episode identity. Plex can collapse those rows into a title-only XMLTV movie GUID such as `tv.plex.xmltv://movie/Live%3A%20NBA%20Basketball`.
+- The tuner streams stay healthy, so the failure looks like playback or entitlement until `/media/subscriptions` reveals the stale title-only subscription.
+
+**What works**
+- Add deterministic programme identity to recurring event-like XMLTV rows without changing the visible title: date-specific `sub-title`, `date`, and `episode-num system="iptvtunerr"` generated from channel/start/stop/title metadata.
+- Cover all generic `Live:` rows plus generic sports titles such as plain `NBA Basketball`, because providers are inconsistent about including the `Live:` prefix.
+- Delete the stale Plex subscription keyed to the generic title, reload the Plex DVR guide, and verify `/media/subscriptions` no longer contains the title-only XMLTV GUID.
+
+**Where it's documented**
+- `internal/tuner/xmltv.go`
+- `internal/tuner/epg_pipeline.go`
+- `internal/tuner/xmltv_test.go`
+
 ### Loop: Plex Record Options uses subscription reads before save
 
 **Symptom**

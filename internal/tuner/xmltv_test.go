@@ -527,6 +527,51 @@ func TestXMLTV_externalSourceRemap_NonLatinTitleFallbackToChannel(t *testing.T) 
 	}
 }
 
+func TestXMLTV_externalSourceRemap_StabilizesRecurringEventIdentity(t *testing.T) {
+	srcXML := `<?xml version="1.0" encoding="utf-8"?>
+<tv>
+  <channel id="tsn1"><display-name>TSN 1</display-name></channel>
+  <programme start="20260521020000 +0200" stop="20260521043000 +0200" channel="tsn1">
+    <title>Live: NBA Basketball</title>
+    <desc>Professional basketball action from the NBA.</desc>
+  </programme>
+  <programme start="20260522020000 +0200" stop="20260522043000 +0200" channel="tsn1">
+    <title>NBA Basketball</title>
+    <desc>Professional basketball action from the NBA.</desc>
+  </programme>
+  <programme start="20260523020000 +0200" stop="20260523030000 +0200" channel="tsn1">
+    <title>Live: NBA Today</title>
+    <desc>In-depth, comprehensive daily coverage of all aspects of the NBA from expert analysts.</desc>
+  </programme>
+</tv>`
+	var out strings.Builder
+	err := writeRemappedXMLTVWithPolicy(&out, strings.NewReader(srcXML), []catalog.LiveChannel{
+		{GuideNumber: "10020", GuideName: "CA: TSN 1", TVGID: "tsn1"},
+	}, xmltvTextPolicy{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	body := out.String()
+	if !strings.Contains(body, "<title>Live: NBA Basketball</title>") {
+		t.Fatalf("title should stay client-readable, got: %s", body)
+	}
+	if !strings.Contains(body, "<sub-title>2026-05-21 00:00 UTC - Professional basketball action from the NBA.</sub-title>") {
+		t.Fatalf("expected date-specific subtitle for Plex identity, got: %s", body)
+	}
+	if !strings.Contains(body, "<date>20260521</date>") {
+		t.Fatalf("expected date element for Plex identity, got: %s", body)
+	}
+	if !strings.Contains(body, `<episode-num system="iptvtunerr">ev-`) {
+		t.Fatalf("expected deterministic episode identity, got: %s", body)
+	}
+	if strings.Count(body, `<episode-num system="iptvtunerr">ev-`) != 3 {
+		t.Fatalf("expected all recurring event-like rows to get identity, got: %s", body)
+	}
+	if strings.Contains(body, "tv.plex.xmltv://movie/Live%3A%20NBA%20Basketball") {
+		t.Fatalf("output must not contain Plex title-only movie identity, got: %s", body)
+	}
+}
+
 func TestXMLTV_buildMergedEPG_UsesRealProgrammeBlocksNotPlaceholder(t *testing.T) {
 	t.Setenv("IPTV_TUNERR_REFIO_ALLOW_PRIVATE_HTTP", "1")
 	providerXML := `<?xml version="1.0" encoding="utf-8"?>

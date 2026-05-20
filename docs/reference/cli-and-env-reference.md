@@ -2046,6 +2046,8 @@ placeholder  <  external XMLTV  <  provider XMLTV (xmltv.php)
 
 External gap-fills provider for any time windows the provider EPG doesn't cover. The cache is pre-warmed synchronously at startup so the first request is never cold. On fetch failure, stale data is served — no guide outage on transient errors.
 
+For Plex DVR stability, recurring event-like programmes get deterministic identity metadata in emitted XMLTV without changing their visible title. Tunerr adds a date-specific `sub-title`, `date`, and `episode-num system="iptvtunerr"` to all `Live:` rows and generic sports event titles such as `NBA Basketball`. This prevents Plex from treating today's event as the same title-only recording target as an event recorded on a previous day.
+
 ### Provider EPG (Xtream `xmltv.php`)
 
 Fetches EPG directly from your IPTV provider using existing credentials. No separate EPG source needed for Xtream providers.

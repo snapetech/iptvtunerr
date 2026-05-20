@@ -1383,9 +1383,10 @@ func (x *XMLTV) buildMergedEPG(ctx context.Context, channels []catalog.LiveChann
 					}
 				}
 			}
-			normalizeProgrammeText(&node, ref.GuideName, policy)
 			node.XMLName = xml.Name{Local: "programme"}
 			node.Attrs = setXMLAttr(node.Attrs, "channel", ref.XMLID)
+			normalizeProgrammeText(&node, ref.GuideName, policy)
+			stabilizeRecurringEventProgramme(&node)
 			if err := enc.EncodeElement(node, xml.StartElement{Name: xml.Name{Local: "programme"}}); err != nil {
 				return nil, buildEPGStats{}, fmt.Errorf("encode programme: %w", err)
 			}

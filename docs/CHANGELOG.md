@@ -13,6 +13,11 @@ All notable changes to IPTV Tunerr are documented here. Repo: [github.com/snapet
 
 ## [Unreleased]
 
+## [v0.1.80] - 2026-05-20
+
+### Guide / XMLTV
+- **Recurring live-event rows now get stable Plex recording identity:** XMLTV output adds date-specific subtitle/date metadata plus a deterministic `episode-num system="iptvtunerr"` for recurring event-like rows, including all `Live:` rows and generic sports titles such as `NBA Basketball`. This prevents Plex from collapsing future events into stale title-only recording markers after an earlier DVR recording.
+
 ### CI
 - **COPR release auth can use durable Fedora credentials:** COPR publishing now supports secret-backed Kerberos/Fedora login credentials with the existing token path retained as fallback during migration.
 - **Snap dropped as a release channel:** removed `release-snap.yml`, `packaging/snap/`, and the Snap dispatch entry; release publishing now covers AUR, PPA, COPR, and the Docker image only.

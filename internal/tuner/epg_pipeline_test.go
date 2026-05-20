@@ -552,6 +552,48 @@ func TestXMLTV_buildMergedEPG_plexSafeIDs(t *testing.T) {
 	}
 }
 
+func TestXMLTV_buildMergedEPG_stabilizesRecurringEventIdentity(t *testing.T) {
+	t.Setenv("IPTV_TUNERR_REFIO_ALLOW_PRIVATE_HTTP", "1")
+	providerXML := `<?xml version="1.0" encoding="utf-8"?>
+<tv>
+  <channel id="tsn1"><display-name>TSN 1</display-name></channel>
+  <programme start="20260521020000 +0200" stop="20260521043000 +0200" channel="tsn1">
+    <title>Live: NBA Basketball</title>
+    <desc>Professional basketball action from the NBA.</desc>
+  </programme>
+  <programme start="20260522020000 +0200" stop="20260522043000 +0200" channel="tsn1">
+    <title>NBA Basketball</title>
+    <desc>Professional basketball action from the NBA.</desc>
+  </programme>
+</tv>`
+	provider := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/xml")
+		_, _ = w.Write([]byte(providerXML))
+	}))
+	defer provider.Close()
+
+	x := &XMLTV{
+		PlexSafeIDs:        true,
+		Channels:           []catalog.LiveChannel{{ChannelID: "tsn1-live", GuideNumber: "10020", GuideName: "CA: TSN 1", TVGID: "tsn1", EPGLinked: true}},
+		ProviderBaseURL:    provider.URL,
+		ProviderUser:       "u",
+		ProviderPass:       "p",
+		ProviderEPGEnabled: true,
+		ProviderEPGTimeout: 5 * time.Second,
+	}
+	x.refresh()
+	body := string(x.cachedXML)
+	if strings.Count(body, `<episode-num system="iptvtunerr">ev-`) != 2 {
+		t.Fatalf("expected recurring event rows to get deterministic identity, got: %s", body)
+	}
+	if !strings.Contains(body, "<date>20260521</date>") || !strings.Contains(body, "<date>20260522</date>") {
+		t.Fatalf("expected date identity on both recurring rows, got: %s", body)
+	}
+	if !strings.Contains(body, "<sub-title>2026-05-21 00:00 UTC - Professional basketball action from the NBA.</sub-title>") {
+		t.Fatalf("expected date-specific subtitle on live row, got: %s", body)
+	}
+}
+
 func TestXMLTV_buildMergedEPG_shortEPGGapFillsSparseProvider(t *testing.T) {
 	t.Setenv("IPTV_TUNERR_PROVIDER_SHORT_EPG_FALLBACK", "true")
 	t.Setenv("IPTV_TUNERR_PROVIDER_SHORT_EPG_MIN_PROGRAMMES", "2")
