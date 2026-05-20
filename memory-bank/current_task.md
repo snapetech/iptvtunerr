@@ -4,7 +4,10 @@
 - Scope: include all dirty and unrelated files, including council generated files and the pre-existing `AGENTS.md` change; do not exclude unrelated work because the user explicitly requested it.
 - Assumption: next patch tag after `v0.1.79` is `v0.1.80`.
 - Done: promoted Unreleased changelog notes into `v0.1.80`.
-- Next: run release-readiness, commit, push, tag, monitor release workflow, then redeploy/verify live services.
+- Done: release-readiness and full verify passed, committed the full dirty tree as `984b24e`, pushed `main`, pushed annotated tag `v0.1.80`, and published the GitHub release with binary/package assets.
+- Done: deployed the `v0.1.80` binary to the live network primary/sports Tunerr services and Live TV proxy service, restarted them, and verified both Tunerr `/readyz` endpoints plus all three services are active.
+- In progress: GitHub Release workflow has published the release but is still marked in post-job cleanup; the Docker tag workflow was rerun after a transient Docker Hub DNS lookup failure and is queued.
+- Next: monitor queued/in-progress GitHub Actions if release-channel status is needed; live deployment is complete.
 
 **Current (2026-05-20):** Fix stale Plex Live TV recording marker and external-user playback error.
 

@@ -274,6 +274,15 @@
 - Deleted the stale Plex subscription, deployed the patched live Tunerr binary, restarted both Tunerr bridge services, and forced Plex guide reloads for both DVRs.
 - Verification: `./scripts/verify` passed; live guide rows now include date/subtitle/episode identity fields; Plex subscriptions list is empty; primary/sports/proxy services are active; direct affected TSN stream returned MPEG-TS data.
 
+## 2026-05-20 - Release and deploy v0.1.80
+
+- Committed the full requested dirty tree, including unrelated files, as `984b24e` and pushed `main`.
+- Tagged and pushed annotated release tag `v0.1.80`.
+- Published GitHub release `v0.1.80` with binary archives, raw binaries, package assets, `SHA256SUMS.txt`, and the release manifest.
+- Deployed the built `v0.1.80` binary to the live network primary/sports Tunerr services and Live TV proxy service, restarted all three services, and confirmed both Tunerr `/readyz` endpoints report ready.
+- Verification: `./scripts/verify`, `./scripts/release-readiness.sh`, local service health checks, live guide identity spot checks, and GitHub release asset publication passed.
+- Follow-up: Docker tag workflow initially failed on a transient Docker Hub DNS lookup and was rerun; GitHub Actions status was still queued/in cleanup at handoff while the GitHub release and live deploy were complete.
+
 ## 2026-05-12 - Harden Plex Live TV entitlement proxy
 
 - Found the live `plex-live-tv-proxy.service` was running `-elevate-all`; unauthenticated public requests to the media frontend returned `200`, so the proxy was effectively acting as an owner-token deputy for anyone who could reach it.
