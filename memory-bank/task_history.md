@@ -245,6 +245,16 @@
 - Added automated proxy coverage for an external shared user coming through forwarded frontend headers: shared token is authorized, Live TV request is elevated to owner token, source headers are retained for audit context, and raw tokens are not logged.
 - Verification: `go test -count=1 ./internal/plexlabelproxy` passed; `./scripts/verify` passed.
 
+## 2026-05-20 - Harden shared-user Plex DVR scheduled-recording visibility
+
+- Patched the Live TV entitlement proxy so read-only `/media/subscriptions*` detail and scheduled-recording paths borrow owner tuner entitlement as DVR discovery, except `/media/subscriptions/template`, which still requires Live TV/XMLTV evidence.
+- Kept mutating subscription edits scoped to XMLTV evidence and broadened form-body scanning to recognize Plex `hints[...]` fields such as `hints[ratingKey]`.
+- Added regression coverage for subscription detail reads, scheduled detail reads, and body-carried XMLTV hint fields.
+- Documented the new recurring Plex post-save detail-read loop in `memory-bank/recurring_loops.md`.
+- Verification: `go test -count=1 ./internal/plexlabelproxy` passed; `./scripts/verify` passed.
+- Live deploy: installed the patched proxy binary to the standalone Live TV proxy service and restarted `plex-live-tv-proxy.service`.
+- Live validation: proxy `/identity` returned `200`; owner-token `/media/subscriptions` and `/media/subscriptions/scheduled` returned `200`; no-token `/media/subscriptions/42` returned `403`.
+
 - 2026-05-18: Added reusable public package-channel smoke validation. New `packaging/smoke/package-smoke` installs from release/package channels, records JSON/JUnit/log evidence, checks requested-version reporting, and supports cleanup hooks. GitLab now has a tag-only `post_release_validate` stage for container, Ubuntu, Fedora, AUR, and Snap channels; GitHub has equivalent disabled `workflow_dispatch` scaffolding. Verification: shell syntax, YAML parsing, evidence success/failure checks, and `git diff --check` passed.
 
 ## 2026-05-12 - Block repeated bad Plex Live TV elevation attempts

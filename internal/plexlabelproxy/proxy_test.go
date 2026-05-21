@@ -1194,8 +1194,32 @@ func TestIsLiveTVRequest_PostMediaSubscriptionWithDoubleEncodedRatingKeyElevated
 	}
 }
 
-func TestIsLiveTVRequest_MediaSubscriptionListsElevated(t *testing.T) {
-	for _, path := range []string{"/media/subscriptions", "/media/subscriptions/scheduled"} {
+func TestIsLiveTVRequest_PostMediaSubscriptionWithPlexHintBodyElevated(t *testing.T) {
+	body := "prefs%5BoneShot%5D=true&" +
+		"hints%5BratingKey%5D=tv%252Eplex%252Exmltv%253A%252F%252Fmovie%252FLive%25253A%252520Etalk&" +
+		"params%5BmediaProviderID%5D=12337&type=1"
+	req := httptest.NewRequest(http.MethodPost, "/media/subscriptions", strings.NewReader(body))
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+
+	if !IsLiveTVRequest(req) {
+		t.Fatal("POST /media/subscriptions with Plex XMLTV hint body should be elevated")
+	}
+	restored, err := io.ReadAll(req.Body)
+	if err != nil {
+		t.Fatalf("read restored body: %v", err)
+	}
+	if string(restored) != body {
+		t.Fatalf("body not restored after classification: got %q want %q", restored, body)
+	}
+}
+
+func TestIsLiveTVRequest_MediaSubscriptionReadsElevated(t *testing.T) {
+	for _, path := range []string{
+		"/media/subscriptions",
+		"/media/subscriptions/42",
+		"/media/subscriptions/scheduled",
+		"/media/subscriptions/scheduled/42",
+	} {
 		req := httptest.NewRequest(http.MethodGet, path, nil)
 		if !IsLiveTVRequest(req) {
 			t.Fatalf("GET %s should be elevated for shared-user Live TV recording UI", path)
@@ -1203,6 +1227,13 @@ func TestIsLiveTVRequest_MediaSubscriptionListsElevated(t *testing.T) {
 		if !IsLiveTVDiscoveryRequest(req) {
 			t.Fatalf("GET %s should be treated as Live TV discovery", path)
 		}
+	}
+}
+
+func TestIsLiveTVRequest_MediaSubscriptionTemplateReadStillRequiresLiveTVEvidence(t *testing.T) {
+	req := httptest.NewRequest(http.MethodGet, "/media/subscriptions/template?guid=com.plexapp.agents.imdb%3A%2F%2Ftt1234567", nil)
+	if IsLiveTVRequest(req) {
+		t.Fatal("library subscription template must not be elevated")
 	}
 }
 

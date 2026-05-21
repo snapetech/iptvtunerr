@@ -13,6 +13,11 @@ All notable changes to IPTV Tunerr are documented here. Repo: [github.com/snapet
 
 ## [Unreleased]
 
+## [v0.1.81] - 2026-05-21
+
+### Plex DVR
+- **Shared-user recording visibility is more reliable after Save:** the Live TV proxy now elevates read-only `/media/subscriptions*` detail and scheduled-recording requests as DVR discovery, while keeping mutating edits scoped to Live TV/XMLTV evidence. Plex hint fields in form bodies, including `hints[ratingKey]`, are now recognized too.
+
 ## [v0.1.80] - 2026-05-20
 
 ### Guide / XMLTV

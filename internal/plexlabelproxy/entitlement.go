@@ -153,8 +153,18 @@ func isLiveTVSubscriptionRequest(req *http.Request) bool {
 	if !mediaSubscriptionMethod(req.Method) {
 		return false
 	}
-	if isReadMethod(req.Method) && (path == "/media/subscriptions" || path == "/media/subscriptions/scheduled") {
+	if isReadMethod(req.Method) {
+		if path == "/media/subscriptions/template" {
+			return subscriptionRequestHasLiveTVEvidence(req)
+		}
 		return true
+	}
+	return subscriptionRequestHasLiveTVEvidence(req)
+}
+
+func subscriptionRequestHasLiveTVEvidence(req *http.Request) bool {
+	if req == nil || req.URL == nil {
+		return false
 	}
 	q := req.URL.Query()
 	if queryParamIsLiveTVPath(q, "guid") || queryParamIsLiveTVPath(q, "key") || queryParamIsLiveTVPath(q, "uri") {
@@ -164,7 +174,7 @@ func isLiveTVSubscriptionRequest(req *http.Request) bool {
 		return true
 	}
 	if methodMayHaveBody(req.Method) {
-		return bodyParamIsLiveTVPath(req, "guid") || bodyParamIsLiveTVPath(req, "key") || bodyParamIsLiveTVPath(req, "uri")
+		return bodyContainsLiveTVPath(req)
 	}
 	return false
 }
@@ -248,21 +258,53 @@ func subscriptionHintKey(key string) bool {
 }
 
 func bodyParamIsLiveTVPath(req *http.Request, name string) bool {
-	if req == nil || req.Body == nil {
+	body, ok := readRequestBodyForClassification(req)
+	if !ok {
 		return false
+	}
+	return bodyBytesContainLiveTVPath(req, body, name)
+}
+
+func bodyContainsLiveTVPath(req *http.Request) bool {
+	body, ok := readRequestBodyForClassification(req)
+	if !ok {
+		return false
+	}
+	ct := strings.ToLower(req.Header.Get("Content-Type"))
+	if strings.Contains(ct, "application/x-www-form-urlencoded") || ct == "" {
+		if values, err := url.ParseQuery(string(body)); err == nil {
+			if queryParamIsLiveTVPath(values, "guid") ||
+				queryParamIsLiveTVPath(values, "key") ||
+				queryParamIsLiveTVPath(values, "uri") ||
+				queryParamIsLiveTVPath(values, "ratingKey") ||
+				queryValuesContainLiveTVPath(values) {
+				return true
+			}
+		}
+	}
+	return liveTVText(string(body))
+}
+
+func readRequestBodyForClassification(req *http.Request) ([]byte, bool) {
+	if req == nil || req.Body == nil {
+		return nil, false
 	}
 	const maxBody = 1 << 20
 	body, err := io.ReadAll(io.LimitReader(req.Body, maxBody+1))
 	if err != nil {
-		return false
+		return nil, false
 	}
 	req.Body = io.NopCloser(bytes.NewReader(body))
 	if req.ContentLength >= 0 && int64(len(body)) <= maxBody {
 		req.ContentLength = int64(len(body))
 	}
 	if len(body) > maxBody {
-		return false
+		return nil, false
 	}
+	return body, true
+}
+
+func bodyBytesContainLiveTVPath(req *http.Request, body []byte, name string) bool {
 	ct := strings.ToLower(req.Header.Get("Content-Type"))
 	if strings.Contains(ct, "application/x-www-form-urlencoded") || ct == "" {
 		if values, err := url.ParseQuery(string(body)); err == nil && queryParamIsLiveTVPath(values, name) {

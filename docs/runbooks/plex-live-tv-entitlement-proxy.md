@@ -123,12 +123,19 @@ inbound-token validation.
 
 The owner token is elevated only after the inbound Plex token is present and
 already authorized for this server. After that check, elevation is limited to
-safe read/probe methods (`GET` and `HEAD`) on known Live TV surfaces:
+known Live TV surfaces:
 
 - `/livetv/*`
 - `/media/providers`
 - `/media/grabbers/devices`
 - `/tv.plex.providers.epg.xmltv:*`
+- read-only `/media/subscriptions*` requests used by Plex's DVR Record UI,
+  including post-save detail and scheduled-recording reads
+- `/media/subscriptions/template` only when its query/body carries Live
+  TV/XMLTV evidence
+- mutating `/media/subscriptions*` requests only when their query/body carries
+  Live TV/XMLTV evidence, including Plex `hints[...]` fields such as
+  `hints[ratingKey]`
 - transcode helper requests under `/video/:/transcode/*` whose `path` query
   parameter is a Live TV session/provider path
 - play queue helper requests under `/playQueues` whose `uri` or `path` query
@@ -145,7 +152,8 @@ Everything else keeps the inbound client token. In particular:
 - `OPTIONS` preflight requests are not elevated
 - mutating methods such as `POST`, `PUT`, `PATCH`, and `DELETE` are not
   elevated on Live TV paths, except stream-start requests when their `uri` or
-  `path` points at a Live TV stream
+  `path` points at a Live TV stream and XMLTV-backed DVR subscription
+  create/edit/delete calls
 
 Security boundary: this mode should still be treated as granting already-shared
 proxied users owner-backed Live TV access. It is not a public anonymous Plex

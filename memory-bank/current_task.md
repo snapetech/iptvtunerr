@@ -1,3 +1,23 @@
+**Current (2026-05-21):** Cut `v0.1.81` for Plex DVR recording visibility hardening.
+
+- Goal: commit and push the full dirty tree, tag `v0.1.81`, and monitor release automation.
+- Scope: Plex Live TV proxy DVR subscription-read hardening, tests, docs, council generated files, memory-bank updates, changelog promotion, release-readiness verification, commit/push/tag.
+- Assumption: next patch tag after `v0.1.80` is `v0.1.81`.
+- Done: patched and deployed the Live TV proxy hotfix before release prep; full `./scripts/verify` passed before the runbook doc update.
+- Next: promote changelog, rerun release-readiness, commit, push, tag, and monitor the release workflow.
+
+**Current (2026-05-20):** Harden shared-user Plex DVR recording visibility after tester report.
+
+- Goal: make the shared-user Plex Record flow more reliable when the save appears accepted but Plex does not show a scheduled-recording marker.
+- Scope: Live TV proxy classification for `/media/subscriptions*` reads and Plex XMLTV hint bodies; focused proxy tests; full verification.
+- Assumption: Plex may follow a successful save with read-only detail/scheduled subscription requests such as `/media/subscriptions/{id}` that carry no XMLTV fields; those reads are part of DVR UI discovery and should borrow owner tuner entitlement, while mutating rule edits must stay XMLTV-scoped.
+- Done: read-only `/media/subscriptions*` paths now elevate as DVR discovery except `/media/subscriptions/template`, which still requires Live TV/XMLTV evidence so library subscription templates are not elevated.
+- Done: mutating subscription requests now scan form bodies for Plex `hints[...]` fields including `hints[ratingKey]`, not only direct `guid`/`key`/`uri` form keys.
+- Verification: focused `go test -count=1 ./internal/plexlabelproxy` passed; full `./scripts/verify` passed.
+- Done: built a commit-stamped proxy binary, installed it to `/opt/iptvtunerr/iptv-tunerr-proxy`, restarted `plex-live-tv-proxy.service`, and confirmed the service is active.
+- Done: live proxy validation returned `200` for `/identity`, `200` for owner-token `/media/subscriptions` and `/media/subscriptions/scheduled`, and `403` for no-token `/media/subscriptions/42`.
+- Next: ask tester to hard refresh Plex and retry Record on a short programme; if it still does not show scheduled state, inspect the fresh `/media/subscriptions*` access log lines around the attempt.
+
 **Current (2026-05-20):** Cut `v0.1.80` and deploy current release.
 
 - Goal: commit the full dirty tree as requested, push `main`, tag `v0.1.80`, monitor release automation, and ensure the live network deployment runs the newest code.

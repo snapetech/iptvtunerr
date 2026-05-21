@@ -113,6 +113,25 @@
 - `internal/plexlabelproxy/entitlement.go`
 - `internal/plexlabelproxy/proxy_test.go`
 
+### Loop: Plex Record Save may need subscription detail reads after create
+
+**Symptom**
+- A shared user can click Record and the client appears to accept the action, but the guide row does not show a scheduled/recording marker afterward.
+- The save path may be fixed already, so there is no obvious client-side "problem saving your changes" error.
+
+**Why it's tricky**
+- Plex can follow a successful Live TV subscription save with read-only detail/scheduled requests such as `/media/subscriptions/{id}` or `/media/subscriptions/scheduled/{id}` that carry only a numeric rule id.
+- If those reads use the shared user's token, Plex may fail to render the DVR rule state even though the create request succeeded.
+
+**What works**
+- Treat read-only `/media/subscriptions*` paths as Live TV DVR discovery, except `/media/subscriptions/template`, which must still require Live TV/XMLTV evidence so ordinary library subscription templates are not elevated.
+- Keep mutating subscription edits scoped to XMLTV evidence, and scan both query strings and form bodies for Plex `hints[...]` fields such as `hints[ratingKey]`.
+- When validating a tester retry, check both the client marker and proxy access lines for all `/media/subscriptions*` requests around the click.
+
+**Where it's documented**
+- `internal/plexlabelproxy/entitlement.go`
+- `internal/plexlabelproxy/proxy_test.go`
+
 ### Loop: Plex Web asks for JSON provider metadata, bypassing XML-only entitlement rewrites
 
 **Symptom**
