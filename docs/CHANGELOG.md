@@ -13,6 +13,11 @@ All notable changes to IPTV Tunerr are documented here. Repo: [github.com/snapet
 
 ## [Unreleased]
 
+## [v0.1.83] - 2026-05-21
+
+### CI / Packaging
+- **Docker publishing no longer depends on the runner BuildKit container reaching Docker Hub DNS through one resolver:** BuildKit now gets explicit DNS servers and a Docker Hub mirror, covering the `registry-1.docker.io` lookup timeouts that survived a simple retry.
+
 ## [v0.1.82] - 2026-05-21
 
 ### Guide / XMLTV

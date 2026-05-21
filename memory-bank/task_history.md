@@ -299,6 +299,7 @@
 - Deployed the patched binary to the live tuner host, restarted Tunerr/proxy services, verified `etalk` guide rows now carry stable identity, reloaded both Plex DVR guides, and deleted the stale title-only subscription.
 - Investigated `v0.1.81` package-channel failures: Docker hit a transient Docker Hub DNS timeout, COPR lacked `requests-gssapi` for configured GSSAPI auth, and Launchpad rejected the PPA upload after Actions reported success because the `.dsc` was not readable during incoming processing.
 - Hardened release workflows: Docker build/push retries once, COPR installs `requests-gssapi`, and PPA upload validates the `.changes` file manifest then uploads payloads, `.dsc`, and `.changes` with retries in a safer order.
+- Follow-up: `v0.1.82` Docker still failed because the BuildKit container could not resolve `registry-1.docker.io` through `8.8.8.8`; patched BuildKit setup to use explicit DNS servers and the Docker Hub mirror before cutting `v0.1.83`.
 - Verification: focused XMLTV tests, `go test -count=1 ./internal/tuner`, YAML parsing for edited workflows, `git diff --check`, and `./scripts/release-readiness.sh` passed.
 
 ## 2026-05-20 - Release and deploy v0.1.80
