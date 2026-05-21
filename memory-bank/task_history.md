@@ -300,6 +300,7 @@
 - Investigated `v0.1.81` package-channel failures: Docker hit a transient Docker Hub DNS timeout, COPR lacked `requests-gssapi` for configured GSSAPI auth, and Launchpad rejected the PPA upload after Actions reported success because the `.dsc` was not readable during incoming processing.
 - Hardened release workflows: Docker build/push retries once, COPR installs `requests-gssapi`, and PPA upload validates the `.changes` file manifest then uploads payloads, `.dsc`, and `.changes` with retries in a safer order.
 - Follow-up: `v0.1.82` Docker still failed because the BuildKit container could not resolve `registry-1.docker.io` through `8.8.8.8`; patched BuildKit setup to use explicit DNS servers and the Docker Hub mirror before cutting `v0.1.83`.
+- Follow-up: `v0.1.83` Docker still used `8.8.8.8` despite inline DNS config, so the workflow now generates BuildKit DNS config from the runner resolver; COPR also now prefers configured API token credentials before attempting Fedora OTP/Kerberos fallback auth.
 - Verification: focused XMLTV tests, `go test -count=1 ./internal/tuner`, YAML parsing for edited workflows, `git diff --check`, and `./scripts/release-readiness.sh` passed.
 
 ## 2026-05-20 - Release and deploy v0.1.80

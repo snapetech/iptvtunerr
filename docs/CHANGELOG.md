@@ -13,6 +13,11 @@ All notable changes to IPTV Tunerr are documented here. Repo: [github.com/snapet
 
 ## [Unreleased]
 
+## [v0.1.84] - 2026-05-21
+
+### CI / Packaging
+- **Docker and COPR publisher fallbacks now use the working runner paths first:** Docker BuildKit now derives DNS servers from the runner resolver at runtime, and COPR prefers configured API token credentials before attempting Fedora OTP/Kerberos fallback auth.
+
 ## [v0.1.83] - 2026-05-21
 
 ### CI / Packaging

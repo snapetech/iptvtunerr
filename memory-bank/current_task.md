@@ -1,6 +1,7 @@
 **Current (2026-05-21):** Cut `v0.1.82` for short recurring XMLTV recording identity and release-channel hardening.
 
 - Update: `v0.1.82` Docker still failed after the one-shot retry; logs prove the BuildKit container cannot resolve `registry-1.docker.io` through `8.8.8.8` even though the host resolver works. Preparing follow-up `v0.1.83` with explicit BuildKit DNS plus a Docker Hub mirror.
+- Update: `v0.1.83` Docker still failed because BuildKit continued using `8.8.8.8`; `v0.1.82` COPR also progressed past the missing `requests-gssapi` dependency but failed by choosing Fedora OTP auth before the configured API token path. Preparing `v0.1.84` to generate BuildKit DNS from the runner resolver and prefer COPR API token credentials.
 - Goal: commit the deployed `etalk`/short recurring show XMLTV identity fix plus fixes for failed `v0.1.81` package-channel publishing, push `main`, tag `v0.1.82`, and monitor release automation.
 - Scope: XMLTV recurring-title identity heuristic, Docker/COPR/PPA release workflow hardening, focused/full verification, changelog promotion, and release tag.
 - Assumption: `v0.1.81` covers the proxy DVR subscription-read hardening; this follow-up release is needed because tester logs showed the remaining failure was title-only guide identity for `etalk`.
@@ -11,7 +12,7 @@
 - Done: patched Docker publishing to retry the build/push once, COPR tooling to install `requests-gssapi`, and PPA upload to validate referenced files and upload payloads, `.dsc`, and `.changes` in an ordered retried sequence.
 - Verification: focused `go test -count=1 ./internal/tuner -run 'TestXMLTV_externalSourceRemap_Stabilizes(RecurringEventIdentity|ShortRecurringProgrammeIdentity)'` passed; full package `go test -count=1 ./internal/tuner` passed.
 - Verification: follow-up release-readiness after the Docker BuildKit DNS/mirror patch passed.
-- Next: commit/push the Docker follow-up, tag `v0.1.83`, then monitor Docker plus release-channel workflows.
+- Next: rerun release-readiness after the Docker/COPR fallback patch, commit/push, tag `v0.1.84`, then monitor Docker plus release-channel workflows.
 
 **Current (2026-05-21):** Cut `v0.1.81` for Plex DVR recording visibility hardening.
 
