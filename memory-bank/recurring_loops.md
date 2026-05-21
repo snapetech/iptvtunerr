@@ -95,6 +95,25 @@
 - `internal/tuner/epg_pipeline.go`
 - `internal/tuner/xmltv_test.go`
 
+### Loop: Short recurring shows can save as title-only one-shot rules
+
+**Symptom**
+- Plex accepts Record for a short recurring programme such as `etalk`, but the guide row does not show the red scheduled-recording marker.
+- `/media/subscriptions` shows a title-only XMLTV movie rule such as `tv.plex.xmltv://movie/etalk`, while `/media/subscriptions/scheduled` has no matching future grab.
+
+**Why it's tricky**
+- The proxy save/read flow can be healthy; the failure is Plex matching a metadata-poor programme title instead of a specific guide airing.
+- Plex may create a one-shot subscription with `startTimeslot=Any`, so it looks saved but is not bound to the selected airing.
+
+**What works**
+- Metadata-poor short recurring rows need the same kind of deterministic XMLTV identity as generic sports rows: date-specific `sub-title`, `date`, and `episode-num system="iptvtunerr"`.
+- Preserve rows that already carry episode metadata; do not overwrite upstream `sub-title`, `date`, or `episode-num`.
+- Delete stale title-only subscriptions after deploying the fixed guide identity, reload Plex guides, and have the tester recreate the recording.
+
+**Where it's documented**
+- `internal/tuner/xmltv.go`
+- `internal/tuner/xmltv_test.go`
+
 ### Loop: Plex Record Options uses subscription reads before save
 
 **Symptom**

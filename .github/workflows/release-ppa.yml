@@ -113,10 +113,38 @@ jobs:
           incoming="ftp://ppa.launchpad.net/~keefshape/ubuntu/iptvtunerr/"
           changes="$(find . -maxdepth 1 -name '*.changes' -print -quit)"
           test -n "$changes"
-          awk '/^Files:/{files=1; next} files && NF >= 5 {print $5}' "$changes" | while read -r file; do
+          mapfile -t referenced_files < <(awk '/^Files:/{files=1; next} files && NF >= 5 {print $5}' "$changes")
+          test "${#referenced_files[@]}" -gt 0
+
+          payload_files=()
+          dsc_files=()
+          for file in "${referenced_files[@]}"; do
             test -f "$file"
-            curl --fail --show-error --ftp-create-dirs --user anonymous: \
-              --upload-file "$file" "${incoming}${file}"
+            if [[ "$file" == *.dsc ]]; then
+              dsc_files+=("$file")
+            else
+              payload_files+=("$file")
+            fi
           done
-          curl --fail --show-error --ftp-create-dirs --user anonymous: \
-            --upload-file "$changes" "${incoming}$(basename "$changes")"
+          test "${#dsc_files[@]}" -gt 0
+
+          printf 'Launchpad upload manifest for %s:\n' "$changes"
+          for file in "${payload_files[@]}" "${dsc_files[@]}" "$changes"; do
+            sha256sum "$file"
+          done
+
+          upload_file() {
+            local file="$1"
+            curl --fail --show-error --retry 5 --retry-delay 5 --retry-all-errors \
+              --ftp-create-dirs --user anonymous: \
+              --upload-file "$file" "${incoming}$(basename "$file")"
+          }
+
+          for file in "${payload_files[@]}"; do
+            upload_file "$file"
+          done
+          for file in "${dsc_files[@]}"; do
+            upload_file "$file"
+          done
+          sleep 10
+          upload_file "$changes"

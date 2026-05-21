@@ -1,3 +1,16 @@
+**Current (2026-05-21):** Cut `v0.1.82` for short recurring XMLTV recording identity and release-channel hardening.
+
+- Goal: commit the deployed `etalk`/short recurring show XMLTV identity fix plus fixes for failed `v0.1.81` package-channel publishing, push `main`, tag `v0.1.82`, and monitor release automation.
+- Scope: XMLTV recurring-title identity heuristic, Docker/COPR/PPA release workflow hardening, focused/full verification, changelog promotion, and release tag.
+- Assumption: `v0.1.81` covers the proxy DVR subscription-read hardening; this follow-up release is needed because tester logs showed the remaining failure was title-only guide identity for `etalk`.
+- Done: found Plex created subscription `783` at `2026-05-20 18:00:08 CST` for `tv.plex.xmltv://movie/etalk`; `/media/subscriptions/scheduled` had no `etalk` grab, and proxy logs had no tester subscription POST.
+- Done: patched XMLTV output so metadata-poor short recurring rows get date-specific `sub-title`, `date`, and `episode-num system="iptvtunerr"` while rows with existing episode metadata are preserved.
+- Done: deployed the patched binary to the live tuner host, restarted primary/sports/proxy services, verified `etalk` rows in `/guide.xml` now carry stable identity, reloaded both Plex DVR guides, and deleted stale title-only subscription `783`.
+- Done: investigated failed `v0.1.81` package channels: Docker hit transient Docker Hub DNS resolution failures, COPR lacked `requests-gssapi` for configured GSSAPI auth, and the PPA workflow uploaded successfully from Actions but Launchpad later rejected the source upload because the `.dsc` was not readable in incoming processing.
+- Done: patched Docker publishing to retry the build/push once, COPR tooling to install `requests-gssapi`, and PPA upload to validate referenced files and upload payloads, `.dsc`, and `.changes` in an ordered retried sequence.
+- Verification: focused `go test -count=1 ./internal/tuner -run 'TestXMLTV_externalSourceRemap_Stabilizes(RecurringEventIdentity|ShortRecurringProgrammeIdentity)'` passed; full package `go test -count=1 ./internal/tuner` passed.
+- Next: rerun release-readiness after workflow patches, commit, push, tag `v0.1.82`, then monitor release workflows.
+
 **Current (2026-05-21):** Cut `v0.1.81` for Plex DVR recording visibility hardening.
 
 - Goal: commit and push the full dirty tree, tag `v0.1.81`, and monitor release automation.

@@ -572,6 +572,44 @@ func TestXMLTV_externalSourceRemap_StabilizesRecurringEventIdentity(t *testing.T
 	}
 }
 
+func TestXMLTV_externalSourceRemap_StabilizesShortRecurringProgrammeIdentity(t *testing.T) {
+	srcXML := `<?xml version="1.0" encoding="utf-8"?>
+<tv>
+  <channel id="ctv"><display-name>CTV</display-name></channel>
+  <programme start="20260521020000 +0000" stop="20260521023000 +0000" channel="ctv">
+    <title>etalk</title>
+    <category>Entertainment</category>
+  </programme>
+  <programme start="20260521023000 +0000" stop="20260521030000 +0000" channel="ctv">
+    <title>Family Feud</title>
+    <sub-title>Fast Money</sub-title>
+  </programme>
+</tv>`
+	var out strings.Builder
+	err := writeRemappedXMLTVWithPolicy(&out, strings.NewReader(srcXML), []catalog.LiveChannel{
+		{GuideNumber: "10028", GuideName: "CTV", TVGID: "ctv"},
+	}, xmltvTextPolicy{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	body := out.String()
+	if !strings.Contains(body, "<title>etalk</title>") {
+		t.Fatalf("title should stay client-readable, got: %s", body)
+	}
+	if !strings.Contains(body, "<sub-title>2026-05-21 02:00 UTC</sub-title>") {
+		t.Fatalf("expected date-specific subtitle for short recurring row, got: %s", body)
+	}
+	if !strings.Contains(body, "<date>20260521</date>") {
+		t.Fatalf("expected date element for short recurring row, got: %s", body)
+	}
+	if strings.Count(body, `<episode-num system="iptvtunerr">ev-`) != 1 {
+		t.Fatalf("expected only metadata-poor recurring row to get synthetic identity, got: %s", body)
+	}
+	if !strings.Contains(body, "<sub-title>Fast Money</sub-title>") {
+		t.Fatalf("existing episode metadata should be preserved, got: %s", body)
+	}
+}
+
 func TestXMLTV_buildMergedEPG_UsesRealProgrammeBlocksNotPlaceholder(t *testing.T) {
 	t.Setenv("IPTV_TUNERR_REFIO_ALLOW_PRIVATE_HTTP", "1")
 	providerXML := `<?xml version="1.0" encoding="utf-8"?>

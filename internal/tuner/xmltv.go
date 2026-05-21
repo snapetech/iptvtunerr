@@ -633,7 +633,7 @@ func stabilizeRecurringEventProgramme(node *xmlRawNode) {
 		return
 	}
 	title := strings.TrimSpace(p.Title.Value)
-	if !isRecurringEventTitle(title) {
+	if !needsPlexStableProgrammeIdentity(p, *node) {
 		return
 	}
 	start, ok := parseXMLTVTime(strings.TrimSpace(p.Start))
@@ -666,6 +666,61 @@ func isRecurringEventTitle(title string) bool {
 		}
 	}
 	return false
+}
+
+func needsPlexStableProgrammeIdentity(p xmlProgramme, node xmlRawNode) bool {
+	title := strings.TrimSpace(p.Title.Value)
+	if title == "" {
+		return false
+	}
+	if isRecurringEventTitle(title) {
+		return true
+	}
+	if strings.TrimSpace(p.SubTitle.Value) != "" ||
+		rawXMLNodeHasChild(node, "sub-title") ||
+		rawXMLNodeHasChild(node, "date") ||
+		rawXMLNodeHasChild(node, "episode-num") {
+		return false
+	}
+	start, ok := parseXMLTVTime(strings.TrimSpace(p.Start))
+	if !ok {
+		return false
+	}
+	stop, ok := parseXMLTVTime(strings.TrimSpace(p.Stop))
+	if !ok {
+		return false
+	}
+	duration := stop.Sub(start)
+	if duration <= 0 || duration > 6*time.Hour {
+		return false
+	}
+	return recurringTitleCandidate(title, p.Categories)
+}
+
+func recurringTitleCandidate(title string, categories []xmlValue) bool {
+	t := strings.ToLower(strings.TrimSpace(title))
+	if t == "" {
+		return false
+	}
+	for _, c := range categories {
+		switch strings.ToLower(strings.TrimSpace(c.Value)) {
+		case "series", "show", "talk", "news", "sports", "entertainment", "game show", "reality":
+			return true
+		}
+	}
+	if strings.Contains(t, ":") || strings.Contains(t, "|") {
+		return false
+	}
+	words := strings.Fields(t)
+	if len(words) > 4 {
+		return false
+	}
+	for _, word := range words {
+		if len(word) > 24 {
+			return false
+		}
+	}
+	return true
 }
 
 func recurringEventEpisodeID(p xmlProgramme, start time.Time) string {

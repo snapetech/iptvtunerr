@@ -245,6 +245,14 @@
 - Added automated proxy coverage for an external shared user coming through forwarded frontend headers: shared token is authorized, Live TV request is elevated to owner token, source headers are retained for audit context, and raw tokens are not logged.
 - Verification: `go test -count=1 ./internal/plexlabelproxy` passed; `./scripts/verify` passed.
 
+## 2026-05-20 - Fix title-only Plex recording identity for short recurring shows
+
+- Followed tester feedback that Record appeared to work for `etalk` but the guide did not show a red recording marker.
+- Found Plex had created a title-only subscription `tv.plex.xmltv://movie/etalk` at `2026-05-20 18:00:08 CST`, while `/media/subscriptions/scheduled` had no `etalk` grab. Proxy logs showed no tester subscription POST, so the remaining issue was guide identity, not proxy save classification.
+- Patched XMLTV output so metadata-poor short recurring rows such as `etalk` get date-specific `sub-title`, `date`, and deterministic `episode-num system="iptvtunerr"` fields; rows with existing episode metadata are preserved.
+- Deployed the patched binary to the live tuner host, restarted primary/sports/proxy services, verified live `/guide.xml` now includes stable identity on `etalk` rows, forced Plex guide reloads for both DVRs, and deleted stale title-only subscription `783`.
+- Verification: focused XMLTV tests and `go test -count=1 ./internal/tuner` passed.
+
 ## 2026-05-20 - Harden shared-user Plex DVR scheduled-recording visibility
 
 - Patched the Live TV entitlement proxy so read-only `/media/subscriptions*` detail and scheduled-recording paths borrow owner tuner entitlement as DVR discovery, except `/media/subscriptions/template`, which still requires Live TV/XMLTV evidence.
@@ -283,6 +291,15 @@
 - Added regression tests for both the external XMLTV remap path and the real merged EPG provider-import path.
 - Deleted the stale Plex subscription, deployed the patched live Tunerr binary, restarted both Tunerr bridge services, and forced Plex guide reloads for both DVRs.
 - Verification: `./scripts/verify` passed; live guide rows now include date/subtitle/episode identity fields; Plex subscriptions list is empty; primary/sports/proxy services are active; direct affected TSN stream returned MPEG-TS data.
+
+## 2026-05-21 - Fix short recurring show recording identity and harden release channels
+
+- Found Plex saved the tester's `etalk` attempt as title-only `tv.plex.xmltv://movie/etalk` with no scheduled grab, while proxy subscription reads were healthy.
+- Patched XMLTV output so metadata-poor short recurring shows get date-specific `sub-title`, `date`, and deterministic `episode-num system="iptvtunerr"` fields without overwriting existing upstream episode metadata.
+- Deployed the patched binary to the live tuner host, restarted Tunerr/proxy services, verified `etalk` guide rows now carry stable identity, reloaded both Plex DVR guides, and deleted the stale title-only subscription.
+- Investigated `v0.1.81` package-channel failures: Docker hit a transient Docker Hub DNS timeout, COPR lacked `requests-gssapi` for configured GSSAPI auth, and Launchpad rejected the PPA upload after Actions reported success because the `.dsc` was not readable during incoming processing.
+- Hardened release workflows: Docker build/push retries once, COPR installs `requests-gssapi`, and PPA upload validates the `.changes` file manifest then uploads payloads, `.dsc`, and `.changes` with retries in a safer order.
+- Verification: focused XMLTV tests, `go test -count=1 ./internal/tuner`, YAML parsing for edited workflows, `git diff --check`, and `./scripts/release-readiness.sh` passed.
 
 ## 2026-05-20 - Release and deploy v0.1.80
 

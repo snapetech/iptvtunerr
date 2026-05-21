@@ -52,7 +52,20 @@ jobs:
           tags: |
             type=raw,value=latest
             type=raw,value=${{ env.RELEASE_TAG }}
-      - uses: docker/build-push-action@v7
+      - name: Build and push Docker image
+        id: docker-build
+        continue-on-error: true
+        uses: docker/build-push-action@v7
+        with:
+          context: .
+          platforms: linux/amd64,linux/arm64,linux/arm/v7
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          build-args: VERSION=${{ env.RELEASE_TAG }}
+      - name: Retry Docker build and push
+        if: steps.docker-build.outcome == 'failure'
+        uses: docker/build-push-action@v7
         with:
           context: .
           platforms: linux/amd64,linux/arm64,linux/arm/v7

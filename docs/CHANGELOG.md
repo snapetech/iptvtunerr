@@ -13,6 +13,14 @@ All notable changes to IPTV Tunerr are documented here. Repo: [github.com/snapet
 
 ## [Unreleased]
 
+## [v0.1.82] - 2026-05-21
+
+### Guide / XMLTV
+- **Short recurring shows now get stable Plex recording identity:** metadata-poor recurring programme rows such as `etalk` now receive date-specific subtitle/date metadata plus deterministic `episode-num system="iptvtunerr"` fields, preventing Plex from saving title-only one-shot rules that do not bind to a scheduled guide airing.
+
+### CI / Packaging
+- **Release-channel publishing is more resilient:** Docker image publishing now retries the multi-arch build after transient registry/DNS failures, COPR installs the `requests-gssapi` runtime dependency required by the configured Kerberos auth path, and PPA uploads now validate the `.changes` manifest then upload payloads, `.dsc`, and `.changes` in a safer ordered/retried sequence.
+
 ## [v0.1.81] - 2026-05-21
 
 ### Plex DVR
