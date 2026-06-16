@@ -13,6 +13,9 @@ All notable changes to IPTV Tunerr are documented here. Repo: [github.com/snapet
 
 ## [Unreleased]
 
+### CI / Packaging
+- **COPR publishing can recover from an expired API token:** the COPR workflow now prepares the Fedora GSSAPI fallback even when token credentials are present, then retries COPR CLI calls with that fallback when COPR rejects the token as invalid or expired.
+
 ## [v0.1.85] - 2026-06-16
 
 ### Plex Live TV proxy

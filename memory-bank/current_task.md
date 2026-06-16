@@ -1,11 +1,14 @@
-**Current (2026-06-16):** Commit dirty tree and cut `v0.1.85`.
+**Current (2026-06-16):** Release `v0.1.85` and recover package-channel fallout.
 
-- Goal: commit every local dirty and unrelated change as requested, push `main`, tag `v0.1.85`, and monitor release automation.
-- Scope: pre-existing dirty Plex/PMS access and Live TV proxy changes, memory-bank/council generated files, release changelog, full release-readiness verification, commit/push/tag, and GitHub release workflow monitoring.
+- Goal: commit every local dirty and unrelated change as requested, push `main`, tag `v0.1.85`, monitor release automation, and action release-channel failures.
+- Scope: pre-existing dirty Plex/PMS access and Live TV proxy changes, memory-bank/council generated files, release changelog, full release-readiness verification, commit/push/tag, GitHub release workflow monitoring, and COPR package-channel recovery.
 - Assumption: user explicitly confirmed the full dirty tree is in scope, including unrelated and generated files.
 - Done: fast-forwarded local `main` to include the completed PR/security sweep commits before reapplying the dirty tree.
-- Done: resolved generated-file conflicts, promoted release notes into `v0.1.85`, and `./scripts/release-readiness.sh` passed.
-- Next: commit and push the full staged tree, tag `v0.1.85` at current `main`, push the tag, and monitor the primary release workflow.
+- Done: resolved generated-file conflicts, promoted release notes into `v0.1.85`, committed the full requested tree as `1c7fcd7`, pushed `main`, tagged and pushed `v0.1.85`, and published the GitHub release.
+- Done: `./scripts/release-readiness.sh` passed locally; release workflow, Docker, AUR, PPA, main CI, CodeQL, Gitleaks, and local-identity checks completed successfully.
+- Found: COPR publishing failed before upload because COPR rejected the configured API token as invalid or expired.
+- In progress: patched the COPR workflow so token-auth failures can retry with the already-configured Fedora GSSAPI fallback without deleting repository secrets.
+- Next: push the COPR recovery patch, rerun COPR publishing for `v0.1.85`, then close the memory/task history with final release-channel status.
 
 **Previous (2026-06-16):** Resolve open PR and security issues.
 
