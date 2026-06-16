@@ -396,3 +396,14 @@
 - Final GitHub state: open PRs, open Dependabot alerts, open code-scanning alerts, open secret-scanning alerts, and open issues are all empty.
 - Verification: `npm --prefix web audit` reported zero vulnerabilities; `go run golang.org/x/vuln/cmd/govulncheck@latest ./...` reported no called Go vulnerabilities; `npm --prefix web run build`, `git diff --check`, `./scripts/check-local-identity-leaks.sh`, and full `./scripts/verify` passed.
 - GitHub verification: CI, CodeQL, Gitleaks, Dependency Graph, and Local Identity checks passed for the consolidated dependency/security commit.
+
+## 2026-06-16 - Commit dirty tree and publish v0.1.85
+
+- Fast-forwarded local `main`, reapplied the requested dirty and unrelated tree, resolved generated-file conflicts, regenerated council outputs, promoted the changelog, and committed the full requested tree as `1c7fcd7`.
+- Published `v0.1.85`: pushed `main`, pushed the annotated `v0.1.85` tag, and confirmed the GitHub Release workflow published release assets and manifest/checksum assets.
+- Release content: Plex/PMS canonical env preference and startup drift warnings, Live TV proxy rolling cleanup classifier tightening, PR/security dependency upgrades from the consolidated sweep, docs/changelog/memory updates, and generated council state.
+- Verification before release: focused PMS/runtime/proxy/setupdoctor tests, changelog gate, local identity scan, staged diff check, and full `./scripts/release-readiness.sh` passed.
+- GitHub verification for the release commit: Release, Docker, AUR, PPA, main CI, CodeQL, Gitleaks, and Local Identity checks completed successfully.
+- COPR follow-up: initial COPR publish failed because the configured COPR API token was invalid or expired. Pushed `f5c79db` to retry configured Fedora GSSAPI fallback after token-auth expiry and reran COPR for `v0.1.85`.
+- COPR final state: rerun `27634610662` still failed before upload. The workflow attempted fallback, but COPR returned a non-JSON response for write auth; browser GSSAPI login returned `401 Unauthorized`; OIDC required Fedora username/password/OTP; no readable local/OpenBao replacement secret was available.
+- Filed known issue: COPR package publishing requires rotating `COPR_LOGIN`/`COPR_TOKEN` or adding valid COPR Kerberos keytab secrets, then rerunning `release-copr.yml` for `v0.1.85`.

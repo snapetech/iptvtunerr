@@ -14,7 +14,7 @@ All notable changes to IPTV Tunerr are documented here. Repo: [github.com/snapet
 ## [Unreleased]
 
 ### CI / Packaging
-- **COPR publishing can recover from an expired API token:** the COPR workflow now prepares the Fedora GSSAPI fallback even when token credentials are present, then retries COPR CLI calls with that fallback when COPR rejects the token as invalid or expired.
+- **COPR publishing now attempts configured fallback auth after token expiry:** the COPR workflow prepares Fedora GSSAPI fallback credentials even when token credentials are present, then retries COPR CLI calls with that fallback when COPR rejects the token as invalid or expired. The current COPR channel still requires credential rotation or keytab-backed auth because COPR rejected the existing token and did not accept the OTP-backed GSSAPI write path.
 
 ## [v0.1.85] - 2026-06-16
 

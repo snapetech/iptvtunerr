@@ -5,10 +5,11 @@
 - Assumption: user explicitly confirmed the full dirty tree is in scope, including unrelated and generated files.
 - Done: fast-forwarded local `main` to include the completed PR/security sweep commits before reapplying the dirty tree.
 - Done: resolved generated-file conflicts, promoted release notes into `v0.1.85`, committed the full requested tree as `1c7fcd7`, pushed `main`, tagged and pushed `v0.1.85`, and published the GitHub release.
-- Done: `./scripts/release-readiness.sh` passed locally; release workflow, Docker, AUR, PPA, main CI, CodeQL, Gitleaks, and local-identity checks completed successfully.
+- Done: `./scripts/release-readiness.sh` passed locally; release workflow, Docker, AUR, PPA, main CI, CodeQL, Gitleaks, and local-identity checks completed successfully for `1c7fcd7`.
 - Found: COPR publishing failed before upload because COPR rejected the configured API token as invalid or expired.
-- In progress: patched the COPR workflow so token-auth failures can retry with the already-configured Fedora GSSAPI fallback without deleting repository secrets.
-- Next: push the COPR recovery patch, rerun COPR publishing for `v0.1.85`, then close the memory/task history with final release-channel status.
+- Done: pushed follow-up `f5c79db` to make COPR retry with the already-configured Fedora GSSAPI fallback when token auth reports invalid/expired; YAML parsing, `actionlint` with the repo's custom runner label ignored, changelog gate, local identity scan, diff check, and GitHub CI/CodeQL/Gitleaks/Local Identity checks passed.
+- Blocked: rerun `27634610662` still failed at COPR write auth. The fallback was attempted, but COPR returned a non-JSON API response for the write path; browser GSSAPI login also returned `401 Unauthorized`, and OIDC stopped at a Fedora username/password/OTP form. No readable local/OpenBao replacement credential was available.
+- Next: rotate `COPR_LOGIN`/`COPR_TOKEN` from the COPR API page or add valid COPR Kerberos keytab secrets, then rerun `release-copr.yml` for `v0.1.85`.
 
 **Previous (2026-06-16):** Resolve open PR and security issues.
 
