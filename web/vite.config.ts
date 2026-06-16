@@ -2,6 +2,7 @@ import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 
 export default defineConfig({
+  // plugin-react v6 no longer applies Babel transforms; add @rolldown/plugin-babel before using Babel plugins.
   plugins: [react()],
   build: {
     outDir: '../internal/webui/static/dist',

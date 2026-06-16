@@ -13,6 +13,14 @@ All notable changes to IPTV Tunerr are documented here. Repo: [github.com/snapet
 
 ## [Unreleased]
 
+### Security / Dependencies
+- **Open Dependabot alerts are resolved:** the web package lock now uses `react-router-dom`/`react-router` `6.30.4` and removes the vulnerable direct `esbuild` path by moving Vite tooling to `@vitejs/plugin-react` `6.0.2` and `vite` `8.0.16`; `npm audit` reports zero vulnerabilities.
+- **Go maintenance dependencies are current:** `golang.org/x/crypto` is now `v0.53.0`, `golang.org/x/net` is now `v0.56.0`, and the vendored `golang.org/x/sys` tree is refreshed to `v0.46.0`.
+
+### CI / Packaging
+- **Disabled package-smoke workflow dependencies are current:** the dormant package smoke workflow now references `actions/checkout@v6` and `actions/upload-artifact@v7`, with changelog coverage so future PR checks do not fail the release-relevant change gate.
+- **Web tooling declares the Vite 8 Node floor:** the repo now pins Node major `22` through `.node-version`, and the web package declares `node >=22.12.0` so local and CI environments do not drift below Vite's supported runtime.
+
 ## [v0.1.84] - 2026-05-21
 
 ### CI / Packaging

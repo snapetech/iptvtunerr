@@ -1,3 +1,14 @@
+**Current (2026-06-16):** Resolve open PR and security issues.
+
+- Goal: close out the open Dependabot PR queue and repository security alerts by landing one consolidated dependency/workflow/security update.
+- Scope: open GitHub PRs #22, #23, #26, #27, #28, #29; Dependabot alerts for `esbuild` and `react-router`; GitHub code/secret scanning; local npm/Go vulnerability checks; verification and memory-bank updates.
+- Assumption: landing equivalent or newer dependency/workflow updates directly on `main` is acceptable for Dependabot PRs, then closing superseded PRs with explicit comments.
+- Done: GitHub open issues, code-scanning alerts, and secret-scanning alerts are empty.
+- Done: `govulncheck ./...` found no called Go vulnerabilities.
+- Done: updated web dependencies to resolve the `esbuild` and `react-router` alerts, added Node 22 runtime pinning for Vite 8, updated Go `x/crypto`/`x/net`/`x/sys`, and bumped the disabled package-smoke workflow actions.
+- Verification: `npm --prefix web audit`, `go run golang.org/x/vuln/cmd/govulncheck@latest ./...`, `npm --prefix web run build`, and full `./scripts/verify` passed.
+- Next: push the consolidated fix, confirm GitHub alerts clear, then close or merge all superseded open PRs.
+
 **Current (2026-05-21):** Completed `v0.1.84` release for recording identity and release-channel hardening.
 
 - Update: `v0.1.82` Docker still failed after the one-shot retry; logs prove the BuildKit container cannot resolve `registry-1.docker.io` through `8.8.8.8` even though the host resolver works. Preparing follow-up `v0.1.83` with explicit BuildKit DNS plus a Docker Hub mirror.
