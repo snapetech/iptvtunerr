@@ -6,8 +6,11 @@
 - Done: GitHub open issues, code-scanning alerts, and secret-scanning alerts are empty.
 - Done: `govulncheck ./...` found no called Go vulnerabilities.
 - Done: updated web dependencies to resolve the `esbuild` and `react-router` alerts, added Node 22 runtime pinning for Vite 8, updated Go `x/crypto`/`x/net`/`x/sys`, and bumped the disabled package-smoke workflow actions.
-- Verification: `npm --prefix web audit`, `go run golang.org/x/vuln/cmd/govulncheck@latest ./...`, `npm --prefix web run build`, and full `./scripts/verify` passed.
-- Next: push the consolidated fix, confirm GitHub alerts clear, then close or merge all superseded open PRs.
+- Done: landed the consolidated fix on `main`, closed superseded Dependabot PRs #22, #23, #26, #27, #28, and #29 with explicit resolution comments, and deleted their remote branches.
+- Done: GitHub Dependabot, code-scanning, and secret-scanning open alert queues are empty after the dependency graph refreshed.
+- Done: GitHub CI, CodeQL, Gitleaks, Dependency Graph, and Local Identity checks passed for the consolidated dependency/security commit.
+- Verification: `npm --prefix web audit`, `go run golang.org/x/vuln/cmd/govulncheck@latest ./...`, `npm --prefix web run build`, `./scripts/check-local-identity-leaks.sh`, and full `./scripts/verify` passed.
+- Next: no PR/security action remains; record task history closeout.
 
 **Current (2026-05-21):** Completed `v0.1.84` release for recording identity and release-channel hardening.
 

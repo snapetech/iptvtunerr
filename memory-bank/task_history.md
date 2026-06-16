@@ -350,3 +350,13 @@
 - Live fix kept the host/systemd Tunerr services as the single owner, installed the patched binary, and deleted twelve empty IPTV DVR rows.
 - Code fix: the watchdog no longer re-registers solely because Plex marks a device `dead` while mappings remain healthy; activation request timeout errors redact token-bearing URLs.
 - Verification at that point: `./scripts/verify` passed.
+
+## 2026-06-16 - Resolve open PR and security queues
+
+- Inspected the full open GitHub queue: Dependabot PRs #22, #23, #26, #27, #28, and #29; Dependabot security alerts for `esbuild` and `react-router`; code scanning; secret scanning; and open issues.
+- Landed one consolidated update on `main`: Vite/React tooling plus Node 22 pinning, React Router 6.30.4, Go `x/crypto` 0.53.0, Go `x/net` 0.56.0, vendored Go module refresh including `x/sys` 0.46.0, and `actions/checkout@v6` / `actions/upload-artifact@v7` in the disabled package-smoke workflow.
+- Rebuilt the shipped Web UI static bundle and updated the changelog so the dependency/workflow changes pass the repo changelog gate.
+- Closed superseded Dependabot PRs #22, #23, #26, #27, #28, and #29 with explicit resolution comments after the consolidated commit landed.
+- Final GitHub state: open PRs, open Dependabot alerts, open code-scanning alerts, open secret-scanning alerts, and open issues are all empty.
+- Verification: `npm --prefix web audit` reported zero vulnerabilities; `go run golang.org/x/vuln/cmd/govulncheck@latest ./...` reported no called Go vulnerabilities; `npm --prefix web run build`, `git diff --check`, `./scripts/check-local-identity-leaks.sh`, and full `./scripts/verify` passed.
+- GitHub verification: CI, CodeQL, Gitleaks, Dependency Graph, and Local Identity checks passed for the consolidated dependency/security commit.
