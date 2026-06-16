@@ -45,9 +45,7 @@ func resolvePlexAccess(flagURL, flagToken string) (string, string) {
 		baseURL = strings.TrimSpace(os.Getenv("IPTV_TUNERR_PMS_URL"))
 	}
 	if baseURL == "" {
-		if host := strings.TrimSpace(os.Getenv("PLEX_HOST")); host != "" {
-			baseURL = "http://" + host + ":32400"
-		}
+		baseURL = plexBaseURLFromHostAlias(os.Getenv("PLEX_HOST"))
 	}
 	token := strings.TrimSpace(flagToken)
 	if token == "" {
@@ -57,6 +55,20 @@ func resolvePlexAccess(flagURL, flagToken string) (string, string) {
 		token = strings.TrimSpace(os.Getenv("PLEX_TOKEN"))
 	}
 	return baseURL, token
+}
+
+func plexBaseURLFromHostAlias(host string) string {
+	host = strings.TrimSpace(host)
+	if host == "" {
+		return ""
+	}
+	if strings.Contains(host, "://") {
+		return strings.TrimRight(host, "/")
+	}
+	if strings.Contains(host, ":") {
+		return "http://" + host
+	}
+	return "http://" + host + ":32400"
 }
 
 func registerCatchupPlexLibraries(baseURL, token string, manifest tuner.CatchupPublishManifest, refresh bool) error {

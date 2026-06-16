@@ -1,3 +1,39 @@
+## 2026-05-29 - Fix Plex Web Live TV transcode ingress 404
+
+- Found the remaining tester `s1002 (Network)` failure was not stale DVR state or tuner output: Plex Web's `/video/:/transcode/universal/*` and `/:/timeline` calls were returning Caddy's 9-byte `404` immediately after a successful Live TV tune.
+- Direct PMS and direct Go proxy probes reached Plex/proxy, while the same encoded Live TV transcode URL through HTTPS ingress failed before the proxy. Root cause was the public-ingress abnormal-URI matcher blocking `%2f` in Plex Web's legitimate `path=%2Flivetv%2Fsessions%2F...` query value.
+- Installed the patched active proxy binary (`dev-3739f33-rolling-delete-session`), backed up the previous binary, and restarted only `plex-live-tv-proxy.service`.
+- Backed up the active ingress Caddyfile, narrowed the abnormal-URI deny rule so Plex playback paths `/video/:/transcode/*`, `/:/timeline*`, and `/playQueues*` can carry encoded Live TV session values, validated the Caddyfile, and restarted only the ingress service.
+- Live validation: the encoded HTTPS transcode probe no longer returns Caddy's 9-byte `404`; it reaches `plex-live-tv-proxy.service`, logs `live_tv=true stream=true`, and returns a Plex/proxy response for the synthetic fake session. Timeline requests also reach the proxy instead of being denied at ingress.
+- Verification: previous focused `go test -count=1 ./internal/plexlabelproxy` and full `./scripts/verify` passed for the proxy code change; the Caddyfile change was validated live with `caddy validate` and synthetic ingress probes.
+
+## 2026-05-28 - Patch Plex rolling Live TV subscription cleanup
+
+- Investigated the tester's post-refresh Plex Web `s1002 (Network)` retry after the stale subscription was removed and the sports bridge was switched to AAC for PMS internal fetches.
+- Found the fresh retry reached the tuner and PMS successfully: the Live TV tune request was elevated, the sports bridge served the AAC profile, PMS confirmed AAC audio, and Plex Web pulled many HLS segments.
+- Found the remaining proxy denial: Plex Web sent `DELETE /media/subscriptions/{id}` for the rolling Live TV playback subscription with `X-Plex-Playback-Session-Id`, and the proxy classified it as non-Live-TV because it did not carry XMLTV guide evidence.
+- Patched the proxy classifier so only `DELETE /media/subscriptions/<numeric-id>` with non-empty `X-Plex-Playback-Session-Id` is elevated. Plain id-only deletes, nested scheduled paths, and library subscription edits remain non-elevated.
+- Verification: `go test -count=1 ./internal/plexlabelproxy` passed and full `./scripts/verify` passed.
+- Live deploy: installed the verified proxy hotfix binary on the live validation host, backed up the previous binary, restarted only `plex-live-tv-proxy.service`, and confirmed the service is active.
+- Live validation: synthetic missing-token playback-session DELETE is now classified as `live_tv=true` and denied for missing token; synthetic id-only DELETE remains `live_tv=false`.
+- Follow-up correction: after the tester still saw `s1002`, found the active live proxy process was still the old binary and had logged zero Live TV elevations in the retry window. Rebuilt and installed `dev-3739f33-rolling-delete`, restarted only `plex-live-tv-proxy.service`, and validated the active service now classifies playback-session DELETE as `live_tv=true` while id-only DELETE remains `live_tv=false`.
+- Follow-up session-shape fix: after the tester still saw `s1002`, broadened only `DELETE /media/subscriptions/<numeric-id>` rolling Live TV cleanup classification to accept non-empty `X-Plex-Playback-Session-Id` or `X-Plex-Session-Id` from query parameters or headers. Plain id-only deletes, product-only deletes, nested scheduled paths, and library subscription edits remain non-elevated.
+- Live deploy: built `dev-3739f33-rolling-delete-session`, backed up the prior live proxy binary, installed the new binary to the active proxy path, and restarted only `plex-live-tv-proxy.service`.
+- Live validation: synthetic header playback-session DELETE and query session-id DELETE now log `live_tv=true` and deny missing-token; neighboring product-only DELETE logs `live_tv=false`.
+- Verification after actual deploys: focused proxy tests and full `./scripts/verify` passed.
+- Post-deploy correction after another tester failure: no real tester Live TV requests reached the patched proxy journal after the hotfix. Restored PMS remote advertisement to the documented static proxy state: manual mapping enabled, manual port `443`, relay disabled, public media HTTPS custom connection retained, and automatic mapped port cleared to `0`.
+- Validation after PMS correction: active public-media HTTPS path reaches the Go proxy and logs `/media/providers` as `elevated_live_tv`; plex.tv resources advertise the public remote HTTPS custom connection.
+
+## 2026-05-28 - Clear stale Plex NBA Live TV subscription after tester playback error
+
+- Investigated tester screenshot showing Plex Web playback error `s1002 (Network)` for `Live: NBA Basketball` on the Sportsnet 360 raw row.
+- Verified the sports tuner service and guide were healthy: `/readyz`, `/lineup.json`, and `/guide.xml` returned `200`; the current `Live: NBA Basketball` guide rows include stable `sub-title`, `date`, and `episode-num system="iptvtunerr"` identity.
+- Verified the reported channel stream itself was usable: direct `/stream/10014` returned HTTP `200` and MPEG-TS bytes, and live tuner logs showed Plex had recently received first bytes and tens of MB for the same raw Sportsnet 360 stream.
+- Verified recent Live TV proxy discovery requests were elevated successfully with no missing-token, unauthorized, or blocked-source denials.
+- Found Plex still had a stale title-only `Live: NBA Basketball` media subscription, matching the known generic-live-sports stale identity loop.
+- Backed up the relevant Plex subscription XML on the live validation host, then deleted only the stale title-only `Live: NBA Basketball` media subscription. Plex returned `200`, and `/media/subscriptions` no longer contains that rule.
+- Verification: `go test -count=1 ./internal/tuner -run 'TestXMLTV_(externalSourceRemap_StabilizesRecurringEventIdentity|buildMergedEPG_stabilizesRecurringEventIdentity)'` passed; `go test -count=1 ./internal/plexlabelproxy -run 'TestIsLiveTVRequest_(MediaSubscriptionTemplateForXMLTVElevated|PostMediaSubscriptionWithPlexHintQueryElevated|MediaSubscriptionReadsElevated)|TestProxy_RewritesJSONAllowTunersForMediaProviders'` passed.
+
 ## 2026-05-18 - Fix shared-user Plex DVR subscription list failure
 
 - Investigated the external tester's Plex Record Options save error and found PMS was returning shared-user `403` responses for read-only DVR subscription list endpoints.

@@ -89,6 +89,8 @@
 - Add deterministic programme identity to recurring event-like XMLTV rows without changing the visible title: date-specific `sub-title`, `date`, and `episode-num system="iptvtunerr"` generated from channel/start/stop/title metadata.
 - Cover all generic `Live:` rows plus generic sports titles such as plain `NBA Basketball`, because providers are inconsistent about including the `Live:` prefix.
 - Delete the stale Plex subscription keyed to the generic title, reload the Plex DVR guide, and verify `/media/subscriptions` no longer contains the title-only XMLTV GUID.
+- 2026-05-28 recurrence: a tester saw Plex Web `s1002 (Network)` on `Live: NBA Basketball` even though the tuner stream and current guide identity were healthy. Plex still had a stale title-only `Live: NBA Basketball` media subscription; deleting only that subscription cleared `/media/subscriptions`.
+- If the stale marker is gone but shared-user playback still returns `s1002`, verify the PMS advertised connection state before widening proxy classifiers again. The documented working state is static manual port `443`, relay disabled, and the public media HTTPS custom connection; automatic port drift back to `32400` can make clients miss the entitlement proxy.
 
 **Where it's documented**
 - `internal/tuner/xmltv.go`
@@ -131,6 +133,62 @@
 **Where it's documented**
 - `internal/plexlabelproxy/entitlement.go`
 - `internal/plexlabelproxy/proxy_test.go`
+
+### Loop: Plex Web rolling Live TV playback deletes a subscription id
+
+**Symptom**
+- Plex Web reports `s1002 (Network)` after a shared user starts a Live TV stream.
+- Tuner and PMS evidence can look healthy: the tune request succeeds, the tuner serves bytes, PMS creates a Live TV transcode, and the client pulls HLS segments.
+- Proxy access logs then show `DELETE /media/subscriptions/{id}` denied as `403`. Plex Web may send playback evidence as query `X-Plex-Playback-Session-Id`, query `X-Plex-Session-Id`, or the corresponding request headers.
+
+**Why it's tricky**
+- The request is a mutating `/media/subscriptions/{id}` path, so broad elevation would risk ordinary library subscription changes.
+- The rolling Live TV cleanup request does not carry XMLTV `guid`, `key`, `uri`, or `hints[...]` values; it carries playback-session evidence instead.
+
+**What works**
+- Elevate only `DELETE /media/subscriptions/<numeric-id>` when playback/session evidence is present and non-empty: `X-Plex-Playback-Session-Id` or `X-Plex-Session-Id` in either query parameters or headers.
+- Keep plain id-only deletes, product-only deletes, nested scheduled paths, and library subscription edits non-elevated.
+- Validate with both classifier tests and live proxy logs: the playback/session DELETE should log `live_tv=true`; the no-session neighbor should remain `live_tv=false`.
+
+**Where it's documented**
+- `internal/plexlabelproxy/entitlement.go`
+- `internal/plexlabelproxy/proxy_test.go`
+
+### Loop: Ingress encoded-slash deny blocks Plex Live TV transcode before the proxy
+
+**Symptom**
+- Plex Web reports `s1002 (Network)` immediately after a successful Live TV tune.
+- PMS starts a Live TV session/transcode, but the client-facing `/video/:/transcode/universal/*` and `/:/timeline` calls return tiny `404` responses and do not show up in the Plex Live TV proxy journal.
+
+**Why it's tricky**
+- The tuner, PMS transcode worker, and proxy tune/subscription paths can all look healthy.
+- Plex Web legitimately sends encoded slashes in query values such as `path=%2Flivetv%2Fsessions%2F...`; a generic public-ingress abnormal-URI rule that scans the full URI can block that before the proxy ever sees it.
+
+**What works**
+- Compare the same encoded transcode URL through direct PMS, direct Go proxy, and HTTPS ingress. If only HTTPS ingress returns the 9-byte `404`, fix ingress routing before changing tuner or proxy classifiers again.
+- Keep the ingress exception narrow to Plex playback paths that need encoded Live TV session values, such as `/video/:/transcode/*`, `/:/timeline*`, and `/playQueues*`.
+- After the ingress change, validate that the encoded `/video/:/transcode/universal/decision` request reaches `plex-live-tv-proxy.service` and logs `live_tv=true stream=true`.
+
+**Where it's documented**
+- `memory-bank/current_task.md`
+
+### Loop: Proxy hotfix validated from `/tmp` but not active in systemd
+
+**Symptom**
+- A proxy classifier fix appears tested and "deployed", but the next tester retry shows no change.
+- `journalctl -u plex-live-tv-proxy.service` shows zero expected `plexlabelproxy_access`/`plexlabelproxy_audit` lines for the retry, or the service process start time predates the hotfix.
+
+**Why it's tricky**
+- Building a corrected binary under `/tmp` and running synthetic checks can look like a live deploy if the active `/opt/iptvtunerr/iptv-tunerr-proxy` path and systemd process are not checked afterward.
+- Caddy may still route correctly to the proxy, so this is not an ingress bypass; it is an inactive binary/process problem.
+
+**What works**
+- After every proxy hotfix, verify all three facts: `/opt/iptvtunerr/iptv-tunerr-proxy version` reports the intended build, `ps` shows a fresh `plex-label-proxy` process, and live journal lines from `127.0.0.1:33240` show the expected classification.
+- Use the exact failing request shape for live validation, then also validate a neighboring non-elevated shape to prove the classifier stayed narrow.
+
+**Where it's documented**
+- `memory-bank/task_history.md`
+- `memory-bank/current_task.md`
 
 ### Loop: Plex Record Save may need subscription detail reads after create
 

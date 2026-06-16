@@ -198,8 +198,8 @@ Legacy `/ui/` shell: still available on the tuner port for lightweight read-only
 **Programmatic (all servers, headless):**
 ```bash
 # Plex zero-touch (recommended)
-export PLEX_HOST=http://<plex-host>:32400
-export PLEX_TOKEN=<owner-token>
+export IPTV_TUNERR_PMS_URL=http://<plex-host>:32400
+export IPTV_TUNERR_PMS_TOKEN=<owner-token>
 ./iptv-tunerr run -mode=full -register-plex=api
 
 # Emby

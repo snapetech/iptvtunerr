@@ -242,7 +242,7 @@ func Build(cfg *config.Config, mode, baseURLOverride string) Report {
 			if plexHost != "" && plexToken != "" {
 				report.NextSteps = append(report.NextSteps, "Run zero-touch Plex registration: iptv-tunerr run -mode=full -register-plex=api")
 			} else {
-				report.NextSteps = append(report.NextSteps, "Set PLEX_HOST and PLEX_TOKEN (or IPTV_TUNERR_PMS_URL and IPTV_TUNERR_PMS_TOKEN) before using -register-plex=api.")
+				report.NextSteps = append(report.NextSteps, "Set IPTV_TUNERR_PMS_URL and IPTV_TUNERR_PMS_TOKEN (or legacy PLEX_HOST and PLEX_TOKEN) before using -register-plex=api.")
 			}
 		}
 		if report.DeckURL != "" {

@@ -25,21 +25,36 @@ func streamURLForBase(baseURL, channelID string) string {
 	return strings.TrimRight(strings.TrimSpace(baseURL), "/") + "/stream/" + channelID
 }
 
+func warnPlexAccessAliasDrift() {
+	canonicalURL := strings.TrimRight(strings.TrimSpace(os.Getenv("IPTV_TUNERR_PMS_URL")), "/")
+	legacyURL := strings.TrimRight(plexBaseURLFromHostAlias(os.Getenv("PLEX_HOST")), "/")
+	if canonicalURL != "" && legacyURL != "" && canonicalURL != legacyURL {
+		log.Print("[PLEX-REG] warning: IPTV_TUNERR_PMS_URL and PLEX_HOST are both set but differ; using IPTV_TUNERR_PMS_URL")
+	}
+
+	canonicalToken := strings.TrimSpace(os.Getenv("IPTV_TUNERR_PMS_TOKEN"))
+	legacyToken := strings.TrimSpace(os.Getenv("PLEX_TOKEN"))
+	if canonicalToken != "" && legacyToken != "" && canonicalToken != legacyToken {
+		log.Print("[PLEX-REG] warning: IPTV_TUNERR_PMS_TOKEN and PLEX_TOKEN are both set but differ; using IPTV_TUNERR_PMS_TOKEN")
+	}
+}
+
 func registerRunPlex(ctx context.Context, cfg *config.Config, srv *tuner.Server, live []catalog.LiveChannel, baseURL, registerPlex string, registerOnly bool, registerInterval time.Duration, standbyPrimaryURL, mode string) bool {
 	log.Printf("[PLEX-REG] START: runRegisterPlex=%q runMode=%q standbyPrimaryURL=%q", registerPlex, mode, standbyPrimaryURL)
 	if registerPlex == "" || mode == "easy" {
 		_, _ = os.Stderr.WriteString("\n--- Plex one-time setup ---\n")
 		_, _ = os.Stderr.WriteString("Easy (wizard): -mode=easy -> lineup capped at 479; add tuner in Plex, pick suggested guide (e.g. Rogers West).\n")
-		_, _ = os.Stderr.WriteString("Full (zero-touch): set PLEX_HOST + PLEX_TOKEN, then run -mode=full -register-plex=api -> no wizard, reuses existing DVRs automatically.\n")
+		_, _ = os.Stderr.WriteString("Full (zero-touch): set IPTV_TUNERR_PMS_URL + IPTV_TUNERR_PMS_TOKEN, then run -mode=full -register-plex=api -> no wizard, reuses existing DVRs automatically.\n")
 		_, _ = os.Stderr.WriteString("  Device / Base URL: " + baseURL + "   Guide: " + guideURLForBase(baseURL) + "\n")
 		_, _ = os.Stderr.WriteString("---\n\n")
 		return false
 	}
 
-	plexHost := os.Getenv("PLEX_HOST")
-	plexToken := os.Getenv("PLEX_TOKEN")
-	log.Printf("[PLEX-REG] Checking API registration: runRegisterPlex=%q mode=%q PLEX_HOST=%q PLEX_TOKEN present=%v",
-		registerPlex, mode, plexHost, plexToken != "")
+	warnPlexAccessAliasDrift()
+	plexBaseURL, plexToken := resolvePlexAccess("", "")
+	plexHost := plexBaseURL
+	log.Printf("[PLEX-REG] Checking API registration: runRegisterPlex=%q mode=%q PMS_URL present=%v PMS_TOKEN present=%v",
+		registerPlex, mode, plexHost != "", plexToken != "")
 
 	apiRegistrationDone := false
 	var registeredDeviceUUID string

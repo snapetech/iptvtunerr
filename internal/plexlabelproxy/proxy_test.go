@@ -1243,6 +1243,7 @@ func TestIsLiveTVRequest_MediaSubscriptionRuleEditsElevatedOnlyWithLiveTVEvidenc
 		method string
 		target string
 		body   string
+		header map[string]string
 		want   bool
 	}{
 		{
@@ -1272,6 +1273,37 @@ func TestIsLiveTVRequest_MediaSubscriptionRuleEditsElevatedOnlyWithLiveTVEvidenc
 			want:   false,
 		},
 		{
+			name:   "delete rolling playback subscription",
+			method: http.MethodDelete,
+			target: "/media/subscriptions/809?X-Plex-Playback-Session-Id=abc123&X-Plex-Product=Plex%20Web",
+			want:   true,
+		},
+		{
+			name:   "delete rolling playback subscription alternate session id",
+			method: http.MethodDelete,
+			target: "/media/subscriptions/809?X-Plex-Product=Plex%20Web&X-Plex-Session-Id=client-session",
+			want:   true,
+		},
+		{
+			name:   "delete rolling playback subscription header session id",
+			method: http.MethodDelete,
+			target: "/media/subscriptions/809?X-Plex-Product=Plex%20Web",
+			want:   true,
+			header: map[string]string{"X-Plex-Playback-Session-Id": "abc123"},
+		},
+		{
+			name:   "delete playback query without any session id",
+			method: http.MethodDelete,
+			target: "/media/subscriptions/809?X-Plex-Product=Plex%20Web",
+			want:   false,
+		},
+		{
+			name:   "delete nested scheduled playback subscription",
+			method: http.MethodDelete,
+			target: "/media/subscriptions/scheduled/809?X-Plex-Playback-Session-Id=abc123",
+			want:   false,
+		},
+		{
 			name:   "put library body",
 			method: http.MethodPut,
 			target: "/media/subscriptions/42",
@@ -1282,6 +1314,9 @@ func TestIsLiveTVRequest_MediaSubscriptionRuleEditsElevatedOnlyWithLiveTVEvidenc
 		t.Run(tc.name, func(t *testing.T) {
 			req := httptest.NewRequest(tc.method, tc.target, strings.NewReader(tc.body))
 			req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+			for k, v := range tc.header {
+				req.Header.Set(k, v)
+			}
 			if got := IsLiveTVRequest(req); got != tc.want {
 				t.Fatalf("IsLiveTVRequest() = %v, want %v", got, tc.want)
 			}

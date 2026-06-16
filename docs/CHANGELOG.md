@@ -13,6 +13,16 @@ All notable changes to IPTV Tunerr are documented here. Repo: [github.com/snapet
 
 ## [Unreleased]
 
+## [v0.1.85] - 2026-06-16
+
+### Plex Live TV proxy
+- **Rolling Live TV cleanup requests stay in the Live TV entitlement path:** the proxy now recognizes `DELETE /media/subscriptions/<id>` only when Plex sends playback-session evidence through `X-Plex-Playback-Session-Id` or `X-Plex-Session-Id` in the query string or headers. Plain subscription deletes and library subscription edits remain non-elevated.
+- **Plex Web transcode failures from encoded Live TV paths are documented for future recovery:** recurring-loop memory now records the public-ingress encoded-slash blocker pattern so future `s1002` investigations check ingress before widening proxy classifiers.
+
+### Plex registration
+- **Zero-touch Plex registration now prefers canonical PMS env vars:** runtime registration and help text prefer `IPTV_TUNERR_PMS_URL` plus `IPTV_TUNERR_PMS_TOKEN`, while preserving `PLEX_HOST` and `PLEX_TOKEN` as legacy aliases.
+- **Plex API alias drift is visible at startup:** when both canonical and legacy Plex URL/token variables are set but differ, startup logs warn that the canonical PMS variables win.
+
 ### Security / Dependencies
 - **Open Dependabot alerts are resolved:** the web package lock now uses `react-router-dom`/`react-router` `6.30.4` and removes the vulnerable direct `esbuild` path by moving Vite tooling to `@vitejs/plugin-react` `6.0.2` and `vite` `8.0.16`; `npm audit` reports zero vulnerabilities.
 - **Go maintenance dependencies are current:** `golang.org/x/crypto` is now `v0.53.0`, `golang.org/x/net` is now `v0.56.0`, and the vendored `golang.org/x/sys` tree is refreshed to `v0.46.0`.

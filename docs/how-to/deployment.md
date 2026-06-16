@@ -64,7 +64,7 @@ cp .env.example .env   # edit with your provider and base URL
 ```
 
 Optional for Plex:
-- `-register-plex=api` with `PLEX_HOST` + `PLEX_TOKEN` is the normal zero-touch path
+- `-register-plex=api` with `IPTV_TUNERR_PMS_URL` + `IPTV_TUNERR_PMS_TOKEN` is the normal zero-touch path; `PLEX_HOST` + `PLEX_TOKEN` remains a legacy alias
 - DB-path registration remains available only for legacy local-Plex setups where Plex is stopped intentionally
 
 For Emby/Jellyfin registration, see [Emby and Jellyfin Support](../emby-jellyfin-support.md).

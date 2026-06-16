@@ -1,16 +1,17 @@
-**Current (2026-06-16):** Resolve open PR and security issues.
+**Current (2026-06-16):** Commit dirty tree and cut `v0.1.85`.
 
-- Goal: close out the open Dependabot PR queue and repository security alerts by landing one consolidated dependency/workflow/security update.
-- Scope: open GitHub PRs #22, #23, #26, #27, #28, #29; Dependabot alerts for `esbuild` and `react-router`; GitHub code/secret scanning; local npm/Go vulnerability checks; verification and memory-bank updates.
-- Assumption: landing equivalent or newer dependency/workflow updates directly on `main` is acceptable for Dependabot PRs, then closing superseded PRs with explicit comments.
-- Done: GitHub open issues, code-scanning alerts, and secret-scanning alerts are empty.
-- Done: `govulncheck ./...` found no called Go vulnerabilities.
-- Done: updated web dependencies to resolve the `esbuild` and `react-router` alerts, added Node 22 runtime pinning for Vite 8, updated Go `x/crypto`/`x/net`/`x/sys`, and bumped the disabled package-smoke workflow actions.
-- Done: landed the consolidated fix on `main`, closed superseded Dependabot PRs #22, #23, #26, #27, #28, and #29 with explicit resolution comments, and deleted their remote branches.
-- Done: GitHub Dependabot, code-scanning, and secret-scanning open alert queues are empty after the dependency graph refreshed.
-- Done: GitHub CI, CodeQL, Gitleaks, Dependency Graph, and Local Identity checks passed for the consolidated dependency/security commit.
-- Verification: `npm --prefix web audit`, `go run golang.org/x/vuln/cmd/govulncheck@latest ./...`, `npm --prefix web run build`, `./scripts/check-local-identity-leaks.sh`, and full `./scripts/verify` passed.
-- Next: no PR/security action remains; record task history closeout.
+- Goal: commit every local dirty and unrelated change as requested, push `main`, tag `v0.1.85`, and monitor release automation.
+- Scope: pre-existing dirty Plex/PMS access and Live TV proxy changes, memory-bank/council generated files, release changelog, full release-readiness verification, commit/push/tag, and GitHub release workflow monitoring.
+- Assumption: user explicitly confirmed the full dirty tree is in scope, including unrelated and generated files.
+- Done: fast-forwarded local `main` to include the completed PR/security sweep commits before reapplying the dirty tree.
+- Done: resolved generated-file conflicts, promoted release notes into `v0.1.85`, and `./scripts/release-readiness.sh` passed.
+- Next: commit and push the full staged tree, tag `v0.1.85` at current `main`, push the tag, and monitor the primary release workflow.
+
+**Previous (2026-06-16):** Resolve open PR and security issues.
+
+- Done: landed the consolidated dependency/security fix on `main`, closed superseded Dependabot PRs #22, #23, #26, #27, #28, and #29 with explicit resolution comments, and deleted their remote branches.
+- Done: GitHub open issues, Dependabot alerts, code-scanning alerts, and secret-scanning alerts were empty after dependency graph refresh.
+- Verification: `npm --prefix web audit`, `go run golang.org/x/vuln/cmd/govulncheck@latest ./...`, `npm --prefix web run build`, `./scripts/check-local-identity-leaks.sh`, full `./scripts/verify`, and GitHub CI/CodeQL/Gitleaks/Local Identity checks passed.
 
 **Current (2026-05-21):** Completed `v0.1.84` release for recording identity and release-channel hardening.
 

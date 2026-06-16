@@ -159,7 +159,57 @@ func isLiveTVSubscriptionRequest(req *http.Request) bool {
 		}
 		return true
 	}
+	if subscriptionDeleteHasPlaybackSessionEvidence(req) {
+		return true
+	}
 	return subscriptionRequestHasLiveTVEvidence(req)
+}
+
+func subscriptionDeleteHasPlaybackSessionEvidence(req *http.Request) bool {
+	if req == nil || req.URL == nil || !strings.EqualFold(req.Method, http.MethodDelete) {
+		return false
+	}
+	if !isSingleMediaSubscriptionIDPath(req.URL.EscapedPath()) {
+		return false
+	}
+	return requestValueNonEmpty(req, "X-Plex-Playback-Session-Id") ||
+		requestValueNonEmpty(req, "X-Plex-Session-Id")
+}
+
+func isSingleMediaSubscriptionIDPath(path string) bool {
+	const prefix = "/media/subscriptions/"
+	if !strings.HasPrefix(path, prefix) {
+		return false
+	}
+	id := strings.TrimPrefix(path, prefix)
+	if id == "" || strings.Contains(id, "/") {
+		return false
+	}
+	for _, r := range id {
+		if r < '0' || r > '9' {
+			return false
+		}
+	}
+	return true
+}
+
+func requestValueNonEmpty(req *http.Request, name string) bool {
+	for key, values := range req.URL.Query() {
+		if !strings.EqualFold(key, name) {
+			continue
+		}
+		for _, v := range values {
+			if strings.TrimSpace(v) != "" {
+				return true
+			}
+		}
+	}
+	for _, v := range req.Header.Values(name) {
+		if strings.TrimSpace(v) != "" {
+			return true
+		}
+	}
+	return false
 }
 
 func subscriptionRequestHasLiveTVEvidence(req *http.Request) bool {
