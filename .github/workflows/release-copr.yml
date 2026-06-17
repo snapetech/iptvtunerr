@@ -37,6 +37,7 @@ jobs:
       - uses: actions/setup-go@v6
         with:
           go-version-file: go.mod
+          cache: false
 
       - name: Build release source
         run: |
@@ -174,16 +175,22 @@ jobs:
         run: |
           set -euo pipefail
           version="${{ steps.version.outputs.version }}"
-          mkdir -p ~/rpmbuild/{SOURCES,SPECS,SRPMS}
-          cp "iptv-tunerr-v${version}-linux-amd64.tar.gz" ~/rpmbuild/SOURCES/
-          cp packaging/aur/iptvtunerr.service ~/rpmbuild/SOURCES/
-          cp packaging/aur/iptvtunerr.env ~/rpmbuild/SOURCES/
-          cp packaging/aur/iptvtunerr.sysusers ~/rpmbuild/SOURCES/iptvtunerr.conf
-          cp packaging/aur/iptvtunerr.tmpfiles ~/rpmbuild/SOURCES/
-          cp packaging/rpm/iptvtunerr.spec ~/rpmbuild/SPECS/
-          sed -i "s/^Version:.*/Version:        ${version}/" ~/rpmbuild/SPECS/iptvtunerr.spec
-          sed -i "s|^Source0:.*|Source0:        iptv-tunerr-v${version}-linux-amd64.tar.gz|" ~/rpmbuild/SPECS/iptvtunerr.spec
-          rpmbuild -bs ~/rpmbuild/SPECS/iptvtunerr.spec --define "_topdir $HOME/rpmbuild"
+          rpm_top="$(mktemp -d "/tmp/iptvtunerr-rpmbuild-${version}.XXXXXX")"
+          mkdir -p "$rpm_top"/{SOURCES,SPECS,SRPMS}
+          cp "iptv-tunerr-v${version}-linux-amd64.tar.gz" "$rpm_top/SOURCES/"
+          cp packaging/aur/iptvtunerr.service "$rpm_top/SOURCES/"
+          cp packaging/aur/iptvtunerr.env "$rpm_top/SOURCES/"
+          cp packaging/aur/iptvtunerr.sysusers "$rpm_top/SOURCES/iptvtunerr.conf"
+          cp packaging/aur/iptvtunerr.tmpfiles "$rpm_top/SOURCES/"
+          cp packaging/rpm/iptvtunerr.spec "$rpm_top/SPECS/"
+          sed -i "s/^Version:.*/Version:        ${version}/" "$rpm_top/SPECS/iptvtunerr.spec"
+          sed -i "s|^Source0:.*|Source0:        iptv-tunerr-v${version}-linux-amd64.tar.gz|" "$rpm_top/SPECS/iptvtunerr.spec"
+          rpmbuild -bs "$rpm_top/SPECS/iptvtunerr.spec" --define "_topdir $rpm_top"
+          srpm="$rpm_top/SRPMS/iptvtunerr-${version}-1.src.rpm"
+          test -f "$srpm"
+          mkdir -p dist
+          cp "$srpm" "dist/iptvtunerr-${version}-1.src.rpm"
+          echo "IPTVTUNERR_SRPM=dist/iptvtunerr-${version}-1.src.rpm" >> "$GITHUB_ENV"
 
       - name: Ensure COPR project exists
         run: |
@@ -257,7 +264,8 @@ jobs:
             printf '%s\n' "$output"
             return "$status"
           }
-          srpm="$(find ~/rpmbuild/SRPMS -name '*.src.rpm' -print -quit)"
+          srpm="${IPTVTUNERR_SRPM:?Build SRPM step did not publish an SRPM path}"
+          test -f "$srpm"
           run_copr_cli build \
             --chroot fedora-43-x86_64 \
             --chroot fedora-rawhide-x86_64 \
