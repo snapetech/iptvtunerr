@@ -407,3 +407,12 @@
 - COPR follow-up: initial COPR publish failed because the configured COPR API token was invalid or expired. Pushed `f5c79db` to retry configured Fedora GSSAPI fallback after token-auth expiry and reran COPR for `v0.1.85`.
 - COPR final state: rerun `27634610662` still failed before upload. The workflow attempted fallback, but COPR returned a non-JSON response for write auth; browser GSSAPI login returned `401 Unauthorized`; OIDC required Fedora username/password/OTP; no readable local/OpenBao replacement secret was available.
 - Filed known issue: COPR package publishing requires rotating `COPR_LOGIN`/`COPR_TOKEN` or adding valid COPR Kerberos keytab secrets, then rerunning `release-copr.yml` for `v0.1.85`.
+
+## 2026-06-17 - Restore COPR publishing for v0.1.85
+
+- Regenerated the COPR API token from the logged-in COPR API page after user confirmation, stored the values only in restricted temp files, verified local COPR CLI write auth, and rotated the `COPR_LOGIN`/`COPR_TOKEN` GitHub Actions secrets.
+- Reran `release-copr.yml` as run `27710982704`; COPR auth and upload passed, proving the new token works.
+- Found the successful upload used stale SRPM `0.1.78` because the self-hosted runner retained `~/rpmbuild/SRPMS` from an earlier release and the workflow selected the first match with `find ... -quit`.
+- Patched `release-copr.yml` in commit `892e825` so COPR publishing disables the flaky Go cache restore, builds SRPMs under an isolated temporary RPM topdir, tests the exact expected SRPM name, copies it to relative `dist/`, and uploads only that explicit file.
+- Reran the patched COPR workflow as run `27711455455`; it uploaded `dist/iptvtunerr-0.1.85-1.src.rpm`, created COPR build `10612565`, and `copr-cli watch-build 10612565` reported `succeeded`.
+- Verification: YAML parsing for the workflow, local SRPM build smoke for `iptvtunerr 0.1.85-1`, changelog gate, local identity scan, `git diff --check`, GitHub CodeQL/Gitleaks/Local Identity, COPR workflow success, and external COPR build success passed. Local `actionlint` was unavailable.

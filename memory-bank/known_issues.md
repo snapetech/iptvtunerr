@@ -14,6 +14,4 @@
 
 ## Release / Packaging
 
-- **COPR publishing is blocked by expired/invalid credentials (2026-06-16).** `v0.1.85` Release, Docker, AUR, PPA, CI, CodeQL, Gitleaks, and local-identity checks are green, but COPR failed before upload because COPR rejected `COPR_LOGIN`/`COPR_TOKEN` as invalid or expired. A follow-up workflow patch retried with the configured Fedora OTP/GSSAPI fallback; COPR still returned a non-JSON API response for write operations, and browser GSSAPI login returned `401 Unauthorized`. No readable local/OpenBao replacement secret was available. Fix requires rotating `COPR_LOGIN`/`COPR_TOKEN` from the COPR API page or adding valid `COPR_KERBEROS_PRINCIPAL`/`COPR_KERBEROS_KEYTAB_B64` secrets, then rerunning `release-copr.yml` for the affected tag.
-
 - **Winget ZIP manifests must point at the executable inside the archive directory.** The Windows release ZIP contains `iptv-tunerr-vX.Y.Z-windows-amd64/iptv-tunerr.exe`, not a root-level `iptv-tunerr-vX.Y.Z-windows-amd64.exe`. A wrong `NestedInstallerFiles.RelativeFilePath` downloads and hashes fine but fails Microsoft install validation.

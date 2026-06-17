@@ -225,3 +225,23 @@
 **Where it's documented**
 - `internal/plexlabelproxy/entitlement.go`
 - `internal/plexlabelproxy/proxy.go`
+
+### Loop: Self-hosted COPR runner reuses stale SRPMs
+
+**Symptom**
+- A COPR workflow rerun for a newer tag succeeds, but COPR receives an older `iptvtunerr-X.Y.Z-1.src.rpm`.
+- GitHub Actions reports a green upload because `copr-cli build` accepted an SRPM, but the selected file was not built for the requested tag.
+
+**Why it's tricky**
+- Self-hosted runners can retain `~/rpmbuild/SRPMS` between jobs.
+- A pattern like `find ~/rpmbuild/SRPMS -name '*.src.rpm' -print -quit` silently chooses the first leftover file, which may be from a prior release.
+
+**What works**
+- Build each release SRPM under an isolated temporary RPM topdir.
+- Compute and test the exact expected path, `iptvtunerr-${version}-1.src.rpm`.
+- Copy that file to a relative workspace path such as `dist/iptvtunerr-${version}-1.src.rpm` and pass that explicit path to `copr-cli build`.
+- Verify the COPR upload log contains the requested release version, then watch the external COPR build to success.
+
+**Where it's documented**
+- `.github/workflows/release-copr.yml`
+- `memory-bank/task_history.md`

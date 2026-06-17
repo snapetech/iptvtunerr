@@ -6,8 +6,10 @@
 - Done: regenerated the COPR API token in the logged-in browser session without printing secret values, verified COPR CLI write auth locally, and rotated `COPR_LOGIN`/`COPR_TOKEN` in GitHub Actions secrets.
 - Done: COPR workflow run `27710982704` passed auth and upload for `v0.1.85`, proving the rotated token works.
 - Found: the successful rerun uploaded stale SRPM `0.1.78` because the workflow reused persistent `~/rpmbuild` state on a self-hosted runner and selected the first SRPM via `find ... -quit`.
-- Current fix: make the COPR workflow build in an isolated temp RPM topdir, copy the expected `iptvtunerr-${version}-1.src.rpm` into a relative `dist/` path, disable the flaky self-hosted Go cache restore, and upload only that explicit SRPM.
-- Next: commit/push the workflow fix, rerun `release-copr.yml` for `v0.1.85`, verify it uploads `0.1.85`, then close the known issue/history.
+- Done: pushed `892e825` to make the COPR workflow build in an isolated temp RPM topdir, copy the expected `iptvtunerr-${version}-1.src.rpm` into a relative `dist/` path, disable the flaky self-hosted Go cache restore, and upload only that explicit SRPM.
+- Done: rerun `27711455455` uploaded `dist/iptvtunerr-0.1.85-1.src.rpm`, created COPR build `10612565`, and `copr-cli watch-build 10612565` reported `succeeded`.
+- Done: removed the temporary COPR token files after GitHub secrets were rotated and COPR verification completed.
+- Next: commit/push closeout memory updates and verify final GitHub checks for the closeout commit.
 
 **Previous (2026-06-16):** Release `v0.1.85` and recover package-channel fallout.
 
