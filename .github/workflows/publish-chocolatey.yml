@@ -31,9 +31,18 @@ jobs:
 
       - name: Require release tag on main
         shell: bash
-        env:
-          RELEASE_TAG_MAIN_MODE: ancestor
-        run: ./scripts/ensure-release-tag-on-main.sh "${{ inputs.version }}"
+        run: |
+          set -euo pipefail
+          tag="${{ inputs.version }}"
+          git fetch --quiet origin main --tags
+          git rev-parse -q --verify "refs/tags/${tag}" >/dev/null
+          tag_commit="$(git rev-list -n 1 "${tag}")"
+          main_commit="$(git rev-parse origin/main)"
+          if ! git merge-base --is-ancestor "${tag_commit}" origin/main; then
+            echo "[publish-chocolatey] ERROR: release tag '${tag}' points to ${tag_commit}, which is not in origin/main history" >&2
+            exit 1
+          fi
+          echo "[publish-chocolatey] ${tag} is in origin/main history (${tag_commit}; current main ${main_commit})"
 
       - name: Download Windows release asset
         env:

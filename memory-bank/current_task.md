@@ -7,9 +7,11 @@
 - Done: after the first dispatch queued indefinitely because no online runner had the old `Windows` label, changed Chocolatey publishing to run on the repo Linux runner pool and pack/push with .NET/NuGet.
 - Done: after the first Linux dispatch failed because setup-dotnet tried to write `/usr/share/dotnet` without permission, constrained the .NET install directory to runner temp.
 - Done: after the next Linux dispatch hung while downloading the release ZIP in a reused self-hosted workspace, moved the asset download under runner temp and replaced `gh release download` with timeout-bounded `curl` retries; packing hashes that explicit path.
+- Done: headless public page checks confirmed Chocolatey `0.1.68` is still `Waiting for Maintainer`; the `v0.1.85` publish run builds the `.nupkg` and downloads the Windows ZIP successfully, then Chocolatey returns `403 Forbidden` at the push endpoint.
+- Done: tried the exact-version moderation update for `v0.1.68`; it failed before push because the checked-out old tag uses an older exact-match tag guard script, so the Chocolatey workflow now performs the ancestor guard inline from the current workflow file.
 - Done: updated release-channel docs and changelog with the Chocolatey moderation state and fix.
 - Verification: XML/SVG syntax checks, PowerShell parser checks, extracted workflow parser checks, extracted bash parser check, local curl download/checksum for the `v0.1.85` Windows ZIP, simulated `Pack and push` workflow dry runs against old `v0.1.85` tag contents, local `dotnet pack` smoke for the Chocolatey nuspec, install-script shim-path stub test, `git diff --check`, local identity scan, and full `./scripts/verify` passed.
-- Next: commit/push the timeout-bounded asset-download follow-up, then dispatch `Publish Chocolatey` for the current release tag. If Chocolatey requires it, self-reject or ask the moderator to reject stale `0.1.68` first.
+- Next: verify/commit/push the inline tag-guard follow-up, rerun `Publish Chocolatey` for `v0.1.68`, then either wait for that moderation update or add a review comment asking the moderator to reject `0.1.68` so `v0.1.85` can be pushed.
 
 **Current (2026-06-16):** Fix COPR publishing credentials and rerun `v0.1.85`.
 

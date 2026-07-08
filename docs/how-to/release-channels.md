@@ -128,7 +128,9 @@ Configured packaging:
 - `.github/workflows/publish-chocolatey.yml` publishes a Chocolatey package
   from a release tag. It runs on the repo Linux runner pool, rewrites the
   nuspec/install script for the requested tag, packs the Chocolatey `.nupkg`
-  with .NET/NuGet, and pushes it to `https://push.chocolatey.org/`.
+  with .NET/NuGet, and pushes it to `https://push.chocolatey.org/`. The
+  workflow performs its tag-on-main check inline because older tags may not
+  contain the current helper script used by other release workflows.
 - `.github/workflows/publish-winget.yml` submits a Winget PR from a release tag.
 
 These Windows package workflows are manual-only until their external gates are
@@ -152,9 +154,12 @@ Current status:
   plus a pass over `authors` and `owners`. The publish workflow now rewrites the
   Chocolatey nuspec at pack time so existing release tags can be republished
   with owner, icon, package source, project source, docs, bug tracker, and
-  release-notes metadata without moving old release tags. If Chocolatey rejects
-  the stale `0.1.68` submission, republish the current release tag so the package
-  version matches the software version.
+  release-notes metadata without moving old release tags. The `v0.1.85`
+  republish attempt built and downloaded assets successfully, but Chocolatey
+  returned `403 Forbidden` because `0.1.68` is still the only package version and
+  is waiting for maintainer action. Resubmit `v0.1.68` with the corrected
+  metadata first, or add a Chocolatey review comment asking the moderator to
+  reject `0.1.68` so the current release tag can be pushed.
 - Winget PR `microsoft/winget-pkgs#374269` cleared the Microsoft CLA after the
   GitHub agreement comment, but currently has Microsoft validation labels
   `Internal-Error`, `Needs-Attention`, and `Validation-Guide`. Duplicate
