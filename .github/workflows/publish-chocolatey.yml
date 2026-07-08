@@ -38,21 +38,28 @@ jobs:
       - name: Download Windows release asset
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        shell: pwsh
+        shell: bash
         run: |
-          $ErrorActionPreference = "Stop"
-          $Asset = "iptv-tunerr-${{ inputs.version }}-windows-amd64.zip"
-          $DownloadDir = Join-Path $env:RUNNER_TEMP "chocolatey-assets"
-          New-Item -ItemType Directory -Force -Path $DownloadDir | Out-Null
-          Remove-Item -Force -ErrorAction SilentlyContinue (Join-Path $DownloadDir $Asset)
-          gh release download "${{ inputs.version }}" `
-            --repo "${{ github.repository }}" `
-            --pattern $Asset `
-            --dir $DownloadDir `
-            --clobber
-          if (-not (Test-Path (Join-Path $DownloadDir $Asset))) {
-            throw "Expected release asset was not downloaded: $Asset"
-          }
+          set -euo pipefail
+          asset="iptv-tunerr-${{ inputs.version }}-windows-amd64.zip"
+          download_dir="${RUNNER_TEMP}/chocolatey-assets"
+          mkdir -p "${download_dir}"
+          rm -f "${download_dir}/${asset}"
+          url="https://github.com/${{ github.repository }}/releases/download/${{ inputs.version }}/${asset}"
+          auth_header=()
+          if [[ -n "${GH_TOKEN:-}" ]]; then
+            auth_header=(-H "Authorization: Bearer ${GH_TOKEN}")
+          fi
+          curl --fail --location --show-error --silent \
+            --connect-timeout 20 \
+            --max-time 180 \
+            --retry 3 \
+            --retry-all-errors \
+            --retry-delay 2 \
+            --output "${download_dir}/${asset}" \
+            "${auth_header[@]}" \
+            "${url}"
+          test -s "${download_dir}/${asset}"
 
       - name: Pack and push
         env:
