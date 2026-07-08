@@ -128,9 +128,11 @@ Configured packaging:
 - `.github/workflows/publish-chocolatey.yml` publishes a Chocolatey package
   from a release tag. It runs on the repo Linux runner pool, rewrites the
   nuspec/install script for the requested tag, packs the Chocolatey `.nupkg`
-  with .NET/NuGet, and pushes it to `https://push.chocolatey.org/`. The
-  workflow performs its tag-on-main check inline because older tags may not
-  contain the current helper script used by other release workflows.
+  with .NET/NuGet, replaces the packed root nuspec with the exact Chocolatey
+  nuspec so Chocolatey-specific metadata is preserved, and pushes it to
+  `https://push.chocolatey.org/`. The workflow performs its tag-on-main check
+  inline because older tags may not contain the current helper script used by
+  other release workflows.
 - `.github/workflows/publish-winget.yml` submits a Winget PR from a release tag.
 
 These Windows package workflows are manual-only until their external gates are

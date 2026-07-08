@@ -245,3 +245,31 @@
 **Where it's documented**
 - `.github/workflows/release-copr.yml`
 - `memory-bank/task_history.md`
+
+### Loop: `dotnet pack` strips Chocolatey-specific nuspec metadata
+
+**Symptom**
+- A Chocolatey moderation repush succeeds at the API level, but the raw `.nupkg`
+  still lacks metadata that exists in `packaging/chocolatey/iptvtunerr.nuspec`,
+  especially `packageSourceUrl`, `projectSourceUrl`, `docsUrl`, and
+  `bugTrackerUrl`.
+
+**Why it's tricky**
+- `dotnet pack` creates a valid NuGet package and exits successfully, but it
+  rewrites the root nuspec to a NuGet schema that drops Chocolatey-specific
+  metadata fields. The push can still return `Created`, so workflow success
+  alone does not prove the moderation comments were fixed.
+
+**What works**
+- After `dotnet pack`, replace the generated root `iptvtunerr.nuspec` inside
+  the `.nupkg` with the exact Chocolatey nuspec written by the workflow.
+- Before pushing, reopen the `.nupkg` and assert the required moderation tags
+  are present.
+- After pushing a moderated version, download the raw package feed and inspect
+  the packaged nuspec headlessly instead of trusting the public package page,
+  which may lag or show cached review content.
+
+**Where it's documented**
+- `.github/workflows/publish-chocolatey.yml`
+- `docs/how-to/release-channels.md`
+- `memory-bank/task_history.md`

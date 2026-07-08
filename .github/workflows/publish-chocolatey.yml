@@ -168,4 +168,43 @@ jobs:
             Write-Error "No .nupkg file found"
             exit 1
           }
+
+          Add-Type -AssemblyName System.IO.Compression.FileSystem
+          $NuspecPath = Resolve-Path packaging/chocolatey/iptvtunerr.nuspec
+          $Archive = [System.IO.Compression.ZipFile]::Open($nupkg.FullName, [System.IO.Compression.ZipArchiveMode]::Update)
+          try {
+            $ExistingNuspec = $Archive.GetEntry("iptvtunerr.nuspec")
+            if (-not $ExistingNuspec) {
+              throw "Packed Chocolatey package did not contain iptvtunerr.nuspec"
+            }
+            $ExistingNuspec.Delete()
+            [System.IO.Compression.ZipFileExtensions]::CreateEntryFromFile($Archive, $NuspecPath.Path, "iptvtunerr.nuspec") | Out-Null
+          } finally {
+            if ($Archive) {
+              $Archive.Dispose()
+            }
+          }
+
+          $Archive = [System.IO.Compression.ZipFile]::OpenRead($nupkg.FullName)
+          try {
+            $PackedNuspecEntry = $Archive.GetEntry("iptvtunerr.nuspec")
+            if (-not $PackedNuspecEntry) {
+              throw "Packed Chocolatey package did not contain iptvtunerr.nuspec after replacement"
+            }
+            $Reader = [System.IO.StreamReader]::new($PackedNuspecEntry.Open())
+            try {
+              $PackedNuspec = $Reader.ReadToEnd()
+            } finally {
+              $Reader.Dispose()
+            }
+          } finally {
+            $Archive.Dispose()
+          }
+
+          foreach ($RequiredTag in @("packageSourceUrl", "projectSourceUrl", "docsUrl", "bugTrackerUrl", "releaseNotes", "iconUrl")) {
+            if ($PackedNuspec -notmatch "<$RequiredTag>") {
+              throw "Packed Chocolatey nuspec is missing <$RequiredTag>"
+            }
+          }
+
           dotnet nuget push $nupkg.FullName --source https://push.chocolatey.org/ --api-key $env:CHOCO_API_KEY --timeout 300 --skip-duplicate
