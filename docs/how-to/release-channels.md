@@ -144,10 +144,15 @@ Current status:
 
 - `CHOCO_API_KEY` is configured for the `slskdn` Chocolatey account.
 - `WINGETCREATE_GITHUB_TOKEN` is configured.
-- Chocolatey package packing succeeds, but `choco push` currently returns
-  `403 Forbidden` from `https://push.chocolatey.org/`; the public feed has no
-  existing `iptvtunerr` package entry, so this is an account/API-key/package
-  permission gate to resolve in Chocolatey's portal.
+- Chocolatey package `0.1.68` passed automated validation, verification, and
+  scanning, then entered `Waiting for Maintainer` moderation on 2026-07-06.
+  The reviewer requested the automated review guideline/suggestion metadata,
+  plus a pass over `authors` and `owners`. The publish workflow now rewrites the
+  Chocolatey nuspec at pack time so existing release tags can be republished
+  with owner, icon, package source, project source, docs, bug tracker, and
+  release-notes metadata without moving old release tags. If Chocolatey rejects
+  the stale `0.1.68` submission, republish the current release tag so the package
+  version matches the software version.
 - Winget PR `microsoft/winget-pkgs#374269` cleared the Microsoft CLA after the
   GitHub agreement comment, but currently has Microsoft validation labels
   `Internal-Error`, `Needs-Attention`, and `Validation-Guide`. Duplicate

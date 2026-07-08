@@ -416,3 +416,13 @@
 - Patched `release-copr.yml` in commit `892e825` so COPR publishing disables the flaky Go cache restore, builds SRPMs under an isolated temporary RPM topdir, tests the exact expected SRPM name, copies it to relative `dist/`, and uploads only that explicit file.
 - Reran the patched COPR workflow as run `27711455455`; it uploaded `dist/iptvtunerr-0.1.85-1.src.rpm`, created COPR build `10612565`, and `copr-cli watch-build 10612565` reported `succeeded`.
 - Verification: YAML parsing for the workflow, local SRPM build smoke for `iptvtunerr 0.1.85-1`, changelog gate, local identity scan, `git diff --check`, GitHub CodeQL/Gitleaks/Local Identity, COPR workflow success, and external COPR build success passed. Local `actionlint` was unavailable.
+
+## 2026-07-07 - Address Chocolatey moderation feedback
+
+- Read the Chocolatey `iptvtunerr` `0.1.68` moderation page and confirmed the actionable automated review items: add `iconUrl`, `packageSourceUrl`, `releaseNotes`, and at least one enhanced software metadata URL such as docs, bug tracker, or project source. The human reviewer also asked for the author/owner fields to be checked and noted that stale `0.1.68` can be rejected so the next package version matches the software.
+- Updated `packaging/chocolatey/iptvtunerr.nuspec` with `owners`, a controlled package icon URL, package/project source URLs, docs URL, bug tracker URL, and release notes URL for the current `v0.1.85` line.
+- Added `docs/assets/iptvtunerr-icon.svg` for the Chocolatey package icon.
+- Corrected `packaging/chocolatey/tools/chocolateyinstall.ps1` so the explicit shim target points at the nested release ZIP executable path, `iptv-tunerr-$releaseTag-windows-amd64\iptv-tunerr.exe`.
+- Hardened `.github/workflows/publish-chocolatey.yml` so the `Pack and push` step rewrites the full nuspec and install script at runtime before `choco pack`. This lets an existing tag such as `v0.1.85` be republished with corrected Chocolatey metadata even though the tag itself predates the packaging fix.
+- Updated the release-channel guide and changelog with the moderation state and remediation.
+- Verification: `xmllint` on the nuspec and SVG, PowerShell parser checks, extracted workflow parser check after replacing GitHub expressions, simulated `Pack and push` dry run against old `v0.1.85` tag contents with a fake `choco`, install-script shim-path stub test, `git diff --check`, and full `./scripts/verify` passed. `scripts/verify` regenerated tracked council scan files.

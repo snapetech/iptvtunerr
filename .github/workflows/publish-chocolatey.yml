@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
     inputs:
       version:
-        description: "Release tag to publish, for example v0.1.63"
+        description: "Release tag to publish, for example v0.1.85"
         required: true
         type: string
 
@@ -53,16 +53,56 @@ jobs:
           $Asset = "iptv-tunerr-$Version-windows-amd64.zip"
           $Url = "https://github.com/${{ github.repository }}/releases/download/$Version/$Asset"
           $Checksum = (Get-FileHash $Asset -Algorithm SHA256).Hash.ToLowerInvariant()
-          $ExeName = "iptv-tunerr-$Version-windows-amd64.exe"
+          $ReleaseNotes = "https://github.com/${{ github.repository }}/releases/tag/$Version"
+          $IconUrl = "https://cdn.jsdelivr.net/gh/${{ github.repository }}@main/docs/assets/iptvtunerr-icon.svg"
+          $ProjectUrl = "https://github.com/${{ github.repository }}"
+          $PackageSourceUrl = "$ProjectUrl/tree/main/packaging/chocolatey"
+          $DocsUrl = "$ProjectUrl/blob/main/docs/index.md"
+          $BugTrackerUrl = "$ProjectUrl/issues"
 
-          (Get-Content packaging/chocolatey/iptvtunerr.nuspec) `
-            -replace '<version>.*</version>', "<version>$PackageVersion</version>" |
-            Set-Content packaging/chocolatey/iptvtunerr.nuspec
-          (Get-Content packaging/chocolatey/tools/chocolateyinstall.ps1) `
-            -replace '\$url\s*=\s*".*"', "`$url = `"$Url`"" `
-            -replace '\$checksum\s*=\s*".*"', "`$checksum = `"$Checksum`"" `
-            -replace 'iptv-tunerr-v[0-9][^"]*-windows-amd64\.exe', $ExeName |
-            Set-Content packaging/chocolatey/tools/chocolateyinstall.ps1
+          @"
+          <?xml version="1.0" encoding="utf-8"?>
+          <package xmlns="http://schemas.microsoft.com/packaging/2015/06/nuspec.xsd">
+            <metadata>
+              <id>iptvtunerr</id>
+              <version>$PackageVersion</version>
+              <title>IPTV Tunerr</title>
+              <authors>snapetech</authors>
+              <owners>slskdn</owners>
+              <projectUrl>$ProjectUrl</projectUrl>
+              <iconUrl>$IconUrl</iconUrl>
+              <licenseUrl>$ProjectUrl/blob/main/LICENSE</licenseUrl>
+              <packageSourceUrl>$PackageSourceUrl</packageSourceUrl>
+              <projectSourceUrl>$ProjectUrl</projectSourceUrl>
+              <docsUrl>$DocsUrl</docsUrl>
+              <bugTrackerUrl>$BugTrackerUrl</bugTrackerUrl>
+              <releaseNotes>$ReleaseNotes</releaseNotes>
+              <requireLicenseAcceptance>false</requireLicenseAcceptance>
+              <tags>iptv plex emby jellyfin hdhomerun xmltv live-tv dvr</tags>
+              <summary>IPTV to Plex, Emby, and Jellyfin bridge</summary>
+              <description>IPTV Tunerr turns IPTV sources into a stable HDHomeRun-style tuner and XMLTV guide surface for Plex, Emby, and Jellyfin.</description>
+            </metadata>
+            <files>
+              <file src="tools\**" target="tools" />
+            </files>
+          </package>
+          "@ | Set-Content -Encoding UTF8 packaging/chocolatey/iptvtunerr.nuspec
+
+          @"
+          `$toolsDir = "`$(Split-Path -parent `$MyInvocation.MyCommand.Definition)"
+          `$releaseTag = "$Version"
+          `$url = "$Url"
+          `$checksum = "$Checksum"
+
+          Install-ChocolateyZipPackage -PackageName 'iptvtunerr' -Url `$url -UnzipLocation `$toolsDir -Checksum `$checksum -ChecksumType 'sha256'
+
+          `$exe = Join-Path `$toolsDir "iptv-tunerr-`$releaseTag-windows-amd64\iptv-tunerr.exe"
+          if (-not (Test-Path `$exe)) {
+              throw "Expected executable was not found: `$exe"
+          }
+
+          Install-BinFile -Name "iptv-tunerr" -Path `$exe
+          "@ | Set-Content -Encoding UTF8 packaging/chocolatey/tools/chocolateyinstall.ps1
 
           cd packaging/chocolatey
           choco pack

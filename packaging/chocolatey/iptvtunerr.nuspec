@@ -2,11 +2,18 @@
 <package xmlns="http://schemas.microsoft.com/packaging/2015/06/nuspec.xsd">
   <metadata>
     <id>iptvtunerr</id>
-    <version>0.1.63</version>
+    <version>0.1.85</version>
     <title>IPTV Tunerr</title>
     <authors>snapetech</authors>
+    <owners>slskdn</owners>
     <projectUrl>https://github.com/snapetech/iptvtunerr</projectUrl>
+    <iconUrl>https://cdn.jsdelivr.net/gh/snapetech/iptvtunerr@main/docs/assets/iptvtunerr-icon.svg</iconUrl>
     <licenseUrl>https://github.com/snapetech/iptvtunerr/blob/main/LICENSE</licenseUrl>
+    <packageSourceUrl>https://github.com/snapetech/iptvtunerr/tree/main/packaging/chocolatey</packageSourceUrl>
+    <projectSourceUrl>https://github.com/snapetech/iptvtunerr</projectSourceUrl>
+    <docsUrl>https://github.com/snapetech/iptvtunerr/blob/main/docs/index.md</docsUrl>
+    <bugTrackerUrl>https://github.com/snapetech/iptvtunerr/issues</bugTrackerUrl>
+    <releaseNotes>https://github.com/snapetech/iptvtunerr/releases/tag/v0.1.85</releaseNotes>
     <requireLicenseAcceptance>false</requireLicenseAcceptance>
     <tags>iptv plex emby jellyfin hdhomerun xmltv live-tv dvr</tags>
     <summary>IPTV to Plex, Emby, and Jellyfin bridge</summary>

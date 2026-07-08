@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" role="img" aria-labelledby="title desc">
+  <title id="title">IPTV Tunerr icon</title>
+  <desc id="desc">A tuner screen with broadcast signal bars.</desc>
+  <rect x="14" y="24" width="100" height="74" rx="14" fill="#102033"/>
+  <rect x="22" y="32" width="84" height="54" rx="8" fill="#f8fafc"/>
+  <path d="M39 78h50" stroke="#102033" stroke-width="8" stroke-linecap="round"/>
+  <path d="M64 98v13" stroke="#102033" stroke-width="8" stroke-linecap="round"/>
+  <path d="M45 112h38" stroke="#102033" stroke-width="8" stroke-linecap="round"/>
+  <path d="M48 63c8-8 24-8 32 0" fill="none" stroke="#f59e0b" stroke-width="8" stroke-linecap="round"/>
+  <path d="M36 51c15-16 41-16 56 0" fill="none" stroke="#14b8a6" stroke-width="8" stroke-linecap="round"/>
+  <circle cx="64" cy="70" r="6" fill="#ef4444"/>
+</svg>
