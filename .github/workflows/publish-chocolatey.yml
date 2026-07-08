@@ -40,9 +40,19 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         shell: pwsh
         run: |
+          $ErrorActionPreference = "Stop"
+          $Asset = "iptv-tunerr-${{ inputs.version }}-windows-amd64.zip"
+          $DownloadDir = Join-Path $env:RUNNER_TEMP "chocolatey-assets"
+          New-Item -ItemType Directory -Force -Path $DownloadDir | Out-Null
+          Remove-Item -Force -ErrorAction SilentlyContinue (Join-Path $DownloadDir $Asset)
           gh release download "${{ inputs.version }}" `
-            --repo ${{ github.repository }} `
-            --pattern "iptv-tunerr-${{ inputs.version }}-windows-amd64.zip"
+            --repo "${{ github.repository }}" `
+            --pattern $Asset `
+            --dir $DownloadDir `
+            --clobber
+          if (-not (Test-Path (Join-Path $DownloadDir $Asset))) {
+            throw "Expected release asset was not downloaded: $Asset"
+          }
 
       - name: Pack and push
         env:
@@ -62,8 +72,13 @@ jobs:
           $Version = "${{ inputs.version }}"
           $PackageVersion = $Version.TrimStart("v")
           $Asset = "iptv-tunerr-$Version-windows-amd64.zip"
+          $AssetPath = Join-Path (Join-Path $env:RUNNER_TEMP "chocolatey-assets") $Asset
+          if (-not (Test-Path $AssetPath)) {
+            Write-Error "Release asset was not found: $AssetPath"
+            exit 1
+          }
           $Url = "https://github.com/${{ github.repository }}/releases/download/$Version/$Asset"
-          $Checksum = (Get-FileHash $Asset -Algorithm SHA256).Hash.ToLowerInvariant()
+          $Checksum = (Get-FileHash $AssetPath -Algorithm SHA256).Hash.ToLowerInvariant()
           $ReleaseNotes = "https://github.com/${{ github.repository }}/releases/tag/$Version"
           $IconUrl = "https://cdn.jsdelivr.net/gh/${{ github.repository }}@main/docs/assets/iptvtunerr-icon.svg"
           $ProjectUrl = "https://github.com/${{ github.repository }}"
