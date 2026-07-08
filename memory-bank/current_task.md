@@ -10,9 +10,10 @@
 - Done: headless public page checks confirmed Chocolatey `0.1.68` is still `Waiting for Maintainer`; the `v0.1.85` publish run builds the `.nupkg` and downloads the Windows ZIP successfully, then Chocolatey returns `403 Forbidden` at the push endpoint.
 - Done: tried the exact-version moderation update for `v0.1.68`; it failed before push because the checked-out old tag uses an older exact-match tag guard script, so the Chocolatey workflow now performs the ancestor guard inline from the current workflow file.
 - Done: the next exact-version `v0.1.68` push was accepted by Chocolatey, but headless raw-package inspection showed `dotnet pack` had stripped Chocolatey-specific metadata from the `.nupkg`; the workflow now replaces the packed root nuspec with the exact Chocolatey nuspec and asserts the required metadata tags before pushing.
+- Done: the first packed-nuspec preservation dispatch hung inside the monolithic pack/push script before any native command output was available, so the workflow now uses a unique temp pack directory, progress markers, and `timeout` wrappers around `dotnet pack` and `dotnet nuget push`.
 - Done: updated release-channel docs and changelog with the Chocolatey moderation state and fix.
 - Verification: XML/SVG syntax checks, PowerShell parser checks, extracted workflow parser checks, extracted bash parser check, local curl download/checksum for the `v0.1.85` Windows ZIP, simulated `Pack and push` workflow dry runs against old `v0.1.85` tag contents, local `dotnet pack` smoke for the Chocolatey nuspec, install-script shim-path stub test, local packed-nupkg metadata inspection, `git diff --check`, local identity scan, and full `./scripts/verify` passed.
-- Next: verify/commit/push the packed-nuspec preservation follow-up, rerun `Publish Chocolatey` for `v0.1.68`, confirm the raw `.nupkg` keeps all moderation metadata, then wait for review or ask the moderator to reject `0.1.68` so `v0.1.85` can be pushed.
+- Next: verify/commit/push the bounded pack/push follow-up, rerun `Publish Chocolatey` for `v0.1.68`, confirm the raw `.nupkg` keeps all moderation metadata, then wait for review or ask the moderator to reject `0.1.68` so `v0.1.85` can be pushed.
 
 **Current (2026-06-16):** Fix COPR publishing credentials and rerun `v0.1.85`.
 

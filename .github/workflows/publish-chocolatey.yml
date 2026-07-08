@@ -84,6 +84,10 @@ jobs:
             Write-Error "dotnet is required to pack and push the Chocolatey package"
             exit 1
           }
+          if (-not (Get-Command timeout -ErrorAction SilentlyContinue)) {
+            Write-Error "timeout is required to bound dotnet pack/push"
+            exit 1
+          }
 
           $Version = "${{ inputs.version }}"
           $PackageVersion = $Version.TrimStart("v")
@@ -147,8 +151,9 @@ jobs:
           "@ | Set-Content -Encoding UTF8 packaging/chocolatey/tools/chocolateyinstall.ps1
 
           $PackageDir = Resolve-Path packaging/chocolatey
-          $PackProject = Join-Path $env:RUNNER_TEMP "iptvtunerr-chocolatey-pack.csproj"
-          $PackOut = Join-Path $env:RUNNER_TEMP "iptvtunerr-chocolatey-pack"
+          $PackRoot = Join-Path $env:RUNNER_TEMP ("iptvtunerr-chocolatey-pack-" + [Guid]::NewGuid().ToString("N"))
+          $PackProject = Join-Path $PackRoot "pack.csproj"
+          $PackOut = Join-Path $PackRoot "out"
           New-Item -ItemType Directory -Force -Path $PackOut | Out-Null
           @"
           <Project Sdk="Microsoft.NET.Sdk">
@@ -162,13 +167,18 @@ jobs:
           </Project>
           "@ | Set-Content -Encoding UTF8 $PackProject
 
-          dotnet pack $PackProject --configuration Release --output $PackOut
+          Write-Host "[publish-chocolatey] Packing Chocolatey package $PackageVersion"
+          & timeout 180 dotnet pack $PackProject --configuration Release --output $PackOut
+          if ($LASTEXITCODE -ne 0) {
+            throw "dotnet pack failed or timed out with exit code $LASTEXITCODE"
+          }
           $nupkg = Get-ChildItem $PackOut -Filter "iptvtunerr.$PackageVersion.nupkg" | Select-Object -First 1
           if (-not $nupkg) {
             Write-Error "No .nupkg file found"
             exit 1
           }
 
+          Write-Host "[publish-chocolatey] Preserving exact Chocolatey nuspec in $($nupkg.Name)"
           Add-Type -AssemblyName System.IO.Compression.FileSystem
           $NuspecPath = Resolve-Path packaging/chocolatey/iptvtunerr.nuspec
           $Archive = [System.IO.Compression.ZipFile]::Open($nupkg.FullName, [System.IO.Compression.ZipArchiveMode]::Update)
@@ -206,5 +216,11 @@ jobs:
               throw "Packed Chocolatey nuspec is missing <$RequiredTag>"
             }
           }
+          Write-Host "[publish-chocolatey] Packed nuspec metadata check passed"
 
-          dotnet nuget push $nupkg.FullName --source https://push.chocolatey.org/ --api-key $env:CHOCO_API_KEY --timeout 300 --skip-duplicate
+          Write-Host "[publish-chocolatey] Pushing $($nupkg.Name) to Chocolatey"
+          & timeout 300 dotnet nuget push $nupkg.FullName --source https://push.chocolatey.org/ --api-key $env:CHOCO_API_KEY --timeout 300 --skip-duplicate
+          if ($LASTEXITCODE -ne 0) {
+            throw "dotnet nuget push failed or timed out with exit code $LASTEXITCODE"
+          }
+          Write-Host "[publish-chocolatey] Chocolatey push completed"

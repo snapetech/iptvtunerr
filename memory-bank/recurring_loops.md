@@ -265,6 +265,8 @@
   the `.nupkg` with the exact Chocolatey nuspec written by the workflow.
 - Before pushing, reopen the `.nupkg` and assert the required moderation tags
   are present.
+- Use unique runner-temp pack directories and bounded native command timeouts;
+  the self-hosted runner temp area may contain state from prior attempts.
 - After pushing a moderated version, download the raw package feed and inspect
   the packaged nuspec headlessly instead of trusting the public package page,
   which may lag or show cached review content.
