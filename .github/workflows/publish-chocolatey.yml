@@ -70,59 +70,48 @@ jobs:
             "${url}"
           test -s "${download_dir}/${asset}"
 
-      - name: Pack and push
-        env:
-          CHOCO_API_KEY: ${{ secrets.CHOCO_API_KEY }}
-        shell: pwsh
+      - name: Prepare Chocolatey package
+        id: pack
+        shell: bash
+        timeout-minutes: 5
         run: |
-          $ErrorActionPreference = "Stop"
-          if ([string]::IsNullOrWhiteSpace($env:CHOCO_API_KEY)) {
-            Write-Error "CHOCO_API_KEY secret is not configured"
-            exit 1
-          }
-          if (-not (Get-Command dotnet -ErrorAction SilentlyContinue)) {
-            Write-Error "dotnet is required to pack and push the Chocolatey package"
-            exit 1
-          }
-          if (-not (Get-Command timeout -ErrorAction SilentlyContinue)) {
-            Write-Error "timeout is required to bound dotnet pack/push"
-            exit 1
-          }
+          set -euo pipefail
+          command -v dotnet >/dev/null
+          command -v sha256sum >/dev/null
+          command -v unzip >/dev/null
+          command -v zip >/dev/null
 
-          $Version = "${{ inputs.version }}"
-          $PackageVersion = $Version.TrimStart("v")
-          $Asset = "iptv-tunerr-$Version-windows-amd64.zip"
-          $AssetPath = Join-Path (Join-Path $env:RUNNER_TEMP "chocolatey-assets") $Asset
-          if (-not (Test-Path $AssetPath)) {
-            Write-Error "Release asset was not found: $AssetPath"
-            exit 1
-          }
-          $Url = "https://github.com/${{ github.repository }}/releases/download/$Version/$Asset"
-          $Checksum = (Get-FileHash $AssetPath -Algorithm SHA256).Hash.ToLowerInvariant()
-          $ReleaseNotes = "https://github.com/${{ github.repository }}/releases/tag/$Version"
-          $IconUrl = "https://cdn.jsdelivr.net/gh/${{ github.repository }}@main/docs/assets/iptvtunerr-icon.svg"
-          $ProjectUrl = "https://github.com/${{ github.repository }}"
-          $PackageSourceUrl = "$ProjectUrl/tree/main/packaging/chocolatey"
-          $DocsUrl = "$ProjectUrl/blob/main/docs/index.md"
-          $BugTrackerUrl = "$ProjectUrl/issues"
+          version="${{ inputs.version }}"
+          package_version="${version#v}"
+          asset="iptv-tunerr-${version}-windows-amd64.zip"
+          asset_path="${RUNNER_TEMP}/chocolatey-assets/${asset}"
+          test -s "${asset_path}"
+          url="https://github.com/${{ github.repository }}/releases/download/${version}/${asset}"
+          checksum="$(sha256sum "${asset_path}" | awk '{print $1}')"
+          project_url="https://github.com/${{ github.repository }}"
+          icon_url="https://cdn.jsdelivr.net/gh/${{ github.repository }}@main/docs/assets/iptvtunerr-icon.svg"
+          package_source_url="${project_url}/tree/main/packaging/chocolatey"
+          docs_url="${project_url}/blob/main/docs/index.md"
+          bug_tracker_url="${project_url}/issues"
+          release_notes="${project_url}/releases/tag/${version}"
 
-          @"
+          cat > packaging/chocolatey/iptvtunerr.nuspec <<EOF
           <?xml version="1.0" encoding="utf-8"?>
           <package xmlns="http://schemas.microsoft.com/packaging/2015/06/nuspec.xsd">
             <metadata>
               <id>iptvtunerr</id>
-              <version>$PackageVersion</version>
+              <version>${package_version}</version>
               <title>IPTV Tunerr</title>
               <authors>snapetech</authors>
               <owners>slskdn</owners>
-              <projectUrl>$ProjectUrl</projectUrl>
-              <iconUrl>$IconUrl</iconUrl>
-              <licenseUrl>$ProjectUrl/blob/main/LICENSE</licenseUrl>
-              <packageSourceUrl>$PackageSourceUrl</packageSourceUrl>
-              <projectSourceUrl>$ProjectUrl</projectSourceUrl>
-              <docsUrl>$DocsUrl</docsUrl>
-              <bugTrackerUrl>$BugTrackerUrl</bugTrackerUrl>
-              <releaseNotes>$ReleaseNotes</releaseNotes>
+              <projectUrl>${project_url}</projectUrl>
+              <iconUrl>${icon_url}</iconUrl>
+              <licenseUrl>${project_url}/blob/main/LICENSE</licenseUrl>
+              <packageSourceUrl>${package_source_url}</packageSourceUrl>
+              <projectSourceUrl>${project_url}</projectSourceUrl>
+              <docsUrl>${docs_url}</docsUrl>
+              <bugTrackerUrl>${bug_tracker_url}</bugTrackerUrl>
+              <releaseNotes>${release_notes}</releaseNotes>
               <requireLicenseAcceptance>false</requireLicenseAcceptance>
               <tags>iptv plex emby jellyfin hdhomerun xmltv live-tv dvr</tags>
               <summary>IPTV to Plex, Emby, and Jellyfin bridge</summary>
@@ -132,95 +121,72 @@ jobs:
               <file src="tools\**" target="tools" />
             </files>
           </package>
-          "@ | Set-Content -Encoding UTF8 packaging/chocolatey/iptvtunerr.nuspec
+          EOF
 
-          @"
-          `$toolsDir = "`$(Split-Path -parent `$MyInvocation.MyCommand.Definition)"
-          `$releaseTag = "$Version"
-          `$url = "$Url"
-          `$checksum = "$Checksum"
+          cat > packaging/chocolatey/tools/chocolateyinstall.ps1 <<EOF
+          \$toolsDir = "\$(Split-Path -parent \$MyInvocation.MyCommand.Definition)"
+          \$releaseTag = "${version}"
+          \$url = "${url}"
+          \$checksum = "${checksum}"
 
-          Install-ChocolateyZipPackage -PackageName 'iptvtunerr' -Url `$url -UnzipLocation `$toolsDir -Checksum `$checksum -ChecksumType 'sha256'
+          Install-ChocolateyZipPackage -PackageName 'iptvtunerr' -Url \$url -UnzipLocation \$toolsDir -Checksum \$checksum -ChecksumType 'sha256'
 
-          `$exe = Join-Path `$toolsDir "iptv-tunerr-`$releaseTag-windows-amd64\iptv-tunerr.exe"
-          if (-not (Test-Path `$exe)) {
-              throw "Expected executable was not found: `$exe"
+          \$exe = Join-Path \$toolsDir "iptv-tunerr-\$releaseTag-windows-amd64\iptv-tunerr.exe"
+          if (-not (Test-Path \$exe)) {
+              throw "Expected executable was not found: \$exe"
           }
 
-          Install-BinFile -Name "iptv-tunerr" -Path `$exe
-          "@ | Set-Content -Encoding UTF8 packaging/chocolatey/tools/chocolateyinstall.ps1
+          Install-BinFile -Name "iptv-tunerr" -Path \$exe
+          EOF
 
-          $PackageDir = Resolve-Path packaging/chocolatey
-          $PackRoot = Join-Path $env:RUNNER_TEMP ("iptvtunerr-chocolatey-pack-" + [Guid]::NewGuid().ToString("N"))
-          $PackProject = Join-Path $PackRoot "pack.csproj"
-          $PackOut = Join-Path $PackRoot "out"
-          New-Item -ItemType Directory -Force -Path $PackOut | Out-Null
-          @"
+          pack_root="${RUNNER_TEMP}/iptvtunerr-chocolatey-pack-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          pack_out="${pack_root}/out"
+          pack_project="${pack_root}/pack.csproj"
+          rm -rf "${pack_root}"
+          mkdir -p "${pack_out}"
+          cat > "${pack_project}" <<EOF
           <Project Sdk="Microsoft.NET.Sdk">
             <PropertyGroup>
               <TargetFramework>net8.0</TargetFramework>
-              <NuspecFile>$($PackageDir.Path)/iptvtunerr.nuspec</NuspecFile>
-              <NuspecBasePath>$($PackageDir.Path)</NuspecBasePath>
+              <NuspecFile>${PWD}/packaging/chocolatey/iptvtunerr.nuspec</NuspecFile>
+              <NuspecBasePath>${PWD}/packaging/chocolatey</NuspecBasePath>
               <IncludeBuildOutput>false</IncludeBuildOutput>
               <SuppressDependenciesWhenPacking>true</SuppressDependenciesWhenPacking>
             </PropertyGroup>
           </Project>
-          "@ | Set-Content -Encoding UTF8 $PackProject
+          EOF
 
-          Write-Host "[publish-chocolatey] Packing Chocolatey package $PackageVersion"
-          & timeout 180 dotnet pack $PackProject --configuration Release --output $PackOut
-          if ($LASTEXITCODE -ne 0) {
-            throw "dotnet pack failed or timed out with exit code $LASTEXITCODE"
-          }
-          $nupkg = Get-ChildItem $PackOut -Filter "iptvtunerr.$PackageVersion.nupkg" | Select-Object -First 1
-          if (-not $nupkg) {
-            Write-Error "No .nupkg file found"
+          echo "[publish-chocolatey] Packing Chocolatey package ${package_version}"
+          timeout 180 dotnet pack "${pack_project}" --configuration Release --output "${pack_out}"
+          nupkg="${pack_out}/iptvtunerr.${package_version}.nupkg"
+          test -s "${nupkg}"
+
+          echo "[publish-chocolatey] Preserving exact Chocolatey nuspec in $(basename "${nupkg}")"
+          zip -q -j "${nupkg}" packaging/chocolatey/iptvtunerr.nuspec
+
+          echo "[publish-chocolatey] Checking packed nuspec metadata"
+          packed_nuspec="$(unzip -p "${nupkg}" iptvtunerr.nuspec)"
+          for required_tag in packageSourceUrl projectSourceUrl docsUrl bugTrackerUrl releaseNotes iconUrl; do
+            if ! grep -q "<${required_tag}>" <<<"${packed_nuspec}"; then
+              echo "Packed Chocolatey nuspec is missing <${required_tag}>" >&2
+              exit 1
+            fi
+          done
+          echo "nupkg=${nupkg}" >> "${GITHUB_OUTPUT}"
+
+      - name: Push Chocolatey package
+        env:
+          CHOCO_API_KEY: ${{ secrets.CHOCO_API_KEY }}
+        shell: bash
+        timeout-minutes: 7
+        run: |
+          set -euo pipefail
+          if [[ -z "${CHOCO_API_KEY:-}" ]]; then
+            echo "CHOCO_API_KEY secret is not configured" >&2
             exit 1
-          }
-
-          Write-Host "[publish-chocolatey] Preserving exact Chocolatey nuspec in $($nupkg.Name)"
-          Add-Type -AssemblyName System.IO.Compression.FileSystem
-          $NuspecPath = Resolve-Path packaging/chocolatey/iptvtunerr.nuspec
-          $Archive = [System.IO.Compression.ZipFile]::Open($nupkg.FullName, [System.IO.Compression.ZipArchiveMode]::Update)
-          try {
-            $ExistingNuspec = $Archive.GetEntry("iptvtunerr.nuspec")
-            if (-not $ExistingNuspec) {
-              throw "Packed Chocolatey package did not contain iptvtunerr.nuspec"
-            }
-            $ExistingNuspec.Delete()
-            [System.IO.Compression.ZipFileExtensions]::CreateEntryFromFile($Archive, $NuspecPath.Path, "iptvtunerr.nuspec") | Out-Null
-          } finally {
-            if ($Archive) {
-              $Archive.Dispose()
-            }
-          }
-
-          $Archive = [System.IO.Compression.ZipFile]::OpenRead($nupkg.FullName)
-          try {
-            $PackedNuspecEntry = $Archive.GetEntry("iptvtunerr.nuspec")
-            if (-not $PackedNuspecEntry) {
-              throw "Packed Chocolatey package did not contain iptvtunerr.nuspec after replacement"
-            }
-            $Reader = [System.IO.StreamReader]::new($PackedNuspecEntry.Open())
-            try {
-              $PackedNuspec = $Reader.ReadToEnd()
-            } finally {
-              $Reader.Dispose()
-            }
-          } finally {
-            $Archive.Dispose()
-          }
-
-          foreach ($RequiredTag in @("packageSourceUrl", "projectSourceUrl", "docsUrl", "bugTrackerUrl", "releaseNotes", "iconUrl")) {
-            if ($PackedNuspec -notmatch "<$RequiredTag>") {
-              throw "Packed Chocolatey nuspec is missing <$RequiredTag>"
-            }
-          }
-          Write-Host "[publish-chocolatey] Packed nuspec metadata check passed"
-
-          Write-Host "[publish-chocolatey] Pushing $($nupkg.Name) to Chocolatey"
-          & timeout 300 dotnet nuget push $nupkg.FullName --source https://push.chocolatey.org/ --api-key $env:CHOCO_API_KEY --timeout 300 --skip-duplicate
-          if ($LASTEXITCODE -ne 0) {
-            throw "dotnet nuget push failed or timed out with exit code $LASTEXITCODE"
-          }
-          Write-Host "[publish-chocolatey] Chocolatey push completed"
+          fi
+          nupkg="${{ steps.pack.outputs.nupkg }}"
+          test -s "${nupkg}"
+          echo "[publish-chocolatey] Pushing $(basename "${nupkg}") to Chocolatey"
+          timeout 300 dotnet nuget push "${nupkg}" --source https://push.chocolatey.org/ --api-key "${CHOCO_API_KEY}" --timeout 300 --skip-duplicate
+          echo "[publish-chocolatey] Chocolatey push completed"

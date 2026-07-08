@@ -267,6 +267,9 @@
   are present.
 - Use unique runner-temp pack directories and bounded native command timeouts;
   the self-hosted runner temp area may contain state from prior attempts.
+- Prefer split Bash steps over a monolithic PowerShell pack/push block on Linux
+  runners, because a pre-output stall in PowerShell gives little actionable log
+  context.
 - After pushing a moderated version, download the raw package feed and inspect
   the packaged nuspec headlessly instead of trusting the public package page,
   which may lag or show cached review content.
