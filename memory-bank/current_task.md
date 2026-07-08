@@ -4,9 +4,10 @@
 - Scope: `packaging/chocolatey/`, Chocolatey publish workflow templating, docs/memory closeout. Do not change unrelated package channels.
 - Assumption: because `0.1.68` is under moderation while the repo is at `v0.1.85`, the safest path is to make the package template correct for the next/current release and let the existing Chocolatey moderation item be rejected or superseded if needed.
 - Done: patched the Chocolatey nuspec/template metadata, added a controlled package icon asset, corrected the explicit Windows shim target, and made the publish workflow rewrite nuspec/install-script content before packing so existing release tags can be republished without moving tags.
+- Done: after the first dispatch queued indefinitely because no online runner had the old `Windows` label, changed Chocolatey publishing to run on the repo Linux runner pool and pack/push with .NET/NuGet.
 - Done: updated release-channel docs and changelog with the Chocolatey moderation state and fix.
-- Verification: XML/SVG syntax checks, PowerShell parser checks, extracted workflow parser check, simulated `Pack and push` workflow dry run against old `v0.1.85` tag contents with a fake `choco`, install-script shim-path stub test, `git diff --check`, and full `./scripts/verify` passed.
-- Next: commit/push these changes, then dispatch `Publish Chocolatey` for the current release tag. If Chocolatey requires it, self-reject or ask the moderator to reject stale `0.1.68` first.
+- Verification: XML/SVG syntax checks, PowerShell parser checks, extracted workflow parser check, simulated `Pack and push` workflow dry runs against old `v0.1.85` tag contents, local `dotnet pack` smoke for the Chocolatey nuspec, install-script shim-path stub test, `git diff --check`, local identity scan, and full `./scripts/verify` passed.
+- Next: commit/push the Linux-runner publishing follow-up, then dispatch `Publish Chocolatey` for the current release tag. If Chocolatey requires it, self-reject or ask the moderator to reject stale `0.1.68` first.
 
 **Current (2026-06-16):** Fix COPR publishing credentials and rerun `v0.1.85`.
 

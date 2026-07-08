@@ -126,7 +126,9 @@ Configured packaging:
 - Chocolatey metadata lives in `packaging/chocolatey/`.
 - Winget manifest generation lives in `packaging/scripts/update-winget-manifests.sh`.
 - `.github/workflows/publish-chocolatey.yml` publishes a Chocolatey package
-  from a release tag.
+  from a release tag. It runs on the repo Linux runner pool, rewrites the
+  nuspec/install script for the requested tag, packs the Chocolatey `.nupkg`
+  with .NET/NuGet, and pushes it to `https://push.chocolatey.org/`.
 - `.github/workflows/publish-winget.yml` submits a Winget PR from a release tag.
 
 These Windows package workflows are manual-only until their external gates are

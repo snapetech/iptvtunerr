@@ -14,13 +14,18 @@ permissions:
 jobs:
   publish:
     name: Publish Chocolatey
-    runs-on: [self-hosted, Windows, X64]
+    runs-on: [self-hosted, Linux, X64, iptvtunerr]
     steps:
       - name: Checkout
         uses: actions/checkout@v6
         with:
           ref: ${{ inputs.version }}
           fetch-depth: 0
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v5
+        with:
+          dotnet-version: "8.x"
 
       - name: Require release tag on main
         shell: bash
@@ -45,6 +50,10 @@ jobs:
           $ErrorActionPreference = "Stop"
           if ([string]::IsNullOrWhiteSpace($env:CHOCO_API_KEY)) {
             Write-Error "CHOCO_API_KEY secret is not configured"
+            exit 1
+          }
+          if (-not (Get-Command dotnet -ErrorAction SilentlyContinue)) {
+            Write-Error "dotnet is required to pack and push the Chocolatey package"
             exit 1
           }
 
@@ -104,11 +113,26 @@ jobs:
           Install-BinFile -Name "iptv-tunerr" -Path `$exe
           "@ | Set-Content -Encoding UTF8 packaging/chocolatey/tools/chocolateyinstall.ps1
 
-          cd packaging/chocolatey
-          choco pack
-          $nupkg = Get-ChildItem -Filter "*.nupkg" | Select-Object -First 1
+          $PackageDir = Resolve-Path packaging/chocolatey
+          $PackProject = Join-Path $env:RUNNER_TEMP "iptvtunerr-chocolatey-pack.csproj"
+          $PackOut = Join-Path $env:RUNNER_TEMP "iptvtunerr-chocolatey-pack"
+          New-Item -ItemType Directory -Force -Path $PackOut | Out-Null
+          @"
+          <Project Sdk="Microsoft.NET.Sdk">
+            <PropertyGroup>
+              <TargetFramework>net8.0</TargetFramework>
+              <NuspecFile>$($PackageDir.Path)/iptvtunerr.nuspec</NuspecFile>
+              <NuspecBasePath>$($PackageDir.Path)</NuspecBasePath>
+              <IncludeBuildOutput>false</IncludeBuildOutput>
+              <SuppressDependenciesWhenPacking>true</SuppressDependenciesWhenPacking>
+            </PropertyGroup>
+          </Project>
+          "@ | Set-Content -Encoding UTF8 $PackProject
+
+          dotnet pack $PackProject --configuration Release --output $PackOut
+          $nupkg = Get-ChildItem $PackOut -Filter "iptvtunerr.$PackageVersion.nupkg" | Select-Object -First 1
           if (-not $nupkg) {
             Write-Error "No .nupkg file found"
             exit 1
           }
-          choco push $nupkg.FullName --source https://push.chocolatey.org/ --api-key $env:CHOCO_API_KEY --execution-timeout 300
+          dotnet nuget push $nupkg.FullName --source https://push.chocolatey.org/ --api-key $env:CHOCO_API_KEY --timeout 300 --skip-duplicate
