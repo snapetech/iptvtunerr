@@ -38,7 +38,7 @@ jobs:
           RELEASE_TAG_MAIN_MODE: ancestor
         run: ./scripts/ensure-release-tag-on-main.sh "${{ steps.version.outputs.tag }}"
 
-      - uses: actions/setup-go@v6
+      - uses: actions/setup-go@v7
         with:
           go-version-file: go.mod
 

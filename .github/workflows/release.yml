@@ -17,7 +17,7 @@ jobs:
       - name: Require release tag on main
         run: ./scripts/ensure-release-tag-on-main.sh "${GITHUB_REF_NAME}"
 
-      - uses: actions/setup-go@v6
+      - uses: actions/setup-go@v7
         with:
           go-version-file: go.mod
 
