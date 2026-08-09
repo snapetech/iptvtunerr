@@ -13,7 +13,7 @@ jobs:
   verify:
     runs-on: [self-hosted, Linux, X64, iptvtunerr]
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
 
       - name: Set up Go
         uses: actions/setup-go@v6
@@ -40,7 +40,7 @@ jobs:
     runs-on: [self-hosted, Linux, X64, iptvtunerr]
     needs: verify
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
 
       - name: Set up Go
         uses: actions/setup-go@v6
@@ -54,7 +54,7 @@ jobs:
     runs-on: [self-hosted, Linux, X64, iptvtunerr]
     needs: verify
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
 
       - name: Set up Go
         uses: actions/setup-go@v6
