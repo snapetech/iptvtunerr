@@ -18,5 +18,5 @@
 
 ## Repository remotes
 
-- **Local Identity Leak Check matches existing dependency-update co-author trailers.** Five recent commit-message lines match the private identity denylist. The user directed that published history remain intact, so this check cannot be cleared by rewriting those commits; preserve the scanner and disclose the failing workflow status.
+- **Pre-release Local Identity Leak Check matched existing dependency-update co-author trailers.** Five commit-message lines matched the private identity denylist before `v0.1.86` was tagged. Post-release main checks pass because the latest-tag scan baseline advanced; the historical lines remain in their original commits. Preserve history as directed and do not weaken the scanner.
 - **GitLab mirror ref listing currently fails, and its cached `main` contains an extra donation-links commit.** The GitLab SSH service reports a multi-pack-index signature error during ref listing and rejected a normal push of verified merge candidate `4b5d293` with an index-pack error. The candidate retains the GitLab-only commit; no remote ref changed. Repair the server-side repository index, read current refs, and retry only as a normal fast-forward. Never force-push this branch.
