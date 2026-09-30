@@ -1,13 +1,20 @@
-**Current (2026-07-07):** Address Chocolatey moderation feedback.
+**Current (2026-07-08):** Address Chocolatey moderation feedback.
 
 - Goal: update Chocolatey package metadata so the next publish clears the moderator-requested automated review guidelines/suggestions and aligns the package version with the current software release.
 - Scope: `packaging/chocolatey/`, Chocolatey publish workflow templating, docs/memory closeout. Do not change unrelated package channels.
 - Assumption: because `0.1.68` is under moderation while the repo is at `v0.1.85`, the safest path is to make the package template correct for the next/current release and let the existing Chocolatey moderation item be rejected or superseded if needed.
 - Done: patched the Chocolatey nuspec/template metadata, added a controlled package icon asset, corrected the explicit Windows shim target, and made the publish workflow rewrite nuspec/install-script content before packing so existing release tags can be republished without moving tags.
 - Done: after the first dispatch queued indefinitely because no online runner had the old `Windows` label, changed Chocolatey publishing to run on the repo Linux runner pool and pack/push with .NET/NuGet.
+- Done: after the first Linux dispatch failed because setup-dotnet tried to write `/usr/share/dotnet` without permission, constrained the .NET install directory to runner temp.
+- Done: after the next Linux dispatch hung while downloading the release ZIP in a reused self-hosted workspace, moved the asset download under runner temp and replaced `gh release download` with timeout-bounded `curl` retries; packing hashes that explicit path.
+- Done: headless public page checks confirmed Chocolatey `0.1.68` is still `Waiting for Maintainer`; the `v0.1.85` publish run builds the `.nupkg` and downloads the Windows ZIP successfully, then Chocolatey returns `403 Forbidden` at the push endpoint.
+- Done: tried the exact-version moderation update for `v0.1.68`; it failed before push because the checked-out old tag uses an older exact-match tag guard script, so the Chocolatey workflow now performs the ancestor guard inline from the current workflow file.
+- Done: the next exact-version `v0.1.68` push was accepted by Chocolatey, but headless raw-package inspection showed `dotnet pack` had stripped Chocolatey-specific metadata from the `.nupkg`; the workflow now replaces the packed root nuspec with the exact Chocolatey nuspec and asserts the required metadata tags before pushing.
+- Done: the first packed-nuspec preservation dispatch hung inside the monolithic PowerShell pack/push script before any native command output was available; a second bounded PowerShell attempt still hid the stall before markers printed, so the workflow now uses split Bash prepare/push steps, a unique temp pack directory, progress markers, and GitHub step timeouts.
+- Done: reran `Publish Chocolatey` for `v0.1.68` as run `28960144574`; Chocolatey accepted the package, the raw `.nupkg` now contains `iconUrl`, `packageSourceUrl`, `projectSourceUrl`, `docsUrl`, `bugTrackerUrl`, and `releaseNotes`, the install script points at the nested ZIP executable path, and the public package page now shows status `Updated`.
 - Done: updated release-channel docs and changelog with the Chocolatey moderation state and fix.
-- Verification: XML/SVG syntax checks, PowerShell parser checks, extracted workflow parser check, simulated `Pack and push` workflow dry runs against old `v0.1.85` tag contents, local `dotnet pack` smoke for the Chocolatey nuspec, install-script shim-path stub test, `git diff --check`, local identity scan, and full `./scripts/verify` passed.
-- Next: commit/push the Linux-runner publishing follow-up, then dispatch `Publish Chocolatey` for the current release tag. If Chocolatey requires it, self-reject or ask the moderator to reject stale `0.1.68` first.
+- Verification: XML/SVG syntax checks, PowerShell parser checks, extracted workflow parser checks, extracted bash parser check, local curl download/checksum for the `v0.1.85` Windows ZIP, simulated `Pack and push` workflow dry runs against old `v0.1.85` tag contents, local Bash prepare-step simulation, local `dotnet pack` smoke for the Chocolatey nuspec, install-script shim-path stub test, local packed-nupkg metadata inspection, `git diff --check`, local identity scan, and full `./scripts/verify` passed.
+- Next: wait for Chocolatey moderator review on `0.1.68`; after approval or rejection clears the first-version gate, rerun `Publish Chocolatey` for the current release tag `v0.1.85`.
 
 **Current (2026-06-16):** Fix COPR publishing credentials and rerun `v0.1.85`.
 
