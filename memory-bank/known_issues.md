@@ -18,4 +18,5 @@
 
 ## Repository remotes
 
+- **Local Identity Leak Check matches existing dependency-update co-author trailers.** Five recent commit-message lines match the private identity denylist. The user directed that published history remain intact, so this check cannot be cleared by rewriting those commits; preserve the scanner and disclose the failing workflow status.
 - **GitLab mirror ref listing currently fails, and its cached `main` contains an extra donation-links commit.** The configured GitLab SSH remote reports `multi-pack-index signature 0x00000000 does not match signature 0x4d494458` during ref listing; normal pushes from GitHub `main` are rejected as non-fast-forward. Preserve the GitLab-only commit, repair/read the GitLab ref before synchronizing, and never force-push this branch.

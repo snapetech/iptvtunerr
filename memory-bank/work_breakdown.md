@@ -9,8 +9,8 @@ Objective: incorporate all currently open PRs, resolve repository CodeQL/depende
 | SWEEP-001 | Review and land open GitHub PRs #30-#40, resolving changelog/check failures without bypassing substantive CI. | Completed; #40 closed as superseded by the already-landed secure upgrade. |
 | SEC-001 | Fix CodeQL `go/path-injection` alert #61 by rejecting request-supplied alias paths in the three tuner guide diagnostic endpoints; verify the remote alert closes after push. | Completed; current-main analysis passed and the alert is closed. |
 | TESTER-001 | Fix WebUI XMLTV route mismatches, surface the current tuner lineup, and explain the separate runtime and database-backed provider/channel views. | Completed |
-| PRIV-001 | Remove local identity trailers from the recent merged-PR history without losing commit content; prepare and verify a replacement history, then obtain explicit approval before rewriting GitHub main. | Approval required before remote rewrite. |
-| REL-001 | Update changelog/docs and memory closeout, run prescribed verification/release readiness, push to configured GitHub and GitLab destinations, publish `v0.1.86`, and check release workflows/security queues. | Waiting for PRIV-001 and current-main checks. |
+| PRIV-001 | Resolve the Local Identity Leak Check finding while preserving already-published history; do not weaken the scanner. | Unresolved by explicit user direction to preserve history; five existing co-author trailer lines still match the private identity denylist. Report this workflow check as red. |
+| REL-001 | Update changelog/docs and memory closeout, run prescribed verification/release readiness, push to GitHub by fast-forward, publish `v0.1.86`, and check release workflows/security queues. | In progress; release can proceed after gates, with PRIV-001 reported as unresolved. GitLab sync remains separately blocked until its ref is readable. |
 
 Guardrail: keep code changes scoped to the reported WebUI state mismatch, the CodeQL path finding, and required release notes. Do not change Jellyfin, Plex, deployment hosts, or unrelated packaging behavior.
 

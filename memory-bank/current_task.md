@@ -1,18 +1,18 @@
-**Current (2026-09-30):** Finish scan confirmation, reconcile the GitLab mirror safely, and publish `v0.1.86`.
+**Current (2026-09-30):** Preserve published history, finish the GitHub `v0.1.86` release, and record remaining scan/remote blockers.
 
 - Goal: land the open PR/security work, fix the Jellyfin tester's WebUI report, then publish a verified release.
-- Scope: GitHub PRs #30-#40, the guide diagnostic path-injection finding, provider/guide WebUI data flow, release changelog/version, local-identity scan failure, and required memory docs. Preserve existing GitLab-only history.
-- Assumptions: `v0.1.85` is the latest release, so the next patch release is `v0.1.86`. Do not bypass substantive checks or force-push a divergent GitLab branch.
-- Rollback: do not move or delete existing tags. Before any approved history rewrite, preserve the current main tip as a local backup ref; undo by restoring that ref to GitHub main. The current remote branch has not been rewritten. No production host changes are in scope.
-- Plan: resolve PRs and alerts; verify the tester-facing WebUI fix; finalize docs/changelog; run release readiness; sync remotes without rewriting history; tag/publish and confirm release and scan state.
+- Scope: GitHub PRs #30-#40, the guide diagnostic path-injection finding, provider/guide WebUI data flow, release changelog/version, and required memory docs. Preserve published GitHub and GitLab history.
+- Assumptions: `v0.1.85` is the latest release, so the next patch release is `v0.1.86`. Do not bypass substantive checks, rewrite published history, or force-push a divergent GitLab branch.
+- Rollback: do not move or delete existing tags, rewrite published commits, or change production hosts. Push the release commit as a fast-forward and publish only the new `v0.1.86` tag.
+- Plan: resolve PRs and alerts; verify the tester-facing WebUI fix; finalize docs/changelog; run release readiness; push by fast-forward to GitHub; tag/publish and confirm release and scan state. Leave the GitLab-only commit untouched until its ref can be read safely.
 - Done: merged PRs #30-#39. Closed PR #40 as superseded because `43d295d` already includes React Router `7.18.4`, while the remaining PR diff downgrades patched `nanoid` `3.3.19` to `3.3.16`.
 - Done: `43d295d` makes all three guide diagnostics use only `IPTV_TUNERR_XMLTV_ALIASES`; requests containing an `aliases` override receive JSON 400 responses. The commit is pushed to GitHub, and Dependabot alerts are clear.
 - Done: `1357599` fixes both WebUI XMLTV fetchers to request `/guide.xml`, adds a read-only Live lineup view, and explains that runtime `.env` providers do not create WebUI database records. The commit is pushed to GitHub.
 - Done: focused WebUI tests, `npm audit --audit-level=low` (zero findings), embedded WebUI build, full `./scripts/verify`, and `./scripts/release-readiness.sh` pass.
 - Done: current-main CodeQL analysis uploaded successfully and GitHub now reports zero open code-scanning alerts; Dependabot and secret-scanning alert counts are also zero. The current-main Gitleaks scan step passed.
-- Found: current-main Local Identity Leak Check failed because co-author trailers in merged Dependabot commits #30-#32 and #34-#39 match the private identity denylist. The local checker reproduces the failure. Fixing the public commit messages requires rewriting pushed history; no remote rewrite has been done.
+- Found: current-main Local Identity Leak Check failed because five `Co-authored-by` trailer lines in recent dependency-update commits contain a token matched by the private identity denylist. The local checker reproduces the same five-line finding. The user explicitly directed that published history must not be rewritten, so retain these commits and report this workflow check as unresolved; do not weaken or bypass the scanner.
 - In progress: GitLab rejected the GitHub commits as non-fast-forward, and its SSH Git service fails ref listing with a multi-pack-index signature error. Its cached branch contains a donation-links commit absent from GitHub; preserve that history and do not force-push.
-- Next: prepare a redacted local history candidate and verify it; request approval before any force-push. Then complete the identity check and `v0.1.86` release. Retry GitLab only if its current ref can be read and a normal fast-forward or merge preserves the donation-links commit.
+- Next: push the existing release-prep commit to GitHub by fast-forward and publish `v0.1.86` after release gates pass. Report the Local Identity Leak Check as unresolved due to the user's history-preservation instruction. Retry GitLab only if its current ref can be read and a normal fast-forward or merge preserves the donation-links commit.
 
 **Current (2026-07-08):** Address Chocolatey moderation feedback.
 
