@@ -10,8 +10,9 @@
 - Done: published GitHub release [`v0.1.86`](https://github.com/snapetech/iptvtunerr/releases/tag/v0.1.86) from `c9feeb4`; release verification, smoke, asset build, and asset validation passed.
 - Done: current CodeQL analysis and Gitleaks passed; GitHub reports zero open code-scanning alerts. `npm audit` reports zero vulnerabilities.
 - Found: Local Identity Leak Check still matches five `Co-authored-by` trailer lines in already-published dependency-update commits. The user explicitly directed that published history must not be rewritten; leave the check unresolved and do not weaken or bypass the scanner.
-- In progress: GitLab's cached `main` has one extra donation-links commit. GitLab ref listing and tag push failed with a multi-pack-index signature error. A normal merge candidate is being prepared to preserve that commit; push only if the server accepts it without a force update.
-- Next: validate and attempt the GitLab merge candidate using a normal push. If the server rejects it or remains unreadable, leave GitLab untouched and document that external repair is required.
+- Found: merge candidate `4b5d293` preserves the GitLab-only donation-links commit and includes GitHub `main` through `4e98af0`; it passed `./scripts/verify`, including frontend build, tests, and binary smoke.
+- Blocked: a normal push of `4b5d293` was rejected by GitLab with a multi-pack-index signature/index-pack error. No GitLab ref was changed. Do not retry until GitLab's server-side repository index is repaired and its current refs can be read.
+- Next: after GitLab repair, read its current refs, confirm the donation-links commit is still present, then push `4b5d293` only if the update is a normal fast-forward. Push the existing `v0.1.86` tag separately after the branch update.
 
 **Current (2026-07-08):** Address Chocolatey moderation feedback.
 

@@ -1,3 +1,10 @@
+## 2026-09-30 - Prepare safe GitLab mirror reconciliation
+
+- Prepared merge candidate `4b5d293` from GitLab's cached `main` plus GitHub `main` through `4e98af0`, preserving both histories and rebuilding the combined embedded WebUI.
+- Verification: frontend production build and `./scripts/verify` passed on the merge candidate.
+- Attempted a normal GitLab push; the server rejected the pack with a multi-pack-index/index-pack error before updating refs. No force-push was attempted and GitLab `main` was left unchanged.
+- Next: retry only after the GitLab server-side repository index is repaired and refs can be read.
+
 ## 2026-09-30 - Publish v0.1.86 with security and tester fixes
 
 - Merged GitHub PRs #30-#39 and closed #40 as superseded by the already-landed secure dependency update.
