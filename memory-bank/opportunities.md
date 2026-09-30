@@ -7,3 +7,4 @@
 - Windows channel follow-up: native Windows host proof is still recommended before broad Windows parity claims.
 - Release package follow-up: first GitHub Actions run should confirm Ubuntu runner `.deb`/`.rpm` direct package asset generation and remote channel publish responses end to end.
 - Release announcement parity: Matrix still receives a short version/link message instead of the curated release body; consider sharing the generated notes there in a later scope. Confidence: high.
+- 2026-09-30: One CI run for `585d204` failed `internal/tuner.TestServer_reapplyDeferredGuidePolicyDoesNotCumulativelyShrink` (`first=2 second=0`); retrying the same commit passed full verification. No tuner files changed. If this recurs, inspect whether `reapplyDeferredGuidePolicyAfterGuideHealthReady` or its cached guide-health state is mutated between repeated callbacks. Confidence: moderate.

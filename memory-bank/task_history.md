@@ -457,3 +457,11 @@
 - Changed the Discord release job to send the full GitHub release body as bounded embeds, verify each webhook response, and fail the announcement when the required secret or a message is missing. The existing Matrix message remains unchanged; a follow-up opportunity is filed.
 - Updated release documentation and removed stale references that described an `[Unreleased]` section as the current backlog. No published tag or historical changelog section was changed, and no release was created.
 - Verification: Node and Bash syntax checks, CI/Release YAML parsing, and `git diff --check` passed. Full `scripts/verify` and Go tests were not run.
+
+## 2026-09-30 - Complete curated release notes and historical changelog coverage
+
+- Added Seerrng-style validated release-note fragments, changelog preparation and tag coverage tooling, and full-content Discord embeds in commit `63f4aac`.
+- CI for `63f4aac` passed the release-note fragment gate but found 17 already-published GitHub releases with no changelog section. GitHub confirmed tags `v0.1.37` and `v0.1.49` have no published Release.
+- Added dated link-only sections for the 17 releases, a reasoned exception registry for the two no-release tags, and a documented history audit. Existing changelog sections were preserved byte-for-byte. Pushed follow-up `585d204` to GitHub `main` as a normal fast-forward; no tags or releases were created.
+- Verification: changelog coverage passed for 79 stable tags including the two exceptions; release-note gate, JavaScript syntax, local identity scan, and diff checks passed. CI retry `36785910764` attempt 2 passed full `scripts/verify`, binary smoke, and release asset build/validation; CodeQL, Gitleaks, and Local Identity checks passed.
+- Observation: the first CI attempt for `585d204` failed once in `TestServer_reapplyDeferredGuidePolicyDoesNotCumulativelyShrink`; the unchanged retry passed. Filed as an opportunity to investigate if it recurs. No Go tests were run locally.
