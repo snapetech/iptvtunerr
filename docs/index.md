@@ -9,7 +9,7 @@ tags: [docs, index]
 
 Where to find what. This repo uses the [Diátaxis](https://diataxis.fr/) split by reader need.
 
-**Quick entrypoints:** [README](../README.md) (product overview + doc map) · [CHANGELOG](CHANGELOG.md) (**[Unreleased]** = current engineering slices) · [features.md](features.md) (canonical capability table) · [cli-and-env-reference](reference/cli-and-env-reference.md) · [release-readiness-matrix](explanations/release-readiness-matrix.md) (what is actually proven before a tag) · [project-backlog](explanations/project-backlog.md) (open work index: epics, opportunities, constraints).
+**Quick entrypoints:** [README](../README.md) (product overview + doc map) · [CHANGELOG](CHANGELOG.md) (tagged release summaries and version history) · [release-note fragments](../release-notes/README.md) (curation and release preparation) · [features.md](features.md) (canonical capability table) · [cli-and-env-reference](reference/cli-and-env-reference.md) · [release-readiness-matrix](explanations/release-readiness-matrix.md) (what is actually proven before a tag) · [project-backlog](explanations/project-backlog.md) (open work index: epics, opportunities, constraints).
 
 | Section | Purpose |
 |--------|--------|

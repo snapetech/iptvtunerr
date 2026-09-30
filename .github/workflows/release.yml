@@ -9,6 +9,8 @@ jobs:
     runs-on: [self-hosted, Linux, X64, iptvtunerr]
     permissions:
       contents: write
+    outputs:
+      release_body: ${{ steps.generate-notes.outputs.release_body }}
     steps:
       - uses: actions/checkout@v7
         with:
@@ -21,11 +23,24 @@ jobs:
         with:
           go-version-file: go.mod
 
+      - uses: actions/setup-node@v7
+        with:
+          node-version: '22'
+
       - name: Install verification tools
         run: bash scripts/install-ci-tools.sh ripgrep
 
       - name: Require populated changelog section
         run: ./scripts/verify-changelog-entry.sh release "${GITHUB_REF_NAME}"
+
+      - name: Verify changelog matches release-note fragments
+        run: node scripts/verify-release-changelog.mjs "${GITHUB_REF_NAME}"
+
+      - name: Verify changelog history and tag coverage
+        run: |
+          set -euo pipefail
+          previous_tag="$(git describe --tags --abbrev=0 --match 'v[0-9]*' "${GITHUB_REF_NAME}^")"
+          node scripts/check-changelog-tags.mjs "$previous_tag" "${GITHUB_REF_NAME}"
 
       - name: Verify
         run: ./scripts/verify
@@ -46,11 +61,21 @@ jobs:
         run: ./scripts/verify-release-assets.sh "${GITHUB_REF_NAME}" dist
 
       - name: Generate release notes
+        id: generate-notes
         run: |
           set -euo pipefail
           chmod +x ./scripts/generate-release-notes.sh
           ./scripts/generate-release-notes.sh "${GITHUB_REF_NAME}" dist/release-notes.md
           cat dist/release-notes.md
+          delimiter="release_body_${GITHUB_RUN_ID}_${GITHUB_RUN_ATTEMPT}"
+          while grep -Fxq "$delimiter" dist/release-notes.md; do
+            delimiter+="_"
+          done
+          {
+            echo "release_body<<${delimiter}"
+            cat dist/release-notes.md
+            echo "$delimiter"
+          } >> "$GITHUB_OUTPUT"
 
       - uses: softprops/action-gh-release@v3
         with:
@@ -66,40 +91,88 @@ jobs:
     name: Announce Release to Discord
     needs: [release]
     runs-on: [self-hosted, Linux, X64, iptvtunerr]
+    env:
+      DISCORD_RELEASE_WEBHOOK: ${{ secrets.DISCORD_RELEASE_WEBHOOK }}
+      RELEASE_URL: ${{ github.server_url }}/${{ github.repository }}/releases/tag/${{ github.ref_name }}
+      RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+      RELEASE_BODY: ${{ needs.release.outputs.release_body }}
+      VERSION: ${{ github.ref_name }}
     steps:
       - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: '22'
 
       - name: Install announcement tools
         run: bash scripts/install-ci-tools.sh jq
 
-      - name: Post Discord announcement
-        env:
-          DISCORD_RELEASE_WEBHOOK: ${{ secrets.DISCORD_RELEASE_WEBHOOK }}
-          RELEASE_URL: ${{ github.server_url }}/${{ github.repository }}/releases/tag/${{ github.ref_name }}
-          VERSION: ${{ github.ref_name }}
+      - name: Send Discord release notes
         run: |
           set -euo pipefail
 
-          if [ -z "$DISCORD_RELEASE_WEBHOOK" ]; then
-            echo "DISCORD_RELEASE_WEBHOOK is not configured; skipping Discord announcement."
-            exit 0
-          fi
-
-          payload=$(cat <<EOF
-          {
-            "content": "📡 **Tunerr release published**\nVersion: \`${VERSION}\`\nRelease: ${RELEASE_URL}"
+          test -n "$DISCORD_RELEASE_WEBHOOK" || {
+            echo 'DISCORD_RELEASE_WEBHOOK is required to complete a release.' >&2
+            exit 1
           }
-          EOF
-          )
 
-          if ! curl --fail --silent --show-error \
-            -H "Content-Type: application/json" \
-            -d "$payload" \
-            "$DISCORD_RELEASE_WEBHOOK"; then
-            echo "Discord release announcement failed; continuing without failing the release workflow."
+          chunks_file="$RUNNER_TEMP/iptvtunerr-discord-release-chunks.json"
+          printf '%s' "$RELEASE_BODY" | node scripts/discord-release-notes.mjs --split > "$chunks_file"
+          chunk_count="$(jq 'length' "$chunks_file")"
+          (( chunk_count > 0 )) || {
+            echo 'The generated release notes are empty.' >&2
+            exit 1
+          }
+
+          webhook_url="$DISCORD_RELEASE_WEBHOOK"
+          if [[ "$webhook_url" == *'?'* ]]; then
+            webhook_url+='&wait=true'
+          else
+            webhook_url+='?wait=true'
           fi
+
+          for ((index = 0; index < chunk_count; index += 1)); do
+            description="$(jq -r --argjson index "$index" '.[$index]' "$chunks_file")"
+            number=$((index + 1))
+            title="Release notes (${number}/${chunk_count})"
+            payload_file="$RUNNER_TEMP/iptvtunerr-discord-release-payload.json"
+            jq -n \
+              --arg title "$title" \
+              --arg url "$RELEASE_URL" \
+              --arg description "$description" \
+              --arg run_url "$RUN_URL" \
+              --argjson first "$index" \
+              '{
+                allowed_mentions: { parse: [] },
+                username: "IPTV Tunerr Releases",
+                embeds: [{
+                  title: $title,
+                  url: $url,
+                  description: $description,
+                  color: 5814783,
+                  footer: { text: "IPTV Tunerr release" },
+                  fields: (if $first == 0 then [
+                    { name: "Release assets", value: "Downloads and SHA256SUMS are attached to the GitHub release.", inline: false },
+                    { name: "Workflow", value: $run_url, inline: false }
+                  ] else [] end)
+                }]
+              }' > "$payload_file"
+
+            response="$(curl --fail --silent --show-error \
+              -H 'Content-Type: application/json' \
+              -X POST \
+              --data @"$payload_file" \
+              "$webhook_url")"
+            jq -e --arg description "$description" \
+              '.id != null and .embeds[0].description == $description' \
+              <<< "$response" > /dev/null
+            if (( number < chunk_count )); then
+              sleep 1
+            fi
+          done
 
       - name: Post Matrix announcement
+        if: always()
         env:
           MATRIX_RELEASE_ACCESS_TOKEN: ${{ secrets.TIMEWAYS_MATRIX_RELEASE_TOKEN }}
           MATRIX_BASE_URL: https://matrix.timeways.net

@@ -122,6 +122,7 @@ find . \
   -path './build' -prune -o \
   -path './zeek/pkg' -prune -o \
   -type f \( \
+    -path './release-notes/*' -o \
     -path './.github/release-notes/*' -o \
     -path './docs/dev/release-copy.md' -o \
     -path './docs/release*.md' -o \

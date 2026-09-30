@@ -20,23 +20,60 @@ The primary release workflow builds and uploads:
 - direct `.deb` and `.rpm` Linux package assets;
 - `SHA256SUMS.txt`;
 - `release-manifest.json`;
-- populated release notes generated from `docs/CHANGELOG.md` or the tagged
-  commit range.
+- populated release notes generated from the versioned `docs/CHANGELOG.md`
+  section and tagged commit range.
 
 CI runs the same release asset builder and checksum verifier with a dummy
 version so asset naming, archive layout, and checksum coverage stay tested
 before tags are cut.
 
-Release-relevant changes must update `docs/CHANGELOG.md`. Install local hooks
-with:
+## Release notes and changelog
+
+Each user-facing pull request adds one validated fragment under
+[`release-notes/`](../../release-notes/). Fragments describe the impact for
+users or operators and record their area, required action, and breaking-change
+status. Internal-only pull requests select the explicit no-note option in the
+pull request template. CI rejects missing, malformed, or already-shipped
+fragments. The local tools require Node.js 22; CI installs it automatically.
+
+Preview a pull request's note with:
+
+```bash
+node scripts/preview-release-notes.mjs --base origin/main --head HEAD
+```
+
+Before tagging a release, preview all notes since the previous tag and generate
+the versioned changelog section from those fragments:
+
+```bash
+previous_tag="$(git describe --tags --abbrev=0 --match 'v[0-9]*')"
+node scripts/preview-release-notes.mjs --base "$previous_tag" --head HEAD
+node scripts/prepare-release-changelog.mjs --version vX.Y.Z
+node scripts/check-changelog-tags.mjs
+git diff -- docs/CHANGELOG.md
+```
+
+Commit the prepared changelog section to `main` before creating the matching
+tag. For a direct preparation commit, add `release-note: none` to its commit
+message because the release notes are already in the fragments. The release
+workflow verifies that the tag's changelog section matches the fragments and
+still contains one section for every published release. Previous sections and
+tags are append-only.
+
+The GitHub Release body contains the curated notes, technical commit list,
+checksums, and install notes. Discord receives that same body as bounded embeds;
+the workflow checks Discord's response for every chunk so no later notes are
+silently dropped. A missing webhook or rejected message fails the announcement
+job.
+
+Install local hooks with:
 
 ```bash
 ./scripts/install-git-hooks.sh
 ```
 
-CI enforces the same changelog rule for code, workflow, script, packaging, and
-documentation changes. The release workflow also requires a populated changelog
-section for the exact release tag before GitHub Release notes can be generated.
+The local pre-commit hook validates staged note fragments. CI enforces the
+fragment-or-opt-out choice for pull requests and direct pushes.
 
 ## AUR
 

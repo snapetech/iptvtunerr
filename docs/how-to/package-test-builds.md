@@ -103,7 +103,7 @@ Related release automation:
   - creates the GitHub Release on every `v*` tag push
   - uses `scripts/generate-release-notes.sh` instead of GitHub auto-notes
   - publishes binary assets for `linux/amd64`, `linux/arm64`, `linux/arm/v7`, `darwin/amd64`, `darwin/arm64`, `windows/amd64`, and `windows/arm64`
-  - release notes prefer the matching `docs/CHANGELOG.md` tag section, then `Unreleased`, then fall back to the exact commit range for the tag
+  - release notes prefer the matching `docs/CHANGELOG.md` tag section, which is prepared from validated fragments, then fall back to the exact commit range for the tag; the `Unreleased` fallback remains for older hand-prepared tags
 - `.github/workflows/docker.yml`
   - pushes GHCR/Docker Hub multi-arch images (`linux/amd64`, `linux/arm64`, `linux/arm/v7`)
   - publishes versioned image tags on `v*` pushes

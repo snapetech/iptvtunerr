@@ -449,3 +449,11 @@
 - Reran `Publish Chocolatey` for `v0.1.68` as run `28960144574`; the run passed, Chocolatey returned `Created`/`Your package was pushed`, raw `.nupkg` inspection confirmed the moderation metadata and nested executable path are present, and the public Chocolatey page now shows status `Updated` with July 8, 2026 update/published dates.
 - Updated the release-channel guide and changelog with the moderation state and remediation.
 - Verification: `xmllint` on the nuspec and SVG, PowerShell parser checks, extracted workflow parser checks after replacing GitHub expressions, extracted Bash run-block syntax checks, simulated `Pack and push` dry run against old `v0.1.85` tag contents, local Bash prepare-step simulation, local packed-nupkg metadata inspection, local `dotnet pack` smoke for the Chocolatey nuspec, install-script shim-path stub test, `git diff --check`, local identity scan, and full `./scripts/verify` passed. `scripts/verify` regenerated tracked council scan files.
+
+## 2026-09-30 - Add curated release notes and rich Discord announcements
+
+- Ported SeerrNG's validated release-note fragment format, PR template, preview, staged validation, and CI fragment-or-internal-only gate to Tunerr. Fragments record category, audience, area, required action, and breaking status and are scanned for private local identity terms.
+- Added release preparation tooling that prepends a versioned changelog section from fragments since the preceding tag while retaining all older sections. CI and tag release checks verify tag coverage, immutable published changelog sections, append-only shipped fragments, and exact fragment-to-changelog content.
+- Changed the Discord release job to send the full GitHub release body as bounded embeds, verify each webhook response, and fail the announcement when the required secret or a message is missing. The existing Matrix message remains unchanged; a follow-up opportunity is filed.
+- Updated release documentation and removed stale references that described an `[Unreleased]` section as the current backlog. No published tag or historical changelog section was changed, and no release was created.
+- Verification: Node and Bash syntax checks, CI/Release YAML parsing, and `git diff --check` passed. Full `scripts/verify` and Go tests were not run.

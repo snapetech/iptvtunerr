@@ -21,7 +21,6 @@ This page is the **single entry point** for “what is left to work on” across
 | [EPIC-operator-completion](../epics/EPIC-operator-completion.md) | **Active completion umbrella** for all non-postgres, non-admin-plane operator work across LP/ACC/PM/LH/PAR/HR/VODX/REC lineages. |
 | [memory-bank/known_issues.md](../../memory-bank/known_issues.md) | **Operational** limitations, cluster quirks, and design tradeoffs (not always a code change in *this* repo). |
 | [docs-gaps.md](../docs-gaps.md) | **Documentation** gaps (currently none tracked at High/Medium/Low — see Resolved table). |
-| [CHANGELOG.md](../CHANGELOG.md) **[Unreleased]** | **Current engineering** slices landing on `main`. |
 | [features.md](../features.md) § **Not supported / limits** | **Intentional** non-goals (e.g. public admin plane, wizard >479 preselect, VODFS on non-Linux). |
 
 When you **close** a theme, update the relevant epic/opportunity row and, if it was listed in §2 below, trim or mark it here in the same PR.

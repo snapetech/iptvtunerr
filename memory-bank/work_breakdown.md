@@ -1,5 +1,18 @@
 # Work breakdown
 
+## 2026-09-30 - Structured release notes and Discord announcements
+
+Objective: bring Tunerr's release-note curation, changelog preparation, and Discord announcement quality in line with Seerrng while retaining all published history.
+
+| Story ID | Scope | Status |
+| --- | --- | --- |
+| RELNOTE-001 | Add validated append-only release-note fragments and preview/validation tooling; require a fragment or explicit internal-only opt-out in CI. | Completed |
+| CHANGELOG-001 | Prepare versioned changelog sections from fragments since the previous tag and audit that each existing release tag has one preserved changelog section. | Completed |
+| DISCORD-001 | Send the generated GitHub release body through bounded, verified Discord embeds after release publication. | Completed |
+| DOCS-001 | Document fragment authorship and the release preparation/announcement flow; preserve private-identity restrictions. | Completed |
+
+Guardrail: do not rewrite or move existing release tags or changelog history, publish a new release, or change Matrix announcement behavior in this work.
+
 ## 2026-09-30 - PR/security sweep, tester report, and v0.1.86
 
 Objective: incorporate all currently open PRs, resolve repository CodeQL/dependency findings, fix the tester-reported WebUI/provider state mismatch, then cut the next patch release.

@@ -1,4 +1,13 @@
-**Current (2026-09-30):** Reconcile the GitLab mirror after publishing `v0.1.86`; preserve all published history.
+**Current (2026-09-30):** Add structured release notes, changelog preparation, and full-content Discord release announcements based on Seerrng's workflow.
+
+- Goal: require validated, append-only user-facing release-note fragments and use the same curated release body in the checked-in changelog, GitHub Release, and Discord announcement.
+- Scope: release-note fragment schema and tooling, PR/CI gates, append-only changelog preparation and tag coverage checks, release workflow Discord formatting, docs and memory closeout. Preserve all existing published changelog sections and release tags; do not publish a release as part of this task.
+- Assumptions: Tunerr's existing versioned changelog remains the historical record; new release sections are prepared from fragments since the preceding tag before the next tag is created. Discord receives the full release body in bounded embeds; Matrix behavior remains out of scope.
+- Done: new fragments validate audience, area, action, category, breaking status, and release-ready body; CI requires a fragment or explicit internal-only opt-out; release prep preserves old changelog history; Discord verifies delivery of every note chunk. Updated release docs and removed stale references to an `[Unreleased]` backlog section.
+- Verification: `node --check` on all `scripts/*.mjs`, `bash -n` on changed shell scripts/hooks, YAML parsing for CI and Release workflows, and `git diff --check` passed. The Go test suite/full `scripts/verify` was not run in this tooling-only task. No tag or release was created.
+- Next: stage and commit the release tooling, push to GitHub `main` as a normal fast-forward, and inspect the resulting CI status. Do not force-push or create a release tag.
+
+**Paused (2026-09-30):** Reconcile the GitLab mirror after publishing `v0.1.86`; preserve all published history.
 
 - Goal: sync GitHub's verified `v0.1.86` release to GitLab without rewriting the GitLab-only donation-links commit.
 - Scope: safely merge or fast-forward the GitLab mirror only. Do not change the published release, modify the identity scanner, or force-push.
@@ -12,7 +21,7 @@
 - Found: the pre-release Local Identity Leak Check on `c9feeb4` matched five `Co-authored-by` trailer lines. After publishing `v0.1.86`, the scanner's latest-tag baseline advanced and the post-release checks on `1fa89cd` and `038c564` passed without rewriting history or changing the scanner. The historical lines remain in their original commits; preserve them as directed.
 - Found: merge candidate `4b5d293` preserves the GitLab-only donation-links commit and includes GitHub `main` through `4e98af0`; it passed `./scripts/verify`, including frontend build, tests, and binary smoke.
 - Blocked: a normal push of `4b5d293` was rejected by GitLab with a multi-pack-index signature/index-pack error. No GitLab ref was changed. Do not retry until GitLab's server-side repository index is repaired and its current refs can be read.
-- Next: after GitLab repair, read its current refs, confirm the donation-links commit is still present, then create a fresh merge from the then-current GitHub `main` and push only as a normal fast-forward. Push the existing `v0.1.86` tag separately after the branch update; do not reuse stale candidate `4b5d293`.
+- Paused next: after GitLab repair, read its current refs, confirm the donation-links commit is still present, then create a fresh merge from the then-current GitHub `main` and push only as a normal fast-forward. Push the existing `v0.1.86` tag separately after the branch update; do not reuse stale candidate `4b5d293`.
 
 **Current (2026-07-08):** Address Chocolatey moderation feedback.
 

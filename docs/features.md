@@ -11,7 +11,7 @@ Canonical feature list for the current app.
 
 See also:
 - [README](../README.md)
-- [Docs index](index.md) · [CHANGELOG](CHANGELOG.md) (version history + **[Unreleased]** slices)
+- [Docs index](index.md) · [CHANGELOG](CHANGELOG.md) (tagged release summaries and version history) · [release-note fragments](../release-notes/README.md) (notes for the next tag)
 - [cli-and-env-reference](reference/cli-and-env-reference.md)
 - [hls-mux-toolkit](reference/hls-mux-toolkit.md) · [plex-livetv-http-tuning](reference/plex-livetv-http-tuning.md)
 - [plex-dvr-lifecycle-and-api](reference/plex-dvr-lifecycle-and-api.md)

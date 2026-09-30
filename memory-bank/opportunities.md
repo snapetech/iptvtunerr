@@ -6,3 +6,4 @@
 - Public Actions log hygiene: repo-controlled COPR upload logs now avoid publishing home-directory SRPM paths, but third-party self-hosted runner setup actions still print runner checkout/tool paths in job logs. A broader fix would migrate public release jobs to a generic runner account/path or GitHub-hosted runners where compatible. Confidence: moderate.
 - Windows channel follow-up: native Windows host proof is still recommended before broad Windows parity claims.
 - Release package follow-up: first GitHub Actions run should confirm Ubuntu runner `.deb`/`.rpm` direct package asset generation and remote channel publish responses end to end.
+- Release announcement parity: Matrix still receives a short version/link message instead of the curated release body; consider sharing the generated notes there in a later scope. Confidence: high.

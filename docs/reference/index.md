@@ -11,8 +11,8 @@ Dense and factual. Add CLI reference, env vars, API docs as needed.
 
 | Doc | Description |
 |-----|-------------|
-| [features.md](../features.md) | Canonical user-facing capability list (cross-check with CHANGELOG **[Unreleased]** and README **Recent Changes**). |
-| [CHANGELOG.md](../CHANGELOG.md) | Version history; **[Unreleased]** tracks mux, HR/LP, deck, and doc sync slices. |
+| [features.md](../features.md) | Canonical user-facing capability list (cross-check with tagged CHANGELOG sections and README **Recent Changes**). |
+| [CHANGELOG.md](../CHANGELOG.md) | Version history; each new section is prepared from validated release-note fragments before its tag. |
 | [../explanations/release-readiness-matrix.md](../explanations/release-readiness-matrix.md) | What the repo actually proves before a tag: unit, smoke, focused, and optional host lanes. |
 | [cli-and-env-reference](cli-and-env-reference.md) | Canonical hand-maintained commands, flags, and environment variables (multi-DVR, mux, HTTP pool, web UI, recorder, …). |
 | [transcode-profiles](transcode-profiles.md) | Gateway transcode profile names, HDHR-style aliases, `?profile=`, optional `?mux=fmp4` / `?mux=hls`. |

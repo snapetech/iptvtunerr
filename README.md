@@ -1520,7 +1520,7 @@ docs/                 Reference, how-to guides, runbooks
 
 **Maps (start here)**
 - [`docs/index.md`](docs/index.md) — Diátaxis index: tutorials, how-to, reference, runbooks, epics
-- [`docs/CHANGELOG.md`](docs/CHANGELOG.md) — Release notes and **[Unreleased]** work breakdown (mux, HR/LP slices, web UI, …)
+- [`docs/CHANGELOG.md`](docs/CHANGELOG.md) — Tagged release summaries and version history; the next section is prepared from validated release-note fragments
 - [`docs/features.md`](docs/features.md) — Canonical capability table (kept in sync with major user-facing behavior)
 
 **Reference**
