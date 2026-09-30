@@ -1,3 +1,11 @@
+## 2026-09-30 - Publish v0.1.86 with security and tester fixes
+
+- Merged GitHub PRs #30-#39 and closed #40 as superseded by the already-landed secure dependency update.
+- Fixed guide diagnostic path injection, updated vulnerable web dependencies, and fixed the tester-reported Jellyfin WebUI guide path and runtime lineup visibility.
+- Published GitHub release `v0.1.86` from `c9feeb4` with binaries, archives, Linux packages, checksums, and generated release notes.
+- Verification: `./scripts/verify` and `./scripts/release-readiness.sh` passed; release workflow `36777506406` passed verify, release smoke, asset build, and asset checks; CodeQL and Gitleaks passed; open code-scanning alerts and `npm audit` findings are zero.
+- Remaining: Local Identity Leak Check matches five existing co-author trailer lines. The user directed that published history remain intact, so no rewrite or scanner suppression was performed. The GitLab mirror still needs a safe normal merge after its ref/index error is repaired.
+
 ## 2026-05-29 - Fix Plex Web Live TV transcode ingress 404
 
 - Found the remaining tester `s1002 (Network)` failure was not stale DVR state or tuner output: Plex Web's `/video/:/transcode/universal/*` and `/:/timeline` calls were returning Caddy's 9-byte `404` immediately after a successful Live TV tune.

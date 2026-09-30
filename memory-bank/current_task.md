@@ -1,18 +1,17 @@
-**Current (2026-09-30):** Preserve published history, finish the GitHub `v0.1.86` release, and record remaining scan/remote blockers.
+**Current (2026-09-30):** Reconcile the GitLab mirror after publishing `v0.1.86`; preserve all published history.
 
-- Goal: land the open PR/security work, fix the Jellyfin tester's WebUI report, then publish a verified release.
-- Scope: GitHub PRs #30-#40, the guide diagnostic path-injection finding, provider/guide WebUI data flow, release changelog/version, and required memory docs. Preserve published GitHub and GitLab history.
-- Assumptions: `v0.1.85` is the latest release, so the next patch release is `v0.1.86`. Do not bypass substantive checks, rewrite published history, or force-push a divergent GitLab branch.
-- Rollback: do not move or delete existing tags, rewrite published commits, or change production hosts. Push the release commit as a fast-forward and publish only the new `v0.1.86` tag.
-- Plan: resolve PRs and alerts; verify the tester-facing WebUI fix; finalize docs/changelog; run release readiness; push by fast-forward to GitHub; tag/publish and confirm release and scan state. Leave the GitLab-only commit untouched until its ref can be read safely.
-- Done: merged PRs #30-#39. Closed PR #40 as superseded because `43d295d` already includes React Router `7.18.4`, while the remaining PR diff downgrades patched `nanoid` `3.3.19` to `3.3.16`.
-- Done: `43d295d` makes all three guide diagnostics use only `IPTV_TUNERR_XMLTV_ALIASES`; requests containing an `aliases` override receive JSON 400 responses. The commit is pushed to GitHub, and Dependabot alerts are clear.
-- Done: `1357599` fixes both WebUI XMLTV fetchers to request `/guide.xml`, adds a read-only Live lineup view, and explains that runtime `.env` providers do not create WebUI database records. The commit is pushed to GitHub.
-- Done: focused WebUI tests, `npm audit --audit-level=low` (zero findings), embedded WebUI build, full `./scripts/verify`, and `./scripts/release-readiness.sh` pass.
-- Done: current-main CodeQL analysis uploaded successfully and GitHub now reports zero open code-scanning alerts; Dependabot and secret-scanning alert counts are also zero. The current-main Gitleaks scan step passed.
-- Found: current-main Local Identity Leak Check failed because five `Co-authored-by` trailer lines in recent dependency-update commits contain a token matched by the private identity denylist. The local checker reproduces the same five-line finding. The user explicitly directed that published history must not be rewritten, so retain these commits and report this workflow check as unresolved; do not weaken or bypass the scanner.
-- In progress: GitLab rejected the GitHub commits as non-fast-forward, and its SSH Git service fails ref listing with a multi-pack-index signature error. Its cached branch contains a donation-links commit absent from GitHub; preserve that history and do not force-push.
-- Next: push the existing release-prep commit to GitHub by fast-forward and publish `v0.1.86` after release gates pass. Report the Local Identity Leak Check as unresolved due to the user's history-preservation instruction. Retry GitLab only if its current ref can be read and a normal fast-forward or merge preserves the donation-links commit.
+- Goal: sync GitHub's verified `v0.1.86` release to GitLab without rewriting the GitLab-only donation-links commit.
+- Scope: safely merge or fast-forward the GitLab mirror only. Do not change the published release, modify the identity scanner, or force-push.
+- Assumptions: GitHub `main` is authoritative for the release; retain the extra GitLab commit and all existing commit IDs.
+- Rollback: never move/delete release tags or force-update either remote. If GitLab cannot read or accept a normal update, stop and leave its branch unchanged.
+- Done: merged PRs #30-#39 and closed #40 as superseded because the secure React Router `7.18.4` update was already landed and the remaining diff downgraded patched `nanoid` `3.3.19` to `3.3.16`.
+- Done: `43d295d` closes the guide diagnostic path-injection finding by rejecting request-supplied alias overrides; Dependabot alerts are clear.
+- Done: `1357599` fixes both WebUI XMLTV fetchers to request `/guide.xml`, adds the read-only Live lineup view, and explains the separation between runtime `.env` data and WebUI database records.
+- Done: published GitHub release [`v0.1.86`](https://github.com/snapetech/iptvtunerr/releases/tag/v0.1.86) from `c9feeb4`; release verification, smoke, asset build, and asset validation passed.
+- Done: current CodeQL analysis and Gitleaks passed; GitHub reports zero open code-scanning alerts. `npm audit` reports zero vulnerabilities.
+- Found: Local Identity Leak Check still matches five `Co-authored-by` trailer lines in already-published dependency-update commits. The user explicitly directed that published history must not be rewritten; leave the check unresolved and do not weaken or bypass the scanner.
+- In progress: GitLab's cached `main` has one extra donation-links commit. GitLab ref listing and tag push failed with a multi-pack-index signature error. A normal merge candidate is being prepared to preserve that commit; push only if the server accepts it without a force update.
+- Next: validate and attempt the GitLab merge candidate using a normal push. If the server rejects it or remains unreadable, leave GitLab untouched and document that external repair is required.
 
 **Current (2026-07-08):** Address Chocolatey moderation feedback.
 
