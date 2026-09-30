@@ -341,14 +341,24 @@ func plexResolvedWebsafeProfileName(clientClass string) string {
 	return forcedWebsafeProfileName()
 }
 
-func applyPlexAdaptPolicy(policy plexAdaptPolicy, reason, clientClass string) (bool, bool, string, string, string) {
+func (g *Gateway) applyPlexAdaptPolicy(
+	policy plexAdaptPolicy,
+	reason, clientClass, channelID string,
+	channel *catalog.LiveChannel,
+) (bool, bool, string, string, string) {
 	switch policy {
 	case plexAdaptPolicyDirect:
 		return true, false, "", reason, clientClass
 	case plexAdaptPolicyInherit:
 		return false, false, "", reason, clientClass
 	default:
-		return true, true, plexResolvedWebsafeProfileName(clientClass), reason, clientClass
+		profile := plexResolvedWebsafeProfileName(clientClass)
+		if strings.EqualFold(clientClass, "internal") && channel != nil {
+			if channelProfile, ok := g.firstProfileOverride(channelID, channel.GuideNumber, channel.TVGID); ok {
+				profile = channelProfile
+			}
+		}
+		return true, true, profile, reason, clientClass
 	}
 }
 
@@ -376,7 +386,7 @@ func (g *Gateway) requestAdaptation(ctx context.Context, r *http.Request, channe
 	info, err := g.resolvePlexClient(ctx, hints, r.UserAgent())
 	if err != nil {
 		log.Printf("gateway: channel=%q id=%s plex-client-resolve err=%v", channel.GuideName, channelID, err)
-		return applyPlexAdaptPolicy(plexResolveErrorPolicy(), "resolve-error-websafe", "unknown")
+		return g.applyPlexAdaptPolicy(plexResolveErrorPolicy(), "resolve-error-websafe", "unknown", channelID, channel)
 	}
 	clientClass := plexClientClass(info)
 	if row, ok := g.lookupAutopilotDecision(channel, clientClass); ok {
@@ -384,9 +394,9 @@ func (g *Gateway) requestAdaptation(ctx context.Context, r *http.Request, channe
 	}
 	if info == nil {
 		if hints.SessionIdentifier == "" && hints.ClientIdentifier == "" && looksLikePlexInternalFetcherUserAgent(r.UserAgent()) {
-			return applyPlexAdaptPolicy(plexInternalFetcherPolicy(), "ambiguous-internal-fetcher-websafe", "internal")
+			return g.applyPlexAdaptPolicy(plexInternalFetcherPolicy(), "ambiguous-internal-fetcher-websafe", "internal", channelID, channel)
 		}
-		return applyPlexAdaptPolicy(plexUnknownClientPolicy(), "unknown-client-websafe", clientClass)
+		return g.applyPlexAdaptPolicy(plexUnknownClientPolicy(), "unknown-client-websafe", clientClass, channelID, channel)
 	}
 	log.Printf("gateway: channel=%q id=%s plex-client-resolved class=%s sid=%t cid=%t product=%t platform=%t title=%t",
 		channel.GuideName, channelID, clientClass,
@@ -399,10 +409,10 @@ func (g *Gateway) requestAdaptation(ctx context.Context, r *http.Request, channe
 		return true, true, plexResolvedWebsafeProfileName(clientClass), "resolved-web-client", clientClass
 	}
 	if looksLikePlexInternalFetcherUserAgent(r.UserAgent()) {
-		return applyPlexAdaptPolicy(plexInternalFetcherPolicy(), "internal-fetcher-websafe", "internal")
+		return g.applyPlexAdaptPolicy(plexInternalFetcherPolicy(), "internal-fetcher-websafe", "internal", channelID, channel)
 	}
 	if looksLikePlexInternalFetcher(info.Product, info.Platform) {
-		return applyPlexAdaptPolicy(plexInternalFetcherPolicy(), "internal-fetcher-websafe", clientClass)
+		return g.applyPlexAdaptPolicy(plexInternalFetcherPolicy(), "internal-fetcher-websafe", clientClass, channelID, channel)
 	}
 	return true, false, "", "resolved-nonweb-client", clientClass
 }
