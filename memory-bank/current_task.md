@@ -12,7 +12,7 @@
 - Found: Local Identity Leak Check still matches five `Co-authored-by` trailer lines in already-published dependency-update commits. The user explicitly directed that published history must not be rewritten; leave the check unresolved and do not weaken or bypass the scanner.
 - Found: merge candidate `4b5d293` preserves the GitLab-only donation-links commit and includes GitHub `main` through `4e98af0`; it passed `./scripts/verify`, including frontend build, tests, and binary smoke.
 - Blocked: a normal push of `4b5d293` was rejected by GitLab with a multi-pack-index signature/index-pack error. No GitLab ref was changed. Do not retry until GitLab's server-side repository index is repaired and its current refs can be read.
-- Next: after GitLab repair, read its current refs, confirm the donation-links commit is still present, then push `4b5d293` only if the update is a normal fast-forward. Push the existing `v0.1.86` tag separately after the branch update.
+- Next: after GitLab repair, read its current refs, confirm the donation-links commit is still present, then create a fresh merge from the then-current GitHub `main` and push only as a normal fast-forward. Push the existing `v0.1.86` tag separately after the branch update; do not reuse stale candidate `4b5d293`.
 
 **Current (2026-07-08):** Address Chocolatey moderation feedback.
 
