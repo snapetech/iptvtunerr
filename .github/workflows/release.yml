@@ -10,7 +10,7 @@ jobs:
     permissions:
       contents: write
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
         with:
           fetch-depth: 0
 
@@ -67,7 +67,7 @@ jobs:
     needs: [release]
     runs-on: [self-hosted, Linux, X64, iptvtunerr]
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
 
       - name: Install announcement tools
         run: bash scripts/install-ci-tools.sh jq
@@ -183,7 +183,7 @@ jobs:
       actions: write
       contents: read
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
 
       - name: Install dispatch tools
         run: bash scripts/install-ci-tools.sh gh
