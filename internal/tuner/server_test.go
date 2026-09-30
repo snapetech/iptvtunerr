@@ -4199,6 +4199,7 @@ func TestServer_guideDiagnosticsRequireXMLTV(t *testing.T) {
 }
 
 func TestServer_guideDiagnosticsFailuresStayJSON(t *testing.T) {
+	t.Setenv("IPTV_TUNERR_XMLTV_ALIASES", "/definitely/missing-aliases.json")
 	s := &Server{
 		xmltv: &XMLTV{
 			Channels:  []catalog.LiveChannel{{ChannelID: "1", GuideNumber: "101", GuideName: "News One"}},
@@ -4206,7 +4207,7 @@ func TestServer_guideDiagnosticsFailuresStayJSON(t *testing.T) {
 		},
 	}
 
-	req := httptest.NewRequest(http.MethodGet, "/guide/health.json?aliases=/definitely/missing-aliases.json", nil)
+	req := httptest.NewRequest(http.MethodGet, "/guide/health.json", nil)
 	w := httptest.NewRecorder()
 	s.serveGuideHealth().ServeHTTP(w, req)
 	if w.Code != http.StatusBadGateway {
@@ -4233,6 +4234,37 @@ func TestServer_guideDiagnosticsFailuresStayJSON(t *testing.T) {
 	}
 	if !strings.Contains(w.Body.String(), `"error"`) {
 		t.Fatalf("method body=%s", w.Body.String())
+	}
+}
+
+func TestServer_guideDiagnosticsRejectAliasQueryOverride(t *testing.T) {
+	s := &Server{
+		xmltv: &XMLTV{
+			Channels:  []catalog.LiveChannel{{ChannelID: "1", GuideNumber: "101", GuideName: "News One"}},
+			cachedXML: []byte(`<?xml version="1.0" encoding="UTF-8"?><tv></tv>`),
+		},
+	}
+	tests := []struct {
+		name    string
+		path    string
+		handler http.Handler
+	}{
+		{name: "guide health", path: "/guide/health.json", handler: s.serveGuideHealth()},
+		{name: "epg doctor", path: "/guide/doctor.json", handler: s.serveEPGDoctor()},
+		{name: "guide aliases", path: "/guide/aliases.json", handler: s.serveSuggestedAliasOverrides()},
+	}
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			req := httptest.NewRequest(http.MethodGet, tc.path+"?aliases=/etc/passwd", nil)
+			w := httptest.NewRecorder()
+			tc.handler.ServeHTTP(w, req)
+			if w.Code != http.StatusBadRequest {
+				t.Fatalf("status=%d body=%s", w.Code, w.Body.String())
+			}
+			if !strings.Contains(w.Body.String(), "IPTV_TUNERR_XMLTV_ALIASES") {
+				t.Fatalf("body=%s", w.Body.String())
+			}
+		})
 	}
 }
 

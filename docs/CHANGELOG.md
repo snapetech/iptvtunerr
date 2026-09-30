@@ -13,6 +13,10 @@ All notable changes to IPTV Tunerr are documented here. Repo: [github.com/snapet
 
 ## [Unreleased]
 
+### Security / Dependencies
+- **Guide diagnostics no longer accept caller-supplied alias file paths:** `/guide/health.json`, `/guide/doctor.json`, and `/guide/aliases.json` now use the configured alias source, closing the CodeQL path-injection flow from query parameters to local file reads.
+- **Web dependencies include security fixes:** React Router is updated to `7.18.4` and the lockfile resolves `nanoid` to `3.3.19`; `npm audit` reports zero vulnerabilities.
+
 ### CI / Packaging
 - **Chocolatey publishing uses `actions/setup-dotnet@v6`:** the package workflow tracks the current .NET setup action release.
 - **GitHub Actions use `actions/setup-go@v7`:** Go workflows now use the current setup action release.

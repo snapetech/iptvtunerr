@@ -190,6 +190,14 @@ func writeGuideDiagnosticsJSONError(w http.ResponseWriter, status int, msg strin
 	_, _ = w.Write([]byte(fmt.Sprintf("{\"error\":%q}\n", msg)))
 }
 
+func configuredGuideDiagnosticsAliasesRef(w http.ResponseWriter, r *http.Request) (string, bool) {
+	if strings.TrimSpace(r.URL.Query().Get("aliases")) != "" {
+		writeGuideDiagnosticsJSONError(w, http.StatusBadRequest, "aliases must be configured with IPTV_TUNERR_XMLTV_ALIASES")
+		return "", false
+	}
+	return strings.TrimSpace(os.Getenv("IPTV_TUNERR_XMLTV_ALIASES")), true
+}
+
 func (s *Server) serveGuideHealth() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.Method != http.MethodGet {
@@ -200,9 +208,9 @@ func (s *Server) serveGuideHealth() http.Handler {
 			writeGuideDiagnosticsJSONError(w, http.StatusServiceUnavailable, "xmltv unavailable")
 			return
 		}
-		aliasesRef := strings.TrimSpace(r.URL.Query().Get("aliases"))
-		if aliasesRef == "" {
-			aliasesRef = strings.TrimSpace(os.Getenv("IPTV_TUNERR_XMLTV_ALIASES"))
+		aliasesRef, ok := configuredGuideDiagnosticsAliasesRef(w, r)
+		if !ok {
+			return
 		}
 		rep, err := s.xmltv.GuideHealth(time.Now(), aliasesRef)
 		if err != nil {
@@ -224,9 +232,9 @@ func (s *Server) serveEPGDoctor() http.Handler {
 			writeGuideDiagnosticsJSONError(w, http.StatusServiceUnavailable, "xmltv unavailable")
 			return
 		}
-		aliasesRef := strings.TrimSpace(r.URL.Query().Get("aliases"))
-		if aliasesRef == "" {
-			aliasesRef = strings.TrimSpace(os.Getenv("IPTV_TUNERR_XMLTV_ALIASES"))
+		aliasesRef, ok := configuredGuideDiagnosticsAliasesRef(w, r)
+		if !ok {
+			return
 		}
 		rep, err := s.xmltv.EPGDoctor(time.Now(), aliasesRef)
 		if err != nil {
@@ -248,9 +256,9 @@ func (s *Server) serveSuggestedAliasOverrides() http.Handler {
 			writeGuideDiagnosticsJSONError(w, http.StatusServiceUnavailable, "xmltv unavailable")
 			return
 		}
-		aliasesRef := strings.TrimSpace(r.URL.Query().Get("aliases"))
-		if aliasesRef == "" {
-			aliasesRef = strings.TrimSpace(os.Getenv("IPTV_TUNERR_XMLTV_ALIASES"))
+		aliasesRef, ok := configuredGuideDiagnosticsAliasesRef(w, r)
+		if !ok {
+			return
 		}
 		rep, err := s.xmltv.EPGDoctor(time.Now(), aliasesRef)
 		if err != nil {

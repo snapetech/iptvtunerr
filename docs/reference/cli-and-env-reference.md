@@ -2073,6 +2073,7 @@ Fetches EPG directly from your IPTV provider using existing credentials. No sepa
 - `IPTV_TUNERR_GUIDE_INPUT_ALLOWED_URLS` — comma-separated extra exact remote XMLTV / alias URLs allowed beyond the configured provider, XMLTV, or HDHomeRun guide URLs. Use this only when those sources are intentional and stable.
 - `IPTV_TUNERR_GUIDE_INPUT_ROOTS` — comma-separated safe root directories for local XMLTV / alias files. Relative paths resolve under the current working directory by default; absolute paths outside these roots are rejected.
 - `IPTV_TUNERR_XMLTV_ALIASES` — optional file path or `http(s)` URL for alias overrides used in deterministic EPG repair
+- Guide diagnostics (`/guide/health.json`, `/guide/doctor.json`, `/guide/aliases.json`) use this configured alias source; request-supplied `aliases` paths are rejected.
 - `IPTV_TUNERR_CATCHUP_GUIDE_POLICY` — optional `off|healthy|strict`; applies guide-quality filtering to `/guide/capsules.json`, `catchup-capsules`, and `catchup-publish`
 - `IPTV_TUNERR_GUIDE_POLICY` — optional `off|healthy|strict`; applies guide-quality filtering to runtime lineups once guide health is cached. `healthy` drops channels with no real programmes, placeholder-only rows, or sparse real coverage below the provider short-EPG minimum.
 - `IPTV_TUNERR_CATCHUP_REPLAY_URL_TEMPLATE` — optional source-backed replay URL template for capsules/publishing; when set, replay URLs are rendered with programme and channel tokens instead of falling back to live-channel launchers
