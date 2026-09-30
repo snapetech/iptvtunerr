@@ -60,6 +60,13 @@ workflow verifies that the tag's changelog section matches the fragments and
 still contains one section for every published release. Previous sections and
 tags are append-only.
 
+The historical coverage audit and the two existing tags without published
+GitHub Releases are documented in the
+[release history audit](../explanations/release-history-audit.md). When adding a
+no-release exception, first verify that the tag has no published GitHub Release
+and record the reason in `scripts/changelog-tag-exceptions.json`. Remove the
+exception when a changelog section is added.
+
 The GitHub Release body contains the curated notes, technical commit list,
 checksums, and install notes. Discord receives that same body as bounded embeds;
 the workflow checks Discord's response for every chunk so no later notes are

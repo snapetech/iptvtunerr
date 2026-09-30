@@ -1,11 +1,13 @@
-**Current (2026-09-30):** Add structured release notes, changelog preparation, and full-content Discord release announcements based on Seerrng's workflow.
+**Current (2026-09-30):** Complete structured release notes, changelog preparation, and full-content Discord announcements based on Seerrng's workflow; fix the historical tag coverage gap found by CI.
 
 - Goal: require validated, append-only user-facing release-note fragments and use the same curated release body in the checked-in changelog, GitHub Release, and Discord announcement.
-- Scope: release-note fragment schema and tooling, PR/CI gates, append-only changelog preparation and tag coverage checks, release workflow Discord formatting, docs and memory closeout. Preserve all existing published changelog sections and release tags; do not publish a release as part of this task.
+- Scope: release-note fragment schema and tooling, PR/CI gates, append-only changelog preparation and tag coverage checks, release workflow Discord formatting, historical changelog coverage audit, docs and memory closeout. Preserve all existing published changelog sections and release tags; do not publish a release as part of this task.
 - Assumptions: Tunerr's existing versioned changelog remains the historical record; new release sections are prepared from fragments since the preceding tag before the next tag is created. Discord receives the full release body in bounded embeds; Matrix behavior remains out of scope.
 - Done: new fragments validate audience, area, action, category, breaking status, and release-ready body; CI requires a fragment or explicit internal-only opt-out; release prep preserves old changelog history; Discord verifies delivery of every note chunk. Updated release docs and removed stale references to an `[Unreleased]` backlog section.
-- Verification: `node --check` on all `scripts/*.mjs`, `bash -n` on changed shell scripts/hooks, YAML parsing for CI and Release workflows, and `git diff --check` passed. The Go test suite/full `scripts/verify` was not run in this tooling-only task. No tag or release was created.
-- Next: stage and commit the release tooling, push to GitHub `main` as a normal fast-forward, and inspect the resulting CI status. Do not force-push or create a release tag.
+- Found: the first GitHub CI run passed release-fragment validation but failed because 17 published releases lacked changelog sections; two additional tags had no published GitHub Release.
+- In progress: backfill only dated links to those 17 immutable GitHub Release bodies, document the two no-release exceptions and their maintenance rule, then rerun the changelog coverage gate and static checks.
+- Verification so far: `node --check` on all `scripts/*.mjs`, `bash -n` on changed shell scripts/hooks, YAML parsing for CI and Release workflows, and `git diff --check` passed for the initial tooling commit. The Go test suite/full `scripts/verify` was not run in this tooling-only task. No tag or release was created.
+- Next: finish targeted checks, commit and push a normal fast-forward follow-up to GitHub `main`, then inspect the resulting CI status. Do not force-push or create a release tag.
 
 **Paused (2026-09-30):** Reconcile the GitLab mirror after publishing `v0.1.86`; preserve all published history.
 

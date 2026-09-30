@@ -292,6 +292,11 @@ All notable changes to IPTV Tunerr are documented here. Repo: [github.com/snapet
 - **Manual Plex Live TV proxy implementation guidance:** added a Tunerr-free implementation checklist plus nginx+njs examples that mirror the hardened owner-token elevation allowlist and rewrite both query-string and header token locations for eligible Live TV reads.
 - **Legacy Python Plex proxy is functional again:** `scripts/plex-media-providers-label-proxy.py` now supports hardened `--elevate-live-tv` owner-token injection, XML `allowTuners` hint rewrites, provider-scoped label rewrites, and docs that describe it as a standalone fallback instead of an unmaintained label-only prototype.
 
+## [v0.1.57] - 2026-05-08
+
+### Original release notes
+- [Read the published GitHub release notes](https://github.com/snapetech/iptvtunerr/releases/tag/v0.1.57).
+
 ## [v0.1.56] — 2026-05-07
 
 ### Security / Plex proxy hardening
@@ -365,6 +370,16 @@ All notable changes to IPTV Tunerr are documented here. Repo: [github.com/snapet
 
 ### Build / release
 - **Release binaries build on Windows again:** provider-account shared lease locking now uses platform-specific helpers, keeping Unix `flock` behavior for cluster deployments while allowing Windows release artifacts to compile.
+
+## [v0.1.48] - 2026-04-18
+
+### Original release notes
+- [Read the published GitHub release notes](https://github.com/snapetech/iptvtunerr/releases/tag/v0.1.48).
+
+## [v0.1.47] - 2026-04-18
+
+### Original release notes
+- [Read the published GitHub release notes](https://github.com/snapetech/iptvtunerr/releases/tag/v0.1.47).
 
 ## [v0.1.46] — 2026-04-18
 
@@ -476,6 +491,51 @@ All notable changes to IPTV Tunerr are documented here. Repo: [github.com/snapet
 - **OIDC workflow now keeps failed apply attempts too**: deck-side OIDC apply failures are now normalized into the same structured `oidc_migration_apply` history instead of only returning transient JSON errors, so the workflow history can show validation/provider failure phase and error context alongside successful runs.
 - **OIDC workflow adds success/failure filtering**: the deck's recent OIDC apply history now shows explicit success/failure badges and supports `all`, `success`, and `failed` filtering so operators can isolate bad IdP runs without reading every history line.
 - **Keycloak onboarding bootstrap**: the Keycloak apply path can now optionally set a bootstrap password and trigger `execute-actions-email`, which makes the first IdP backend useful for actual staged user onboarding instead of only user/group provisioning.
+
+## [v0.1.39] - 2026-03-23
+
+### Original release notes
+- [Read the published GitHub release notes](https://github.com/snapetech/iptvtunerr/releases/tag/v0.1.39).
+
+## [v0.1.38] - 2026-03-23
+
+### Original release notes
+- [Read the published GitHub release notes](https://github.com/snapetech/iptvtunerr/releases/tag/v0.1.38).
+
+## [v0.1.36] - 2026-03-23
+
+### Original release notes
+- [Read the published GitHub release notes](https://github.com/snapetech/iptvtunerr/releases/tag/v0.1.36).
+
+## [v0.1.35] - 2026-03-23
+
+### Original release notes
+- [Read the published GitHub release notes](https://github.com/snapetech/iptvtunerr/releases/tag/v0.1.35).
+
+## [v0.1.34] - 2026-03-22
+
+### Original release notes
+- [Read the published GitHub release notes](https://github.com/snapetech/iptvtunerr/releases/tag/v0.1.34).
+
+## [v0.1.33] - 2026-03-22
+
+### Original release notes
+- [Read the published GitHub release notes](https://github.com/snapetech/iptvtunerr/releases/tag/v0.1.33).
+
+## [v0.1.32] - 2026-03-22
+
+### Original release notes
+- [Read the published GitHub release notes](https://github.com/snapetech/iptvtunerr/releases/tag/v0.1.32).
+
+## [v0.1.31] - 2026-03-22
+
+### Original release notes
+- [Read the published GitHub release notes](https://github.com/snapetech/iptvtunerr/releases/tag/v0.1.31).
+
+## [v0.1.30] - 2026-03-22
+
+### Original release notes
+- [Read the published GitHub release notes](https://github.com/snapetech/iptvtunerr/releases/tag/v0.1.30).
 
 ## [v0.1.29] — 2026-03-21
 
@@ -610,6 +670,11 @@ All notable changes to IPTV Tunerr are documented here. Repo: [github.com/snapet
 ### Licensing
 - **Repository license set:** added an explicit `LICENSE` file for **AGPL-3.0-only** and linked it from the README.
 
+## [v0.1.25] - 2026-03-21
+
+### Original release notes
+- [Read the published GitHub release notes](https://github.com/snapetech/iptvtunerr/releases/tag/v0.1.25).
+
 ## [v0.1.24] — 2026-03-21
 
 ### Streaming
@@ -640,6 +705,11 @@ All notable changes to IPTV Tunerr are documented here. Repo: [github.com/snapet
 
 ### Operability
 - **Evidence intake scaffold:** added **`scripts/evidence-intake.sh`** plus [how-to/evidence-intake](how-to/evidence-intake.md) and **`planning/README.md`** so real tester cases can be staged consistently under **`.diag/evidence/<case-id>/`** with debug-bundle output, PMS logs, Tunerr logs, pcaps, and analyst notes before running **`scripts/analyze-bundle.py`**.
+
+## [v0.1.19] - 2026-03-20
+
+### Original release notes
+- [Read the published GitHub release notes](https://github.com/snapetech/iptvtunerr/releases/tag/v0.1.19).
 
 ## [v0.1.18] — 2026-03-20
 
@@ -888,6 +958,11 @@ All notable changes to IPTV Tunerr are documented here. Repo: [github.com/snapet
 
 ---
 
+## [v0.1.13] - 2026-03-19
+
+### Original release notes
+- [Read the published GitHub release notes](https://github.com/snapetech/iptvtunerr/releases/tag/v0.1.13).
+
 ## [v0.1.12] — 2026-03-19
 
 ### Streaming
@@ -929,6 +1004,11 @@ All notable changes to IPTV Tunerr are documented here. Repo: [github.com/snapet
 - **Xtream path credential redaction**: URL logging now redacts provider credentials embedded in Xtream-style stream paths (`/live/<user>/<pass>/...`, `/movie/...`, `/series/...`, `/timeshift/...`) instead of only stripping query parameters.
 
 ---
+
+## [v0.1.11] - 2026-03-19
+
+### Original release notes
+- [Read the published GitHub release notes](https://github.com/snapetech/iptvtunerr/releases/tag/v0.1.11).
 
 ## [v0.1.10] — 2026-03-18
 
@@ -979,6 +1059,11 @@ All notable changes to IPTV Tunerr are documented here. Repo: [github.com/snapet
 - **Platform support alignment**: packaging and platform docs now match the actual published binary matrix so operators can see which targets are shipped on tagged releases.
 
 ---
+
+## [v0.1.7] - 2026-03-18
+
+### Original release notes
+- [Read the published GitHub release notes](https://github.com/snapetech/iptvtunerr/releases/tag/v0.1.7).
 
 ## [v0.1.2] — 2026-03-18
 

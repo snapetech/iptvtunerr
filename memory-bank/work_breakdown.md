@@ -8,6 +8,7 @@ Objective: bring Tunerr's release-note curation, changelog preparation, and Disc
 | --- | --- | --- |
 | RELNOTE-001 | Add validated append-only release-note fragments and preview/validation tooling; require a fragment or explicit internal-only opt-out in CI. | Completed |
 | CHANGELOG-001 | Prepare versioned changelog sections from fragments since the previous tag and audit that each existing release tag has one preserved changelog section. | Completed |
+| CHANGELOG-002 | Backfill link-only sections for historical published releases missing from the changelog and document tags with no published GitHub Release. | In progress |
 | DISCORD-001 | Send the generated GitHub release body through bounded, verified Discord embeds after release publication. | Completed |
 | DOCS-001 | Document fragment authorship and the release preparation/announcement flow; preserve private-identity restrictions. | Completed |
 
