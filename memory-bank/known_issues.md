@@ -15,3 +15,7 @@
 ## Release / Packaging
 
 - **Winget ZIP manifests must point at the executable inside the archive directory.** The Windows release ZIP contains `iptv-tunerr-vX.Y.Z-windows-amd64/iptv-tunerr.exe`, not a root-level `iptv-tunerr-vX.Y.Z-windows-amd64.exe`. A wrong `NestedInstallerFiles.RelativeFilePath` downloads and hashes fine but fails Microsoft install validation.
+
+## Repository remotes
+
+- **GitLab mirror ref listing currently fails, and its cached `main` contains an extra donation-links commit.** The configured GitLab SSH remote reports `multi-pack-index signature 0x00000000 does not match signature 0x4d494458` during ref listing; normal pushes from GitHub `main` are rejected as non-fast-forward. Preserve the GitLab-only commit, repair/read the GitLab ref before synchronizing, and never force-push this branch.

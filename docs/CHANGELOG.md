@@ -11,7 +11,7 @@ All notable changes to IPTV Tunerr are documented here. Repo: [github.com/snapet
 
 ---
 
-## [Unreleased]
+## [v0.1.86] - 2026-09-30
 
 ### Security / Dependencies
 - **Guide diagnostics no longer accept caller-supplied alias file paths:** `/guide/health.json`, `/guide/doctor.json`, and `/guide/aliases.json` now use the configured alias source, closing the CodeQL path-injection flow from query parameters to local file reads.
