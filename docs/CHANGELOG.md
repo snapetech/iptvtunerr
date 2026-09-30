@@ -14,6 +14,7 @@ All notable changes to IPTV Tunerr are documented here. Repo: [github.com/snapet
 ## [Unreleased]
 
 ### CI / Packaging
+- **Chocolatey publishing uses `actions/setup-dotnet@v6`:** the package workflow tracks the current .NET setup action release.
 - **GitHub Actions use `actions/setup-go@v7`:** Go workflows now use the current setup action release.
 - **GitHub Actions use `actions/checkout@v7`:** workflow checkouts are updated across the active CI and release workflows.
 - **Chocolatey metadata now covers moderation feedback:** the Chocolatey package template and publish workflow now set package owner, icon, package source, project source, docs, bug tracker, and release notes metadata, the install script points the explicit shim at the nested Windows executable path used by release ZIPs, and publishing now packs/pushes with .NET installed under runner temp on the existing Linux runner pool instead of waiting for an unavailable Windows runner. The workflow replaces the packed root nuspec with the exact Chocolatey nuspec so `packageSourceUrl`, `projectSourceUrl`, `docsUrl`, and `bugTrackerUrl` survive packaging. The Windows ZIP download uses a runner-temp asset directory plus timeout-bounded `curl` retries, and split Bash prepare/push steps use a unique runner-temp directory plus GitHub step timeouts so reused self-hosted workspaces cannot stall the publish. The tag guard is inline so older moderation tags can be republished even when their checked-out helper scripts predate ancestor-mode checks.
