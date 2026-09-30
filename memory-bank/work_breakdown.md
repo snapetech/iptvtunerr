@@ -1,5 +1,21 @@
 # Work breakdown
 
+## 2026-09-30 - Opportunity backlog implementation sweep
+
+Objective: implement all repo-owned open opportunities, reconcile the items that require package-service or live-host state, and push the result without rewriting history.
+
+| Story ID | Scope | Status |
+| --- | --- | --- |
+| OPP-001 | Preserve explicit per-channel profile overrides for Plex internal fetchers when a global internal-fetcher profile is configured; document precedence. | Completed |
+| OPP-002 | Replace private self-hosted runner paths in public Actions jobs with compatible GitHub-hosted Ubuntu/Windows runners; update release-channel docs. | Completed |
+| OPP-003 | Send the same curated release notes to Matrix as to GitHub/Discord, with bounded chunks and safe HTML rendering. | Implemented; first delivery awaits the next release |
+| OPP-004 | Reconcile first-run package and direct package asset results for v0.1.86; retain only absent Snap or new-version external gates. | Completed for configured channels and direct assets; Snap publisher is not configured |
+| OPP-005 | Check whether the single CI retry failure recurred; fix only if source evidence identifies a repeatable defect. | Closed for now; no recurrence found and latest main CI is green |
+| OPP-006 | Run the existing Windows native smoke on a GitHub-hosted Windows runner when Go code changes reach main. | Workflow wired; pending the post-push result |
+| OPP-007 | Reconcile the Plex Live TV watchdog schedule and snapshots; separate repo-owned implementation from host-managed state. | Pending deployment-host timer/service inspection and a fresh snapshot |
+
+Guardrail: do not publish package versions, change a live host, or rewrite history. Preserve the original dirty local checkout; let normal post-push CI provide code and Windows smoke evidence without running tests locally.
+
 ## 2026-09-30 - Structured release notes and Discord announcements
 
 Objective: bring Tunerr's release-note curation, changelog preparation, and Discord announcement quality in line with Seerrng while retaining all published history.

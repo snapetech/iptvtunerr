@@ -1,3 +1,12 @@
+# Current task (2026-09-30): Implement open repo-owned opportunities
+
+- Goal: implement every open opportunity that belongs in this repository and reconcile the remaining items with current evidence.
+- Scope: Plex internal-fetcher/per-channel profile precedence, public Actions runner path hygiene, Matrix release-note parity, package/release workflow evidence, Windows validation evidence, the one-off CI flake, and the locally recorded Live TV watchdog item. Update memory and release-channel docs, then commit and push by fast-forward.
+- Assumptions: use GitHub-hosted runners for public jobs compatible with standard Ubuntu/Windows images. The request authorizes repository changes and a normal push; it does not include publishing new package versions or changing a live host. Host-owned or publisher-owned state will be documented with concrete evidence and unblock steps.
+- Success criteria: explicit channel profile overrides beat the global internal-fetcher profile; no public workflow job uses a private self-hosted checkout/tool path; Matrix carries the curated release body; resolved items leave the active opportunity list; externally gated items retain precise ownership and evidence.
+- Plan: create WBS stories; implement profile selection and runner/announcement changes; reconcile package, CI, Windows, Snap, and watchdog evidence; update docs, opportunities, task history, and status; inspect diff and remote CI evidence; commit and push without rewriting history.
+- Verification constraint: do not run tests locally. The existing CI and Windows Smoke workflows will run remotely after the push to provide post-change evidence.
+
 **Completed (2026-09-30):** Add structured release notes, changelog preparation, and full-content Discord announcements based on Seerrng's workflow; close the historical tag coverage gap found by CI.
 
 - Goal: require validated, append-only user-facing release-note fragments and use the same curated release body in the checked-in changelog, GitHub Release, and Discord announcement.

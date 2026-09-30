@@ -14,7 +14,7 @@ permissions:
 
 jobs:
   publish-ppa:
-    runs-on: [self-hosted, Linux, X64, iptvtunerr]
+    runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:

@@ -6,7 +6,7 @@ on:
 
 jobs:
   release:
-    runs-on: [self-hosted, Linux, X64, iptvtunerr]
+    runs-on: ubuntu-latest
     permissions:
       contents: write
     outputs:
@@ -90,7 +90,7 @@ jobs:
   announce-discord:
     name: Announce Release to Discord
     needs: [release]
-    runs-on: [self-hosted, Linux, X64, iptvtunerr]
+    runs-on: ubuntu-latest
     env:
       DISCORD_RELEASE_WEBHOOK: ${{ secrets.DISCORD_RELEASE_WEBHOOK }}
       RELEASE_URL: ${{ github.server_url }}/${{ github.repository }}/releases/tag/${{ github.ref_name }}
@@ -180,6 +180,7 @@ jobs:
           MATRIX_PROJECT_KEY: iptvtunerr
           RELEASE_URL: ${{ github.server_url }}/${{ github.repository }}/releases/tag/${{ github.ref_name }}
           VERSION: ${{ github.ref_name }}
+          RELEASE_BODY: ${{ needs.release.outputs.release_body }}
         run: |
           set -euo pipefail
 
@@ -188,12 +189,25 @@ jobs:
             exit 0
           fi
 
+          if [ -z "$RELEASE_BODY" ]; then
+            echo "Curated release notes are empty; skipping Matrix announcement."
+            exit 0
+          fi
+
+          chunks_file="$RUNNER_TEMP/iptvtunerr-matrix-release-chunks.json"
+          printf '%s' "$RELEASE_BODY" | node scripts/discord-release-notes.mjs --split > "$chunks_file"
+          chunk_count="$(jq 'length' "$chunks_file")"
+          (( chunk_count > 0 )) || {
+            echo "The generated Matrix release notes are empty; skipping announcement."
+            exit 0
+          }
+
           today_utc="$(date -u +%F)"
           marker="releasebot-project:${MATRIX_PROJECT_KEY}"
           sync_filter="$(jq -cn --arg room "$MATRIX_ROOM_ID" '{"room":{"rooms":[ $room ],"timeline":{"limit":50}}}')"
           sync_filter_encoded="$(SYNC_FILTER="$sync_filter" python3 -c 'import os, urllib.parse; print(urllib.parse.quote(os.environ["SYNC_FILTER"], safe=""))')"
 
-          previous_event_id="$(
+          previous_event_ids="$(
             curl --fail --silent --show-error \
               -H "Authorization: Bearer ${MATRIX_RELEASE_ACCESS_TOKEN}" \
               "${MATRIX_BASE_URL}/_matrix/client/r0/sync?timeout=0&filter=${sync_filter_encoded}" |
@@ -209,49 +223,63 @@ jobs:
                     | select((.origin_server_ts / 1000 | strftime("%F")) == $today)
                   ]
                   | sort_by(.origin_server_ts)
-                  | last
+                  | .[]
                   | .event_id // empty
                 '
           )"
 
-          if [ -n "$previous_event_id" ]; then
-            redact_txn="redact-${MATRIX_PROJECT_KEY}-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
-            if ! curl --fail --silent --show-error \
-              -X POST \
+          if [ -n "$previous_event_ids" ]; then
+            index=0
+            while IFS= read -r previous_event_id; do
+              [ -n "$previous_event_id" ] || continue
+              redact_txn="redact-${MATRIX_PROJECT_KEY}-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}-${index}"
+              if ! curl --fail --silent --show-error \
+                -X POST \
+                -H "Authorization: Bearer ${MATRIX_RELEASE_ACCESS_TOKEN}" \
+                -H "Content-Type: application/json" \
+                -d '{"reason":"Superseded by newer release announcement"}' \
+                "${MATRIX_BASE_URL}/_matrix/client/r0/rooms/%21feVqoCPCPPaCQmTCEE%3Atimeways.net/redact/${previous_event_id}/${redact_txn}"; then
+                echo "Matrix release-announcement redact failed; continuing without failing the release workflow."
+              fi
+              index=$((index + 1))
+            done <<< "$previous_event_ids"
+          fi
+
+          release_html="$(jq -nr --arg text "$RELEASE_URL" '$text | @html')"
+          version_html="$(jq -nr --arg text "$VERSION" '$text | @html')"
+          for ((index = 0; index < chunk_count; index += 1)); do
+            notes="$(jq -r --argjson index "$index" '.[$index]' "$chunks_file")"
+            number=$((index + 1))
+            notes_html="$(jq -nr --arg text "$notes" '$text | @html | gsub("\n"; "<br>")')"
+            body="$(printf '📡 Tunerr release notes (%s/%s)\nVersion: %s\nRelease: %s\n\n%s' \
+              "$number" "$chunk_count" "$VERSION" "$RELEASE_URL" "$notes")"
+            html="<p>📡 Tunerr release notes (${number}/${chunk_count})<br>Version: <code>${version_html}</code><br>Release: <a href=\"${release_html}\">${release_html}</a></p><p>${notes_html}</p><!-- ${marker} -->"
+            payload="$(jq -cn --arg body "$body" --arg html "$html" '{msgtype:"m.text", body:$body, format:"org.matrix.custom.html", formatted_body:$html}')"
+            txn_id="${MATRIX_PROJECT_KEY}-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}-${index}"
+
+            if response="$(curl --fail --silent --show-error \
+              -X PUT \
               -H "Authorization: Bearer ${MATRIX_RELEASE_ACCESS_TOKEN}" \
               -H "Content-Type: application/json" \
-              -d '{"reason":"Superseded by newer release announcement"}' \
-              "${MATRIX_BASE_URL}/_matrix/client/r0/rooms/%21feVqoCPCPPaCQmTCEE%3Atimeways.net/redact/${previous_event_id}/${redact_txn}"; then
-              echo "Matrix release-announcement redact failed; continuing without failing the release workflow."
+              -d "$payload" \
+              "${MATRIX_BASE_URL}/_matrix/client/r0/rooms/%21feVqoCPCPPaCQmTCEE%3Atimeways.net/send/m.room.message/${txn_id}")"; then
+              if ! jq -e '.event_id | type == "string" and length > 0' <<< "$response" > /dev/null; then
+                echo "Matrix accepted a response without an event ID; continuing without failing the release workflow."
+              fi
+            else
+              echo "Matrix release-announcement chunk ${number}/${chunk_count} failed; continuing without failing the release workflow."
+              exit 0
             fi
-          fi
 
-          payload="$(jq -cn \
-            --arg body "📡 Tunerr release published\nVersion: ${VERSION}\nRelease: ${RELEASE_URL}" \
-            --arg html "<p>📡 Tunerr release published<br>Version: <code>${VERSION}</code><br>Release: <a href=\"${RELEASE_URL}\">${RELEASE_URL}</a></p><!-- ${marker} -->" \
-            '{
-              msgtype: "m.text",
-              body: $body,
-              format: "org.matrix.custom.html",
-              formatted_body: $html
-            }'
-          )"
-
-          txn_id="${MATRIX_PROJECT_KEY}-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
-
-          if ! curl --fail --silent --show-error \
-            -X PUT \
-            -H "Authorization: Bearer ${MATRIX_RELEASE_ACCESS_TOKEN}" \
-            -H "Content-Type: application/json" \
-            -d "$payload" \
-            "${MATRIX_BASE_URL}/_matrix/client/r0/rooms/%21feVqoCPCPPaCQmTCEE%3Atimeways.net/send/m.room.message/${txn_id}"; then
-            echo "Matrix release announcement failed; continuing without failing the release workflow."
-          fi
+            if (( number < chunk_count )); then
+              sleep 1
+            fi
+          done
 
   dispatch-package-channels:
     name: Dispatch Package Channels
     needs: [release]
-    runs-on: [self-hosted, Linux, X64, iptvtunerr]
+    runs-on: ubuntu-latest
     permissions:
       actions: write
       contents: read

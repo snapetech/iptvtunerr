@@ -450,6 +450,15 @@
 - Updated the release-channel guide and changelog with the moderation state and remediation.
 - Verification: `xmllint` on the nuspec and SVG, PowerShell parser checks, extracted workflow parser checks after replacing GitHub expressions, extracted Bash run-block syntax checks, simulated `Pack and push` dry run against old `v0.1.85` tag contents, local Bash prepare-step simulation, local packed-nupkg metadata inspection, local `dotnet pack` smoke for the Chocolatey nuspec, install-script shim-path stub test, `git diff --check`, local identity scan, and full `./scripts/verify` passed. `scripts/verify` regenerated tracked council scan files.
 
+## 2026-09-30 - Audit local Tunerr/Plex deployment and playback
+
+- Confirmed the workspace checkout was `a7b8c30`, 24 commits behind its tracked `main`; the GitHub `main` tip was `c6cbc9bf`. No existing local edits were discarded.
+- Confirmed the local machine had no Tunerr listener or service. On the Plex host, the primary, sports, and Live TV proxy services were active and last started on 2026-09-16, before release `v0.1.86` was published.
+- Recent tuner logs showed `/readyz`, `/lineup.json`, and sports `/guide.xml` requests returning `200` with non-empty lineup responses. No `/stream/` requests appeared in the sampled recent tuner or proxy journals, so provider playback was not proven.
+- Plex had one current direct-play library episode and no Live TV session or transcode. Recent Plex error logs had no Live TV/Tunerr failure clue.
+- The Live TV watchdog service was inactive with its latest saved snapshot dated 2026-06-18. The ingress and media tunnel were active, though the latest media tunnel health-check service invocation failed while its timer remained active.
+- Verification: read-only service status, bounded system/Plex logs, active session and transcode summaries, and GitHub release metadata. No tests, deployment changes, or restarts were performed. The installed binary version and end-to-end stream remained unverified because the available host diagnostics did not expose a safe binary-version or arbitrary local HTTP probe.
+
 ## 2026-09-30 - Add curated release notes and rich Discord announcements
 
 - Ported SeerrNG's validated release-note fragment format, PR template, preview, staged validation, and CI fragment-or-internal-only gate to Tunerr. Fragments record category, audience, area, required action, and breaking status and are scanned for private local identity terms.

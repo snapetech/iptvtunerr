@@ -14,7 +14,7 @@ permissions:
 
 jobs:
   publish-copr:
-    runs-on: [self-hosted, Linux, X64, iptvtunerr]
+    runs-on: ubuntu-latest
     steps:
       - name: Resolve version
         id: version

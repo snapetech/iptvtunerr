@@ -12,6 +12,9 @@ updates, and container images from release tags only. A release tag must be a
 `v*` tag that points at the current `main` commit; release workflows reject tags
 that point anywhere else.
 
+Public GitHub Actions workflows use GitHub-hosted Ubuntu or Windows runners so
+their logs do not expose paths from a private self-hosted runner.
+
 The primary release workflow builds and uploads:
 
 - raw executable assets for Linux, macOS, and Windows;
@@ -71,7 +74,9 @@ The GitHub Release body contains the curated notes, technical commit list,
 checksums, and install notes. Discord receives that same body as bounded embeds;
 the workflow checks Discord's response for every chunk so no later notes are
 silently dropped. A missing webhook or rejected message fails the announcement
-job.
+job. Matrix receives the same notes as bounded, HTML-escaped messages; same-day
+retry chunks are redacted before replacements are posted. Matrix announcement
+failures do not fail the release.
 
 Install local hooks with:
 
@@ -152,6 +157,11 @@ Credential status:
 - COPR: `COPR_LOGIN` and `COPR_TOKEN` are configured for
   `snapetech/iptvtunerr`.
 
+The AUR, PPA, and COPR publisher workflows completed successfully for
+`v0.1.86`. The Launchpad result proves upload completion; source build
+acceptance remains asynchronous. The `v0.1.86` GitHub Release also contains
+direct `.deb` and `.rpm` assets.
+
 GitHub Actions secrets from another repository cannot be read back out, so
 future rotations have to re-enter, regenerate, or source values from a local
 secret store.
@@ -164,19 +174,21 @@ not want to use PPA/COPR.
 Windows release assets are portable ZIP files from GitHub Releases. Current
 Windows status: the binary cross-builds and package prep passes; native Windows
 host validation is still recommended before making broad Windows parity claims.
+The Windows Smoke workflow now uses `windows-latest`; a fresh native run is
+still needed to establish that proof.
 
 Configured packaging:
 
 - Chocolatey metadata lives in `packaging/chocolatey/`.
 - Winget manifest generation lives in `packaging/scripts/update-winget-manifests.sh`.
 - `.github/workflows/publish-chocolatey.yml` publishes a Chocolatey package
-  from a release tag. It runs on the repo Linux runner pool, rewrites the
+  from a release tag. It runs on a GitHub-hosted Ubuntu runner, rewrites the
   nuspec/install script for the requested tag, packs the Chocolatey `.nupkg`
   with .NET/NuGet, replaces the packed root nuspec with the exact Chocolatey
   nuspec so Chocolatey-specific metadata is preserved, and pushes it to
   `https://push.chocolatey.org/`. Package preparation and push run as separate
-  Bash steps with a unique runner-temp directory plus GitHub step timeouts so
-  self-hosted runner state cannot hang the publisher indefinitely. The workflow
+  Bash steps with a unique runner-temp directory and GitHub step timeouts so
+  package preparation or publishing cannot hang indefinitely. The workflow
   performs its tag-on-main check inline because older tags may not contain the
   current helper script used by other release workflows.
 - `.github/workflows/publish-winget.yml` submits a Winget PR from a release tag.
@@ -196,22 +208,20 @@ Current status:
 
 - `CHOCO_API_KEY` is configured for the `slskdn` Chocolatey account.
 - `WINGETCREATE_GITHUB_TOKEN` is configured.
-- Chocolatey package `0.1.68` passed automated validation, verification, and
-  scanning, then entered `Waiting for Maintainer` moderation on 2026-07-06.
-  The reviewer requested the automated review guideline/suggestion metadata,
-  plus a pass over `authors` and `owners`. The publish workflow now rewrites the
-  Chocolatey nuspec at pack time so existing release tags can be republished
-  with owner, icon, package source, project source, docs, bug tracker, and
-  release-notes metadata without moving old release tags. The `v0.1.85`
-  republish attempt built and downloaded assets successfully, but Chocolatey
-  returned `403 Forbidden` because `0.1.68` is still the only package version and
-  is waiting for maintainer action. Resubmit `v0.1.68` with the corrected
-  metadata first, or add a Chocolatey review comment asking the moderator to
-  reject `0.1.68` so the current release tag can be pushed.
-- Winget PR `microsoft/winget-pkgs#374269` cleared the Microsoft CLA after the
-  GitHub agreement comment, but currently has Microsoft validation labels
-  `Internal-Error`, `Needs-Attention`, and `Validation-Guide`. Duplicate
-  automated PRs for later release tags were closed.
+- Chocolatey package [`0.1.68`](https://community.chocolatey.org/packages/iptvtunerr)
+  is approved and has passed automated validation, verification, and scanning.
+  The package page still lists `0.1.68`; the `v0.1.86` package has not been
+  submitted.
+- Winget PR
+  [`microsoft/winget-pkgs#374269`](https://github.com/microsoft/winget-pkgs/pull/374269)
+  for version `0.1.68` merged on 2026-05-19. The `v0.1.86` manifest has not
+  been submitted.
+- These publishers remain manual so release tags do not create package
+  submissions without a release-channel action.
+
+Snap has smoke-test support, but this repository currently has no Snapcraft
+manifest or Snap publisher workflow. Publishing Snap requires a package
+definition and Store credentials before that channel can be exercised.
 
 NuGet is not currently a fit for IPTV Tunerr. The project ships a Go CLI/server
 binary, not a .NET library or .NET global tool.

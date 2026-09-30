@@ -11,7 +11,7 @@ on:
 
 jobs:
   scan:
-    runs-on: [self-hosted, Linux, X64, iptvtunerr]
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
         with:

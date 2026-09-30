@@ -2,6 +2,13 @@ name: Windows Smoke
 
 on:
   workflow_dispatch:
+  push:
+    branches: [main, master]
+    paths:
+      - "**/*.go"
+      - "go.mod"
+      - "go.sum"
+      - ".github/workflows/windows-smoke.yml"
   pull_request:
     paths:
       - "**/*.go"
@@ -14,7 +21,7 @@ permissions:
 
 jobs:
   build:
-    runs-on: [self-hosted, Windows, X64, packer-windows]
+    runs-on: windows-latest
     steps:
       - uses: actions/checkout@v7
 
