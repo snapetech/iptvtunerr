@@ -8,10 +8,10 @@ Objective: incorporate all currently open PRs, resolve repository CodeQL/depende
 | --- | --- | --- |
 | SWEEP-001 | Review and land open GitHub PRs #30-#39, resolving changelog/check failures without bypassing substantive CI. | Completed |
 | SEC-001 | Fix CodeQL `go/path-injection` alert #61 by rejecting request-supplied alias paths in the three tuner guide diagnostic endpoints; verify the remote alert closes after push. | In progress |
-| TESTER-001 | Reproduce and fix the WebUI showing no provider/channel/guide data when the configured tuner is serving Live TV successfully to Jellyfin. | Open |
+| TESTER-001 | Fix WebUI XMLTV route mismatches, surface the current tuner lineup, and explain the separate runtime and database-backed provider/channel views. | In progress |
 | REL-001 | Update changelog/docs and memory closeout, run prescribed verification/release readiness, push to configured GitHub and GitLab destinations, publish `v0.1.86`, and check release workflows/security queues. | Open |
 
-Guardrail: keep the code change scoped to the reported WebUI state mismatch and the CodeQL path finding. Do not change Jellyfin, Plex, deployment hosts, or unrelated packaging behavior.
+Guardrail: keep code changes scoped to the reported WebUI state mismatch, the CodeQL path finding, and required release notes. Do not change Jellyfin, Plex, deployment hosts, or unrelated packaging behavior.
 
 ## 2026-06-16 - PR and security sweep
 

@@ -236,7 +236,7 @@ func (s *Server) v2ChannelsAutoMatch(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusServiceUnavailable, "tuner not configured")
 		return
 	}
-	resp, err := http.Get(strings.TrimRight(s.tunerBase, "/") + "/api/guide.xml")
+	resp, err := http.Get(strings.TrimRight(s.tunerBase, "/") + "/guide.xml")
 	if err != nil || resp.StatusCode != http.StatusOK {
 		writeError(w, http.StatusBadGateway, "guide.xml unavailable")
 		return

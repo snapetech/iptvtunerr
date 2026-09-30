@@ -181,6 +181,109 @@ func TestProxyForwardsAPIPath(t *testing.T) {
 	}
 }
 
+func TestProxyForwardsLiveLineupPath(t *testing.T) {
+	requestPath := make(chan string, 1)
+	upstream := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		requestPath <- r.URL.Path
+		_, _ = w.Write([]byte(`[{"GuideNumber":"101","GuideName":"Local News","URL":"http://tuner/stream/1"}]`))
+	}))
+	defer upstream.Close()
+
+	s := &Server{tunerBase: upstream.URL}
+	req := httptest.NewRequest(http.MethodGet, "/api/lineup.json", nil)
+	w := httptest.NewRecorder()
+	s.proxy(w, req)
+	if got := <-requestPath; got != "/lineup.json" {
+		t.Fatalf("tuner request path=%q want /lineup.json", got)
+	}
+	if w.Code != http.StatusOK || !strings.Contains(w.Body.String(), `"GuideName":"Local News"`) {
+		t.Fatalf("status=%d body=%s", w.Code, w.Body.String())
+	}
+}
+
+func TestV2GuideFetchesTunerGuidePath(t *testing.T) {
+	now := time.Now().UTC().Truncate(time.Minute)
+	start := now.Add(-30 * time.Minute).Format("20060102150405 -0700")
+	stop := now.Add(time.Hour).Format("20060102150405 -0700")
+	requestPath := make(chan string, 1)
+	upstream := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		requestPath <- r.URL.Path
+		if r.URL.Path != "/guide.xml" {
+			http.NotFound(w, r)
+			return
+		}
+		_, _ = fmt.Fprintf(w, `<?xml version="1.0"?><tv><channel id="local.news"><display-name>Local News</display-name></channel><programme start="%s" stop="%s" channel="local.news"><title>Local News Tonight</title></programme></tv>`, start, stop)
+	}))
+	defer upstream.Close()
+
+	s := &Server{tunerBase: upstream.URL}
+	from := now.Add(-time.Hour).Format(time.RFC3339)
+	to := now.Add(2 * time.Hour).Format(time.RFC3339)
+	req := httptest.NewRequest(http.MethodGet, "/api/v2/guide?from="+from+"&to="+to, nil)
+	w := httptest.NewRecorder()
+	s.v2Guide(w, req)
+	if got := <-requestPath; got != "/guide.xml" {
+		t.Fatalf("tuner request path=%q want /guide.xml", got)
+	}
+	if w.Code != http.StatusOK {
+		t.Fatalf("status=%d body=%s", w.Code, w.Body.String())
+	}
+	var got GuideGridResponse
+	if err := json.Unmarshal(w.Body.Bytes(), &got); err != nil {
+		t.Fatalf("decode guide response: %v", err)
+	}
+	if len(got.Channels) != 1 || got.Channels[0].Name != "Local News" {
+		t.Fatalf("channels=%+v", got.Channels)
+	}
+	if len(got.Channels[0].Programmes) != 1 || got.Channels[0].Programmes[0].Title != "Local News Tonight" {
+		t.Fatalf("programmes=%+v", got.Channels[0].Programmes)
+	}
+}
+
+func TestV2ChannelsAutoMatchFetchesTunerGuidePath(t *testing.T) {
+	root := t.TempDir()
+	s := newTestWebUIServerWithStore(t, root)
+	channel := &store.Channel{Name: "Local News", Enabled: true}
+	if err := s.store.CreateChannel(channel); err != nil {
+		t.Fatal(err)
+	}
+	requestPath := make(chan string, 1)
+	upstream := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		requestPath <- r.URL.Path
+		if r.URL.Path != "/guide.xml" {
+			http.NotFound(w, r)
+			return
+		}
+		_, _ = w.Write([]byte(`<?xml version="1.0"?><tv><channel id="local.news"><display-name>Local News</display-name></channel></tv>`))
+	}))
+	defer upstream.Close()
+	s.tunerBase = upstream.URL
+
+	req := httptest.NewRequest(http.MethodPost, "/api/v2/channels/automatch", strings.NewReader(fmt.Sprintf(`{"channel_ids":[%d]}`, channel.ID)))
+	w := httptest.NewRecorder()
+	s.v2ChannelsAutoMatch(w, req)
+	if got := <-requestPath; got != "/guide.xml" {
+		t.Fatalf("tuner request path=%q want /guide.xml", got)
+	}
+	if w.Code != http.StatusOK {
+		t.Fatalf("status=%d body=%s", w.Code, w.Body.String())
+	}
+	var got automatchResult
+	if err := json.Unmarshal(w.Body.Bytes(), &got); err != nil {
+		t.Fatalf("decode automatch response: %v", err)
+	}
+	if got.Matched != 1 || got.Total != 1 {
+		t.Fatalf("result=%+v", got)
+	}
+	channels, _, err := s.store.ListChannels(store.ChannelListOpts{PerPage: 0})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(channels) != 1 || channels[0].TVGID != "local.news" {
+		t.Fatalf("channels=%+v", channels)
+	}
+}
+
 func TestProxyInvalidBaseStaysJSON(t *testing.T) {
 	s := &Server{tunerBase: "http://%zz"}
 	req := httptest.NewRequest(http.MethodGet, "/api/debug/runtime.json", nil)

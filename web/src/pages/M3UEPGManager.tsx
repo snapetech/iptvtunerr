@@ -454,7 +454,7 @@ function M3UTab() {
         <Text size="sm" c="dimmed">Loading…</Text>
       ) : accounts.length === 0 ? (
         <Alert icon={<IconAlertCircle size={16} />} color="gray">
-          No M3U accounts yet. Add one to start pulling streams.
+          No M3U accounts are saved in the WebUI database. A provider configured in .env can still feed the live tuner lineup, but it does not create an account here.
         </Alert>
       ) : (
         <ScrollArea>
@@ -603,7 +603,7 @@ function EPGTab() {
         <Text size="sm" c="dimmed">Loading…</Text>
       ) : accounts.length === 0 ? (
         <Alert icon={<IconAlertCircle size={16} />} color="gray">
-          No EPG sources yet. Add an XMLTV feed or Schedules Direct account.
+          No EPG sources are saved in the WebUI database. Runtime XMLTV or provider settings in .env can still supply the live guide, but they do not create an account here.
         </Alert>
       ) : (
         <ScrollArea>

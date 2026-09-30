@@ -1,15 +1,19 @@
 **Current (2026-09-30):** Close open PR/security queue, fix the Jellyfin tester's WebUI report, and release `v0.1.86`.
 
 - Goal: merge or otherwise land every open GitHub PR, clear open CodeQL and dependency/security findings, diagnose the report that Jellyfin works while the Tunerr WebUI shows no provider/channel/guide data, then publish a new release.
-- Scope: GitHub PRs #30-#39, `internal/guideinput/` path handling, provider/guide WebUI data flow, release changelog/version and required memory docs. Include the configured GitHub and GitLab push destinations.
+- Scope: GitHub PRs #30-#39, `internal/tuner/guide_health.go` query path handling, provider/guide WebUI data flow, release changelog/version and required memory docs. Include the configured GitHub and GitLab push destinations.
 - Assumptions: `v0.1.85` is the latest release, so the next patch release is `v0.1.86`. If a Dependabot PR fails only the changelog gate, add the required release note on its branch and rerun checks; do not bypass substantive failing checks.
 - Rollback: do not move or delete existing tags. If a published fix needs reversal, revert the relevant commit and issue a follow-up patch release. No production host changes are in scope.
 - Plan: inventory every PR/alert; land PRs; fix the CodeQL path flow and reproduce/fix the tester-facing WebUI issue; update docs/changelog; run prescribed verification and release readiness; commit/push to both configured destinations; tag and publish `v0.1.86`; confirm release workflows and scan state.
 - Done: merged all currently open PRs #30-#39, resolving changelog gates and Go dependency conflicts on the PR branches.
 - Done: changed all three guide diagnostics to use only `IPTV_TUNERR_XMLTV_ALIASES`; requests containing an `aliases` override now receive JSON 400 responses. Added endpoint regression coverage and CLI/env reference text.
 - Done: upgraded React Router to `7.18.4` and transitive `nanoid` to `3.3.19`; `npm audit --audit-level=low` reports zero vulnerabilities and the embedded WebUI build succeeds.
-- In progress: run full repo verification, then commit and push this security/dependency batch. After that, finish the reported WebUI data-flow fix and release checks.
-- Next: complete `./scripts/verify`, push the security batch, and confirm the remote CodeQL and Dependabot alerts close.
+- Done: full `./scripts/verify` passed for the security/dependency batch; the security commit `43d295d` is pushed to GitHub and Dependabot alerts are now clear.
+- In progress: the CodeQL alert remains open while GitHub refreshes its scan. The GitHub push was rejected by GitLab because its `main` is ahead; GitLab's SSH Git service also fails ref listing with a multi-pack-index error, so preserve that history while repairing the sync path.
+- Done: fixed both WebUI XMLTV fetchers to request the tuner's `/guide.xml`; added route regression coverage. Added a read-only Live lineup view and clarified that runtime `.env` providers do not create WebUI database records.
+- Done: the focused WebUI tests, `npm audit --audit-level=low`, the embedded WebUI build, and full `./scripts/verify` all pass for the current code.
+- In progress: commit and push the tester-facing WebUI fix to GitHub. GitLab has a cached donation-links commit not present in GitHub; preserve it without force-pushing if its remote becomes readable.
+- Next: push the WebUI batch, run `./scripts/release-readiness.sh`, clear/confirm CodeQL after the queued scan, reconcile GitLab if safe, and publish `v0.1.86`.
 
 **Current (2026-07-08):** Address Chocolatey moderation feedback.
 

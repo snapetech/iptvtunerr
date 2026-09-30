@@ -17,6 +17,10 @@ All notable changes to IPTV Tunerr are documented here. Repo: [github.com/snapet
 - **Guide diagnostics no longer accept caller-supplied alias file paths:** `/guide/health.json`, `/guide/doctor.json`, and `/guide/aliases.json` now use the configured alias source, closing the CodeQL path-injection flow from query parameters to local file reads.
 - **Web dependencies include security fixes:** React Router is updated to `7.18.4` and the lockfile resolves `nanoid` to `3.3.19`; `npm audit` reports zero vulnerabilities.
 
+### WebUI
+- **TV Guide and channel auto-match read the tuner's actual XMLTV endpoint:** both now request `/guide.xml`, which is the path served by the tuner.
+- **Runtime channels are visible in the WebUI:** a read-only Live lineup tab shows the lineup currently served to Jellyfin, while empty states explain that the M3U, EPG, and channel editors use separate WebUI database records and do not import `.env` runtime providers.
+
 ### CI / Packaging
 - **Chocolatey publishing uses `actions/setup-dotnet@v6`:** the package workflow tracks the current .NET setup action release.
 - **GitHub Actions use `actions/setup-go@v7`:** Go workflows now use the current setup action release.

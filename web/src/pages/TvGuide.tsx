@@ -301,7 +301,7 @@ export function TvGuide() {
           </Alert>
         ) : channels.length === 0 ? (
           <Alert icon={<IconAlertCircle size={16} />} color="gray" m="md">
-            No programme data in this time window. Try a different time or check your EPG sources.
+            No programme data in this time window. Try a different time or check the tuner's runtime guide configuration.
           </Alert>
         ) : (
           <ScrollArea style={{ flex: 1 }} viewportRef={scrollRef} type="auto">

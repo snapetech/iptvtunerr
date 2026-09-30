@@ -853,7 +853,9 @@ function ChannelManagerTab() {
                   <Table.Tr>
                     <Table.Td colSpan={7}>
                       <Text c="dimmed" size="sm" ta="center" py="md">
-                        No channels. Add an M3U account and import streams, or create channels manually.
+                        No channels are saved in the WebUI editor. Add an M3U account here or create channels manually.
+                        To inspect channels already served by the tuner, open Live lineup. Runtime providers in .env
+                        do not create WebUI database records.
                       </Text>
                     </Table.Td>
                   </Table.Tr>
@@ -998,6 +1000,75 @@ function ChannelManagerTab() {
 }
 
 // ──────────────────────────────────────────────────────────────────
+// Read-only tuner runtime lineup
+// ──────────────────────────────────────────────────────────────────
+type RuntimeLineupEntry = {
+  GuideNumber: string
+  GuideName: string
+}
+
+function RuntimeLineupTab() {
+  const lineup = useQuery({
+    queryKey: ['runtime-lineup'],
+    queryFn: () => api.get<RuntimeLineupEntry[]>('/api/lineup.json'),
+    refetchInterval: 60_000,
+  })
+  const entries = lineup.data ?? []
+
+  return (
+    <Stack gap="sm">
+      <Group justify="space-between" align="flex-start">
+        <Box>
+          <Text fw={600}>Live lineup</Text>
+          <Text size="sm" c="dimmed">
+            Read-only channels currently served by the tuner. This runtime lineup is separate from the WebUI editor;
+            providers configured in .env do not create database accounts here.
+          </Text>
+        </Box>
+        <Group gap="xs" wrap="nowrap">
+          <Badge variant="light" color="gray">{entries.length} channel{entries.length === 1 ? '' : 's'}</Badge>
+          <Button size="xs" variant="subtle" leftSection={<IconRefresh size={14} />}
+            loading={lineup.isFetching} onClick={() => void lineup.refetch()}>
+            Refresh
+          </Button>
+        </Group>
+      </Group>
+
+      {lineup.isLoading ? (
+        <Text size="sm" c="dimmed">Loading live lineup…</Text>
+      ) : lineup.isError ? (
+        <Alert icon={<IconAlertCircle size={16} />} color="red">
+          Live lineup unavailable. Check that the tuner is running and reachable from the WebUI.
+        </Alert>
+      ) : entries.length === 0 ? (
+        <Alert icon={<IconAlertCircle size={16} />} color="gray">
+          The tuner is not serving any channels right now. Check its runtime channel and provider configuration.
+        </Alert>
+      ) : (
+        <ScrollArea mah="calc(100vh - 260px)">
+          <Table striped highlightOnHover withRowBorders={false} fz="sm">
+            <Table.Thead style={{ position: 'sticky', top: 0, zIndex: 1, background: 'var(--mantine-color-dark-7)' }}>
+              <Table.Tr>
+                <Table.Th style={{ width: 100 }}>Guide number</Table.Th>
+                <Table.Th>Channel</Table.Th>
+              </Table.Tr>
+            </Table.Thead>
+            <Table.Tbody>
+              {entries.map((channel, index) => (
+                <Table.Tr key={`${channel.GuideNumber}-${channel.GuideName}-${index}`}>
+                  <Table.Td c="dimmed">{channel.GuideNumber || '—'}</Table.Td>
+                  <Table.Td>{channel.GuideName || '—'}</Table.Td>
+                </Table.Tr>
+              ))}
+            </Table.Tbody>
+          </Table>
+        </ScrollArea>
+      )}
+    </Stack>
+  )
+}
+
+// ──────────────────────────────────────────────────────────────────
 // Channels page (tabbed)
 // ──────────────────────────────────────────────────────────────────
 export function Channels() {
@@ -1005,6 +1076,7 @@ export function Channels() {
     <Tabs defaultValue="channels" keepMounted={false} style={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
       <Tabs.List>
         <Tabs.Tab value="channels" leftSection={<IconDeviceTv size={14} />}>Channels</Tabs.Tab>
+        <Tabs.Tab value="runtime" leftSection={<IconList size={14} />}>Live lineup</Tabs.Tab>
         <Tabs.Tab value="virtual" leftSection={<IconLayoutDashboard size={14} />}>Virtual</Tabs.Tab>
         <Tabs.Tab value="lineup" leftSection={<IconList size={14} />}>Lineup</Tabs.Tab>
       </Tabs.List>
@@ -1012,6 +1084,9 @@ export function Channels() {
       <Box style={{ flex: 1, overflow: 'hidden', paddingTop: 12 }}>
         <Tabs.Panel value="channels" style={{ height: '100%' }}>
           <ChannelManagerTab />
+        </Tabs.Panel>
+        <Tabs.Panel value="runtime">
+          <RuntimeLineupTab />
         </Tabs.Panel>
         <Tabs.Panel value="virtual">
           <VirtualTab />

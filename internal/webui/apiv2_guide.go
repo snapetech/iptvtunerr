@@ -130,7 +130,7 @@ func (s *Server) fetchGuideGrid(from, to time.Time) (*GuideGridResponse, error) 
 		}, nil
 	}
 
-	resp, err := http.Get(base + "/api/guide.xml")
+	resp, err := http.Get(base + "/guide.xml")
 	if err != nil {
 		return nil, err
 	}
