@@ -232,17 +232,17 @@
 - `scripts/check-release-channel-wiring.sh`
 - `docs/how-to/release-channels.md`
 
-### Loop: Alpine mirrors can work locally but fail in hosted BuildKit
+### Loop: BuildKit can fail to resolve package mirrors from its isolated network
 
 **Symptom**
-- A Docker image builds locally after falling back from Alpine's primary CDN, while GitHub Actions BuildKit fails to fetch indexes from the same mirror and other official mirrors.
+- A Docker image builds locally, while GitHub Actions BuildKit cannot resolve either Alpine or Debian package mirror hosts. Retrying packages or changing distributions does not fix a resolver path failure.
 
 **Why it's tricky**
-- Local Docker and hosted BuildKit use different network paths. A local mirror fallback smoke does not prove that the release workflow can build and push all target architectures.
+- Local Docker and hosted BuildKit use different network paths. The builder container's isolated network can fail to resolve the same hosts the runner can reach. A local mirror fallback smoke does not prove that the release workflow can build and push all target architectures.
 
 **What works**
-- Verify the full multi-architecture publisher on GitHub Actions before treating a local build as release-channel proof.
-- Use Debian Bookworm package archives for runtime FFmpeg dependencies and retry transient apt failures; retain the Alpine Go builder because it does not fetch runtime packages.
+- Configure Docker Buildx with `driver-opts: network=host` so BuildKit can use the GitHub runner's DNS path, then verify the full multi-architecture publisher on GitHub Actions.
+- Use Debian Bookworm package archives for runtime FFmpeg dependencies and retain the Alpine Go builder; retries only help transient errors and cannot repair inaccessible DNS.
 
 **Where it's documented**
 - `Dockerfile`

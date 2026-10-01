@@ -100,10 +100,11 @@ if ! rg -Fq 'build-args: VERSION=${{ env.RELEASE_TAG }}' "$docker_workflow"; the
   exit 1
 fi
 if ! rg -q 'git show origin/main:Dockerfile > Dockerfile' "$docker_workflow" || \
+   ! rg -Fq 'network=host' "$docker_workflow" || \
    ! rg -Fxq 'FROM debian:bookworm-slim' "$root/Dockerfile" || \
    ! rg -Fq 'apt-get -o Acquire::Retries=3 update' "$root/Dockerfile" || \
    ! rg -q 'Debian package install failed.*retrying after backoff' "$root/Dockerfile"; then
-  echo "Docker must use the current Debian packaging recipe and retry transient package mirror failures." >&2
+  echo "Docker must use the current Debian recipe, runner DNS access, and retry transient package mirror failures." >&2
   exit 1
 fi
 ppa_workflow="$root/.github/workflows/release-ppa.yml"

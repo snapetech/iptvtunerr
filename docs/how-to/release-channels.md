@@ -47,9 +47,11 @@ image uses the exact release tag for application source and version, with the
 current `main` Dockerfile packaging recipe, then publishes both `latest` and
 the matching version tag to GHCR and both configured Docker Hub image names.
 The runtime image uses Debian Bookworm package archives for FFmpeg and its
-supporting tools. GitHub Actions BuildKit could not reach the Alpine CDN or its
-official mirrors, even though the fallback build worked on the local Docker
-host.
+supporting tools. The Docker publisher runs BuildKit with host networking so
+its build sandbox can resolve package mirrors through the GitHub runner's DNS;
+the hosted builder failed to resolve Debian mirrors when it used an isolated
+network. A local image build does not prove the hosted multi-architecture
+publish path works.
 
 CI checks the publisher list, latest-tag guard, Docker image names, and tag
 contract. The GitHub Release workflow waits for every dispatched publisher and
