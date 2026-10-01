@@ -295,5 +295,6 @@ jobs:
           GH_TOKEN: ${{ secrets.GH_WORKFLOW_TOKEN || github.token }}
           TAG: ${{ github.ref_name }}
           REPO: ${{ github.repository }}
+          SKIP_RELEASE_CHANNELS: publish-snap.yml
         run: |
           bash scripts/dispatch-release-channels.sh "$TAG" "$REPO"

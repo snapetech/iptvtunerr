@@ -25,6 +25,13 @@ failed=0
 declare -a queued_workflows=() queued_titles=() queued_times=() queued_ids=()
 while IFS=' ' read -r workflow input_name run_title; do
   [[ -n "$workflow" ]] || continue
+
+  skip_channels=",${SKIP_RELEASE_CHANNELS//[[:space:]]/},"
+  if [[ "$skip_channels" == *",$workflow,"* ]]; then
+    echo "Skipping deferred release channel $workflow for $tag"
+    continue
+  fi
+
   if [[ ! -f ".github/workflows/$workflow" ]]; then
     echo "Configured release-channel workflow is missing: $workflow" >&2
     failed=1
@@ -33,7 +40,11 @@ while IFS=' ' read -r workflow input_name run_title; do
 
   started_at="$(date -u +'%Y-%m-%dT%H:%M:%SZ')"
   echo "Dispatching $workflow for $tag"
-  if gh workflow run "$workflow" --repo "$repo" --ref main -f "${input_name}=$tag"; then
+  dispatch_args=(--repo "$repo" --ref main -f "${input_name}=$tag")
+  if [[ "$workflow" == "docker.yml" ]]; then
+    dispatch_args+=(-f "publish_dockerhub=false")
+  fi
+  if gh workflow run "$workflow" "${dispatch_args[@]}"; then
     queued_workflows+=("$workflow")
     queued_titles+=("${run_title} ${tag}")
     queued_times+=("$started_at")

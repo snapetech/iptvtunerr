@@ -40,12 +40,16 @@ with that same tag. Each publisher checks that the tag is the newest stable
 `vX.Y.Z` reachable from `main` immediately before submission. Publisher runs
 are serialized per channel so a newer dispatch cancels an older in-progress
 run. AUR, PPA, and COPR are dispatched once by the release workflow; they do
-not also subscribe to the GitHub Release event.
+not also subscribe to the GitHub Release event. The release job currently sets
+`SKIP_RELEASE_CHANNELS=publish-snap.yml`, so Snap remains listed in the channel
+map but is skipped until explicitly re-enabled.
 
 The dispatcher starts Docker from the current `main` workflow definition. The
 image uses the exact release tag for application source and version, with the
 current `main` Dockerfile packaging recipe, then publishes both `latest` and
-the matching version tag to GHCR and both configured Docker Hub image names.
+the matching version tag to GHCR. Docker Hub is opt-in on the workflow and the
+release dispatcher explicitly passes `publish_dockerhub=false`; it remains
+paused until manually re-enabled.
 The runtime image uses Debian Bookworm package archives for FFmpeg and its
 supporting tools. The Docker publisher runs BuildKit with host networking so
 its build sandbox can resolve package mirrors through the GitHub runner's DNS;
@@ -172,6 +176,13 @@ Configured registries:
 - GHCR: `ghcr.io/snapetech/iptvtunerr`
 - Docker Hub: `snapetech/iptvtunerr` and `keefshape/iptvtunerr` (compatibility image)
 
+Publishing posture:
+
+- GHCR is published by the release dispatcher, with `latest` and the matching
+  version tag.
+- Docker Hub publishing is currently paused. The workflow defaults
+  `publish_dockerhub` to `false`, and release dispatch passes `false` explicitly.
+
 Credential status:
 
 - GHCR: `GHCR_TOKEN` is configured, with `GITHUB_TOKEN` fallback.
@@ -192,8 +203,7 @@ Credential status:
 
 - Launchpad/PPA: `GPG_PRIVATE_KEY`, `LAUNCHPAD_SFTP_KEY`, and
   `LAUNCHPAD_SFTP_USER` are configured for `snapetech/iptvtunerr`. The PPA is
-  `ppa:keefshape/iptvtunerr`; Launchpad account `keefshape` has display name
-  `slskdn`.
+  `ppa:keefshape/iptvtunerr`.
 - COPR: `COPR_LOGIN` and `COPR_TOKEN` are configured for
   `snapetech/iptvtunerr`.
 

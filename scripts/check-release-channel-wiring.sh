@@ -74,6 +74,12 @@ done <<< "$expected_channels"
 
 release_workflow="$root/.github/workflows/release.yml"
 docker_workflow="$root/.github/workflows/docker.yml"
+if ! rg -Fq 'SKIP_RELEASE_CHANNELS: publish-snap.yml' "$release_workflow" || \
+   ! rg -q 'SKIP_RELEASE_CHANNELS' "$dispatcher" || \
+   ! rg -q 'Skipping deferred release channel' "$dispatcher"; then
+  echo "Snap must remain explicitly deferred from tag-triggered publisher dispatch." >&2
+  exit 1
+fi
 if ! rg -q 'dispatch-release-channels\.sh' "$release_workflow"; then
   echo "The GitHub Release workflow does not invoke the channel dispatcher." >&2
   exit 1
@@ -90,9 +96,11 @@ if ! rg -Fq 'type=raw,value=latest' "$docker_workflow" || \
   exit 1
 fi
 if ! rg -Fq 'ghcr.io/${{ github.repository }}' "$docker_workflow" || \
-   ! rg -Fq 'snapetech/iptvtunerr' "$docker_workflow" || \
-   ! rg -Fq 'keefshape/iptvtunerr' "$docker_workflow"; then
-  echo "Docker must publish every configured GHCR and Docker Hub image name." >&2
+   ! rg -Fq "inputs.publish_dockerhub && 'snapetech/iptvtunerr'" "$docker_workflow" || \
+   ! rg -Fq "inputs.publish_dockerhub && 'keefshape/iptvtunerr'" "$docker_workflow" || \
+   ! rg -Fq 'default: false' "$docker_workflow" || \
+   ! rg -Fq 'publish_dockerhub=false' "$dispatcher"; then
+  echo "GHCR must always receive latest and the release tag; Docker Hub must remain opt-in and disabled by release dispatch." >&2
   exit 1
 fi
 if ! rg -Fq 'build-args: VERSION=${{ env.RELEASE_TAG }}' "$docker_workflow"; then
@@ -159,4 +167,4 @@ if RELEASE_REPO_DIR="$tmp_repo" MAIN_REF=main RELEASE_TAG_MAIN_MODE=latest \
   exit 1
 fi
 
-echo "Release channel wiring is complete: every publisher dispatches the latest stable tag once, and every configured container name receives latest plus that version tag."
+echo "Release channel wiring is complete: enabled publishers dispatch the latest stable tag once, GHCR receives latest plus that version tag, and paused channels stay disabled."
