@@ -32,15 +32,15 @@ Guardrail: do not rewrite or move existing release tags or changelog history, pu
 
 ## 2026-09-30 - Release-channel version parity
 
-Objective: ensure every configured release channel receives the same tagged build, publish the current `v0.1.86` to lagging channels, and fail visibly when publisher jobs do not make the release available.
+Objective: ensure every configured release channel receives the same tagged build, publish `v0.1.87` to lagging channels, and fail visibly when publisher jobs do not make the release available.
 
 | Story | Acceptance criteria | Status |
 | --- | --- | --- |
-| RELCH-001 | Chocolatey and Winget receive `v0.1.86`; future release dispatch includes both alongside AUR, PPA, COPR, and Snap. | Submitted; Chocolatey moderation and Winget review remain open |
-| RELCH-002 | GHCR and both Docker Hub names publish matching `latest` and `v0.1.86` tags from one image build; verify registry digests. | In progress; `keefshape/iptvtunerr:latest` is at `v0.1.77` |
-| RELCH-003 | Existing registered Snap package has a least-privilege Go CLI Snap, publisher workflow, and `v0.1.86` stable submission. | Workflow added; stable submission pending |
-| RELCH-004 | Launchpad publisher waits for published amd64 binaries, and `v0.1.86` reaches supported PPA series. | In progress; registry remains at `v0.1.75` |
-| RELCH-005 | CI enforces the exact publisher map, latest stable tag guard, no duplicate release triggers, and docs record external review gates. | In progress |
+| RELCH-001 | Chocolatey and Winget receive `v0.1.87`; future release dispatch includes both alongside AUR, PPA, COPR, and Snap. | Chocolatey `0.1.87` is in the public feed; Winget PR #444749 is open for Microsoft review |
+| RELCH-002 | GHCR and both Docker Hub names publish matching `latest` and `v0.1.87` tags from one image build; verify registry digests. | GHCR and `snapetech/iptvtunerr` tags match digest `sha256:baab1bd9ff3a640ee951c2e994f626f2187e9a1469b204c132433ca6a4831a6f`; `keefshape/iptvtunerr` push is denied with `insufficient_scope` pending write access |
+| RELCH-003 | Existing registered Snap package has a least-privilege Go CLI Snap, publisher workflow, and `v0.1.87` stable submission. | Workflow exists; Store credential rejected; public stable remains `0.1.78` |
+| RELCH-004 | Launchpad publisher waits for published amd64 binaries, and `v0.1.87` reaches supported PPA series. | Noble and Jammy builds succeeded; exact source records remain `Pending` and no amd64 binary is published yet |
+| RELCH-005 | CI enforces the exact publisher map, latest stable tag guard, no duplicate release triggers, and docs record external review gates. | Completed; wiring checks, full CI, and security checks pass on `793c665` |
 
 Guardrail: use the existing `v0.1.86` release tag and current publisher credentials; preserve immutable tags and existing package history. Do not bypass Chocolatey, Microsoft, Launchpad, COPR, or Snap Store validation.
 

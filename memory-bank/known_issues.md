@@ -15,6 +15,10 @@
 ## Release / Packaging
 
 - **Winget ZIP manifests must point at the executable inside the archive directory.** The Windows release ZIP contains `iptv-tunerr-vX.Y.Z-windows-amd64/iptv-tunerr.exe`, not a root-level `iptv-tunerr-vX.Y.Z-windows-amd64.exe`. A wrong `NestedInstallerFiles.RelativeFilePath` downloads and hashes fine but fails Microsoft install validation.
+- **Docker Hub compatibility image needs separate repository write access.** For `v0.1.87`, the configured Docker Hub identity published `snapetech/iptvtunerr` but received `insufficient_scope` when pushing `keefshape/iptvtunerr`; GHCR and the primary Docker Hub tags are current while the compatibility tag is stale. Grant the configured identity write access to the compatibility repository, then rerun the Docker workflow and compare both tags' digests.
+- **Snap stable is behind because the Store credential is rejected.** The public stable channel is `0.1.78`; the `v0.1.87` publisher run failed authentication and no local Snapcraft login is available. Refresh the repository's Store credential through the owner account and rerun the Snap publisher.
+- **Launchpad binary publication is asynchronous.** The `v0.1.87` Noble and Jammy amd64 source builds succeeded, while both exact source publications remain `Pending` and `getPublishedBinaries` returns no binaries. Wait for archive publication before describing the PPA as updated.
+- **Winget package availability waits for Microsoft review.** PR [#444749](https://github.com/microsoft/winget-pkgs/pull/444749) submits `0.1.87` and remains open; the workflow's successful submission does not mean the package is merged or available through WinGet.
 
 ## Repository remotes
 

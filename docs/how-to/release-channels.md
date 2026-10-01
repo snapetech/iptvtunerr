@@ -49,9 +49,12 @@ the matching version tag to GHCR and both configured Docker Hub image names.
 The runtime image uses Debian Bookworm package archives for FFmpeg and its
 supporting tools. The Docker publisher runs BuildKit with host networking so
 its build sandbox can resolve package mirrors through the GitHub runner's DNS;
-the hosted builder failed to resolve Debian mirrors when it used an isolated
-network. A local image build does not prove the hosted multi-architecture
-publish path works.
+the hosted builder failed to resolve Debian mirrors on its isolated network.
+The `v0.1.87` run built all three target architectures and published matching
+`latest` and version tags to GHCR and `snapetech/iptvtunerr`. Docker Hub returned
+`insufficient_scope` for the compatibility image `keefshape/iptvtunerr`; the
+Docker Hub identity used by Actions needs write permission to that repository
+before those tags can be updated.
 
 CI checks the publisher list, latest-tag guard, Docker image names, and tag
 contract. The GitHub Release workflow waits for every dispatched publisher and

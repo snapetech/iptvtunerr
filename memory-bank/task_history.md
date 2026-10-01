@@ -479,6 +479,16 @@
 - Updated release documentation and removed stale references that described an `[Unreleased]` section as the current backlog. No published tag or historical changelog section was changed, and no release was created.
 - Verification: Node and Bash syntax checks, CI/Release YAML parsing, and `git diff --check` passed. Full `scripts/verify` and Go tests were not run.
 
+## 2026-10-01 - Fix smoketest timeout data loss and publish v0.1.87
+
+- Fixed the catalog smoketest so the global time budget cancels outstanding probes without interpreting interrupted or untested channels as failures. Completed probe failures remain removable, timeout-canceled results are not cached as failures, per-probe timeouts are honored, and the CLI reports passed/failed/untested/invalid/kept counts.
+- Added a synthetic 24,908-channel timeout regression in `internal/indexer/smoketest_timeout_test.go`; it confirms channels remain when the five-minute budget expires. `./scripts/release-readiness.sh`, `./scripts/verify`, and Go tests passed.
+- Published immutable tag and GitHub Release `v0.1.87` from `7f93b23`; release notes and Discord/Matrix announcements completed. No tag or commit history was rewritten.
+- Pushed channel recovery commits `f82898c`, `04b455c`, and `793c665` to GitHub `main` by fast-forward. CI `36809767918`, CodeQL `36809767909`, Gitleaks `36809767913`, and Local Identity `36809767934` passed. `./scripts/verify`, `git diff --check`, and local identity checks passed.
+- Recovered COPR `0.1.87-1`; AUR reports `0.1.87-1`; Chocolatey serves `0.1.87`. Launchpad Noble/Jammy source builds `33805213` and `33805214` succeeded, but source publications remained `Pending` with no apt binaries when checked; PPA workflow `36809148695` is still waiting.
+- Fixed hosted BuildKit DNS with host networking. Docker run `36810312961` built all three platforms and pushed GHCR and Docker Hub `snapetech/iptvtunerr` `latest` and `v0.1.87` at matching digest `sha256:baab1bd9ff3a640ee951c2e994f626f2187e9a1469b204c132433ca6a4831a6f`. Pulled that image and verified the app version, `ffmpeg`, and `ffprobe`. Docker Hub denied `keefshape/iptvtunerr` with `insufficient_scope`, leaving that compatibility namespace stale.
+- Remaining external gates: Snap stable is `0.1.78` because the Store credential was rejected; Winget PR [#444749](https://github.com/microsoft/winget-pkgs/pull/444749) is open for review; Docker Hub needs write access for the configured identity on `keefshape/iptvtunerr`; Launchpad has not yet published the built amd64 binaries.
+
 ## 2026-09-30 - Complete curated release notes and historical changelog coverage
 
 - Added Seerrng-style validated release-note fragments, changelog preparation and tag coverage tooling, and full-content Discord embeds in commit `63f4aac`.

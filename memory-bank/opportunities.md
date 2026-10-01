@@ -1,5 +1,11 @@
 # Opportunities
 
+## Release-channel audit on 2026-10-01
+
+- **Smoketest timeout data loss — fixed and released.** `v0.1.87` retains channels whose probes were interrupted or unsampled when the total smoketest budget expires, while only completed probe failures are removed. The 24,908-channel timeout regression passes; see [the release](https://github.com/snapetech/iptvtunerr/releases/tag/v0.1.87).
+- **Current `.87` parity — partly complete, external gates remain.** AUR, COPR, Chocolatey, GHCR, and `snapetech/iptvtunerr` are verified at `.87`. Launchpad builds succeeded but binary publications remain pending. Winget PR [#444749](https://github.com/microsoft/winget-pkgs/pull/444749) is open. Snap stable is `.78` because the Store credential was rejected. Docker Hub `keefshape/iptvtunerr` remains stale because the configured Docker Hub identity lacks write scope; grant it access and rerun the Docker workflow.
+- **Hosted BuildKit DNS — fixed for the primary registries.** Buildx host networking lets the GitHub-hosted multi-architecture build resolve Debian package mirrors. The `.87` image built for amd64, arm64, and arm/v7; its primary GHCR and Docker Hub destinations share digest `sha256:baab1bd9ff3a640ee951c2e994f626f2187e9a1469b204c132433ca6a4831a6f`.
+
 ## Implemented or reconciled on 2026-09-30
 
 - **Plex internal-fetcher profile precedence — implemented.** Explicit per-channel profile overrides now take precedence over `IPTV_TUNERR_PLEX_INTERNAL_FETCHER_PROFILE`; the environment setting remains the fallback. See [CLI and environment reference](../docs/reference/cli-and-env-reference.md) and WBS story OPP-001.
@@ -12,5 +18,5 @@
 
 ## External follow-up
 
-- **Release-channel parity.** Repair the PPA publisher so success means the amd64 binary is visible, add the missing Snap publisher, update the lagging Docker Hub compatibility image, and block stale or duplicate release submissions. Chocolatey moderation, Winget's Microsoft review, and any Snap Store review remain external gates after submission.
+- **Release-channel parity follow-up.** Grant Docker Hub write scope for the compatibility namespace; refresh Snap Store credentials; monitor Launchpad binary publication and Winget review. Keep `.87` package/index status distinct from successful workflow submission.
 - **Plex Live TV watchdog schedule.** The prior read-only audit found the watchdog service inactive and its newest snapshot dated 2026-06-18. No watchdog timer/service definition is owned by this repository. Verify the deployment's timer/service wiring and collect a fresh snapshot through its host-managed configuration before relying on it during a Live TV failure. See WBS story OPP-007.
