@@ -11,6 +11,21 @@ All notable changes to IPTV Tunerr are documented here. Repo: [github.com/snapet
 
 ---
 
+## [v0.1.87] - 2026-09-30
+
+### User-facing changes
+
+#### Changed
+
+- **Release Announcements:** Matrix release announcements now include the same curated notes and install information as the GitHub Release and Discord embeds.
+- **Package Channels:** Release automation now submits the current build to every supported package channel and keeps all container `latest` tags aligned with that release. Older release tags can no longer replace the current channel version.
+- **Release Process:** Future releases include a curated change summary and technical details in GitHub Releases and readable Discord embeds, with CI checking that release notes are complete before publication.
+
+#### Fixed
+
+- **Plex Playback:** Plex internal fetchers now honor explicit per-channel stream profiles ahead of the global internal-fetcher fallback.
+- **Catalog:** Large provider catalogs are no longer emptied solely because the stream smoketest reaches its time budget. Completed failures are removed; interrupted or unsampled channels remain available and are reported as untested.
+
 ## [v0.1.86] - 2026-09-30
 
 ### Security / Dependencies
