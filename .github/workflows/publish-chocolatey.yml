@@ -1,4 +1,5 @@
 name: Publish Chocolatey
+run-name: Publish Chocolatey ${{ inputs.version }}
 
 on:
   workflow_dispatch:
@@ -10,6 +11,10 @@ on:
 
 permissions:
   contents: read
+
+concurrency:
+  group: release-chocolatey
+  cancel-in-progress: true
 
 jobs:
   publish:
@@ -31,18 +36,13 @@ jobs:
 
       - name: Require release tag on main
         shell: bash
+        env:
+          TAG: ${{ inputs.version }}
         run: |
           set -euo pipefail
-          tag="${{ inputs.version }}"
           git fetch --quiet origin main --tags
-          git rev-parse -q --verify "refs/tags/${tag}" >/dev/null
-          tag_commit="$(git rev-list -n 1 "${tag}")"
-          main_commit="$(git rev-parse origin/main)"
-          if ! git merge-base --is-ancestor "${tag_commit}" origin/main; then
-            echo "[publish-chocolatey] ERROR: release tag '${tag}' points to ${tag_commit}, which is not in origin/main history" >&2
-            exit 1
-          fi
-          echo "[publish-chocolatey] ${tag} is in origin/main history (${tag_commit}; current main ${main_commit})"
+          RELEASE_REPO_DIR="$PWD" RELEASE_TAG_MAIN_MODE=latest \
+            bash -c "$(git show origin/main:scripts/ensure-release-tag-on-main.sh)" release-tag-guard "$TAG"
 
       - name: Download Windows release asset
         env:
@@ -177,10 +177,14 @@ jobs:
       - name: Push Chocolatey package
         env:
           CHOCO_API_KEY: ${{ secrets.CHOCO_API_KEY }}
+          TAG: ${{ inputs.version }}
         shell: bash
         timeout-minutes: 7
         run: |
           set -euo pipefail
+          git fetch --quiet origin main --tags
+          RELEASE_REPO_DIR="$PWD" RELEASE_TAG_MAIN_MODE=latest \
+            bash -c "$(git show origin/main:scripts/ensure-release-tag-on-main.sh)" release-tag-guard "$TAG"
           if [[ -z "${CHOCO_API_KEY:-}" ]]; then
             echo "CHOCO_API_KEY secret is not configured" >&2
             exit 1

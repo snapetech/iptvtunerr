@@ -1,8 +1,7 @@
 name: Publish PPA
+run-name: Publish PPA ${{ inputs.tag }}
 
 on:
-  release:
-    types: [published]
   workflow_dispatch:
     inputs:
       tag:
@@ -15,6 +14,10 @@ permissions:
 jobs:
   publish-ppa:
     runs-on: ubuntu-latest
+    timeout-minutes: 120
+    concurrency:
+      group: release-ppa-${{ matrix.ubuntu_series }}
+      cancel-in-progress: true
     strategy:
       fail-fast: false
       matrix:
@@ -22,9 +25,11 @@ jobs:
     steps:
       - name: Resolve version
         id: version
+        env:
+          TAG: ${{ inputs.tag }}
         run: |
           set -euo pipefail
-          tag="${{ github.event.inputs.tag || github.event.release.tag_name }}"
+          tag="$TAG"
           echo "tag=$tag" >> "$GITHUB_OUTPUT"
           echo "version=${tag#v}" >> "$GITHUB_OUTPUT"
 
@@ -33,10 +38,14 @@ jobs:
           ref: ${{ steps.version.outputs.tag }}
           fetch-depth: 0
 
-      - name: Require release tag on main
+      - name: Require latest release tag
         env:
-          RELEASE_TAG_MAIN_MODE: ancestor
-        run: ./scripts/ensure-release-tag-on-main.sh "${{ steps.version.outputs.tag }}"
+          TAG: ${{ steps.version.outputs.tag }}
+        run: |
+          set -euo pipefail
+          git fetch --quiet origin main --tags
+          RELEASE_REPO_DIR="$GITHUB_WORKSPACE" RELEASE_TAG_MAIN_MODE=latest \
+            bash -c "$(git show origin/main:scripts/ensure-release-tag-on-main.sh)" release-tag-guard "$TAG"
 
       - uses: actions/setup-go@v7
         with:
@@ -47,7 +56,7 @@ jobs:
           set -euo pipefail
           if command -v apt-get >/dev/null 2>&1; then
             sudo apt-get update
-            sudo apt-get install -y dpkg-dev gnupg curl
+            sudo DEBIAN_FRONTEND=noninteractive apt-get install -y dpkg-dev dput gnupg curl jq
           elif command -v pacman >/dev/null 2>&1; then
             sudo pacman -Sy --needed --noconfirm dpkg gnupg curl
           elif command -v dnf >/dev/null 2>&1; then
@@ -70,6 +79,7 @@ jobs:
           printf '%s\n' "$GPG_PRIVATE_KEY" | gpg --batch --import
 
       - name: Prepare source package
+        id: source
         run: |
           set -euo pipefail
           version="${{ steps.version.outputs.version }}"
@@ -85,21 +95,23 @@ jobs:
           cp -r packaging/debian "$src/debian"
           printf 'usr/bin/iptv-tunerr\n' > "$src/debian/source/include-binaries"
           ppa_rev="$(date -u +%Y%m%d%H%M)"
+          ppa_version="${version}+ppa${ppa_rev}~${series}"
           cat > "$src/debian/changelog" <<EOF
-          iptvtunerr (${version}+ppa${ppa_rev}~${series}) ${series}; urgency=medium
+          iptvtunerr (${ppa_version}) ${series}; urgency=medium
 
             * Release ${{ steps.version.outputs.tag }}
 
            -- snapetech <iptvtunerr@proton.me>  $(date -R)
           EOF
           chmod +x "$src/debian/rules" "$src/debian/postinst"
+          echo "ppa_version=${ppa_version}" >> "$GITHUB_OUTPUT"
 
       - name: Build signed source package
         run: |
           set -euo pipefail
           cd "iptvtunerr-${{ steps.version.outputs.version }}"
           dpkg-source -b .
-          dpkg-genchanges -S -sa -O../iptvtunerr_${{ steps.version.outputs.version }}_${{ matrix.ubuntu_series }}_source.changes
+          dpkg-genchanges -S -sa -O../iptvtunerr_${{ steps.source.outputs.ppa_version }}_source.changes
           cd ..
           for signed in *.dsc *.changes; do
             gpg --batch --yes --local-user 07E2531E1F470F8008ACCFC996A07606FE65392F \
@@ -108,43 +120,80 @@ jobs:
           done
 
       - name: Upload to Launchpad PPA
+        env:
+          TAG: ${{ steps.version.outputs.tag }}
         run: |
           set -euo pipefail
-          incoming="ftp://ppa.launchpad.net/~keefshape/ubuntu/iptvtunerr/"
+          git fetch --quiet origin main --tags
+          RELEASE_REPO_DIR="$PWD" RELEASE_TAG_MAIN_MODE=latest \
+            bash -c "$(git show origin/main:scripts/ensure-release-tag-on-main.sh)" release-tag-guard "$TAG"
           changes="$(find . -maxdepth 1 -name '*.changes' -print -quit)"
           test -n "$changes"
-          mapfile -t referenced_files < <(awk '/^Files:/{files=1; next} files && NF >= 5 {print $5}' "$changes")
-          test "${#referenced_files[@]}" -gt 0
+          sha256sum "$changes"
+          dput "ppa:keefshape/iptvtunerr" "$changes"
 
-          payload_files=()
-          dsc_files=()
-          for file in "${referenced_files[@]}"; do
-            test -f "$file"
-            if [[ "$file" == *.dsc ]]; then
-              dsc_files+=("$file")
-            else
-              payload_files+=("$file")
+      - name: Wait for Launchpad binary publication
+        env:
+          PPA_VERSION: ${{ steps.source.outputs.ppa_version }}
+          UBUNTU_SERIES: ${{ matrix.ubuntu_series }}
+        run: |
+          set -euo pipefail
+          archive="https://api.launchpad.net/1.0/~keefshape/+archive/ubuntu/iptvtunerr"
+          series_link="https://api.launchpad.net/1.0/ubuntu/${UBUNTU_SERIES}"
+          missing_count=0
+
+          for attempt in $(seq 1 70); do
+            source_response="$(curl --fail --silent --show-error --get "$archive" \
+              --data-urlencode 'ws.op=getPublishedSources' \
+              --data-urlencode 'source_name=iptvtunerr' \
+              --data-urlencode "version=${PPA_VERSION}" \
+              --data-urlencode "distro_series=${series_link}" \
+              --data-urlencode 'exact_match=true' \
+              --data-urlencode 'ws.size=10')"
+            source_status="$(jq -r --arg version "$PPA_VERSION" \
+              '.entries[]? | select(.source_package_version == $version) | .status' \
+              <<< "$source_response" | head -n 1)"
+
+            if [[ -z "$source_status" ]]; then
+              missing_count=$((missing_count + 1))
+              if (( missing_count >= 20 )); then
+                echo "Launchpad has no source publication record for ${PPA_VERSION} (${UBUNTU_SERIES}); inspect its upload queue/rejection notice." >&2
+                exit 1
+              fi
+              echo "Waiting for Launchpad to accept ${PPA_VERSION} for ${UBUNTU_SERIES} (${attempt}/70)."
+              sleep 30
+              continue
             fi
-          done
-          test "${#dsc_files[@]}" -gt 0
+            if [[ "$source_status" == "Superseded" || "$source_status" == "Deleted" ]]; then
+              echo "Launchpad reports source ${PPA_VERSION} as ${source_status} for ${UBUNTU_SERIES}." >&2
+              exit 1
+            fi
 
-          printf 'Launchpad upload manifest for %s:\n' "$changes"
-          for file in "${payload_files[@]}" "${dsc_files[@]}" "$changes"; do
-            sha256sum "$file"
+            binary_response="$(curl --fail --silent --show-error --get "$archive" \
+              --data-urlencode 'ws.op=getPublishedBinaries' \
+              --data-urlencode 'binary_name=iptvtunerr' \
+              --data-urlencode "version=${PPA_VERSION}" \
+              --data-urlencode "distro_series=${series_link}" \
+              --data-urlencode "distro_arch_series=${series_link}/amd64" \
+              --data-urlencode 'status=Published' \
+              --data-urlencode 'exact_match=true' \
+              --data-urlencode 'ws.size=10')"
+            binary_status="$(jq -r --arg version "$PPA_VERSION" \
+              '.entries[]? | select(.binary_package_name == "iptvtunerr" and .binary_package_version == $version) | .status' \
+              <<< "$binary_response" | head -n 1)"
+
+            if [[ "$source_status" == "Published" && "$binary_status" == "Published" ]]; then
+              echo "Launchpad published binary ${PPA_VERSION} for ${UBUNTU_SERIES}/amd64."
+              exit 0
+            fi
+            if [[ "$binary_status" == "Superseded" || "$binary_status" == "Deleted" || "$binary_status" == "Obsolete" ]]; then
+              echo "Launchpad reports binary ${PPA_VERSION} as ${binary_status} for ${UBUNTU_SERIES}/amd64." >&2
+              exit 1
+            fi
+
+            echo "Launchpad source status is ${source_status}; waiting for ${UBUNTU_SERIES}/amd64 binary publication (${attempt}/70)."
+            sleep 60
           done
 
-          upload_file() {
-            local file="$1"
-            curl --fail --show-error --retry 5 --retry-delay 5 --retry-all-errors \
-              --ftp-create-dirs --user anonymous: \
-              --upload-file "$file" "${incoming}$(basename "$file")"
-          }
-
-          for file in "${payload_files[@]}"; do
-            upload_file "$file"
-          done
-          for file in "${dsc_files[@]}"; do
-            upload_file "$file"
-          done
-          sleep 10
-          upload_file "$changes"
+          echo "Launchpad did not publish binary ${PPA_VERSION} for ${UBUNTU_SERIES}/amd64 before timeout." >&2
+          exit 1

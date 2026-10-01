@@ -1,8 +1,7 @@
 name: Publish COPR
+run-name: Publish COPR ${{ inputs.tag }}
 
 on:
-  release:
-    types: [published]
   workflow_dispatch:
     inputs:
       tag:
@@ -12,15 +11,21 @@ on:
 permissions:
   contents: read
 
+concurrency:
+  group: release-copr
+  cancel-in-progress: true
+
 jobs:
   publish-copr:
     runs-on: ubuntu-latest
     steps:
       - name: Resolve version
         id: version
+        env:
+          TAG: ${{ inputs.tag }}
         run: |
           set -euo pipefail
-          tag="${{ github.event.inputs.tag || github.event.release.tag_name }}"
+          tag="$TAG"
           echo "tag=$tag" >> "$GITHUB_OUTPUT"
           echo "version=${tag#v}" >> "$GITHUB_OUTPUT"
 
@@ -29,10 +34,14 @@ jobs:
           ref: ${{ steps.version.outputs.tag }}
           fetch-depth: 0
 
-      - name: Require release tag on main
+      - name: Require latest release tag
         env:
-          RELEASE_TAG_MAIN_MODE: ancestor
-        run: ./scripts/ensure-release-tag-on-main.sh "${{ steps.version.outputs.tag }}"
+          TAG: ${{ steps.version.outputs.tag }}
+        run: |
+          set -euo pipefail
+          git fetch --quiet origin main --tags
+          RELEASE_REPO_DIR="$GITHUB_WORKSPACE" RELEASE_TAG_MAIN_MODE=latest \
+            bash -c "$(git show origin/main:scripts/ensure-release-tag-on-main.sh)" release-tag-guard "$TAG"
 
       - uses: actions/setup-go@v7
         with:
@@ -241,8 +250,13 @@ jobs:
             --instructions "dnf copr enable slskdn/iptvtunerr && dnf install iptvtunerr"
 
       - name: Upload to COPR
+        env:
+          TAG: ${{ steps.version.outputs.tag }}
         run: |
           set -euo pipefail
+          git fetch --quiet origin main --tags
+          RELEASE_REPO_DIR="$PWD" RELEASE_TAG_MAIN_MODE=latest \
+            bash -c "$(git show origin/main:scripts/ensure-release-tag-on-main.sh)" release-tag-guard "$TAG"
           run_copr_cli() {
             local output status
             set +e

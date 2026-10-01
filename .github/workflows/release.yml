@@ -277,9 +277,10 @@ jobs:
           done
 
   dispatch-package-channels:
-    name: Dispatch Package Channels
+    name: Publish Release Channels
     needs: [release]
     runs-on: ubuntu-latest
+    timeout-minutes: 240
     permissions:
       actions: write
       contents: read
@@ -291,14 +292,8 @@ jobs:
 
       - name: Dispatch channel workflows
         env:
-          GH_TOKEN: ${{ secrets.GH_WORKFLOW_TOKEN || secrets.GHCR_TOKEN || github.token }}
+          GH_TOKEN: ${{ secrets.GH_WORKFLOW_TOKEN || github.token }}
           TAG: ${{ github.ref_name }}
           REPO: ${{ github.repository }}
         run: |
-          set -euo pipefail
-
-          for workflow in release-aur.yml release-ppa.yml release-copr.yml; do
-            gh workflow run "$workflow" --repo "$REPO" -f "tag=$TAG"
-          done
-
-          echo "Chocolatey and Winget publishing are intentionally manual while external account and validation gates are pending."
+          bash scripts/dispatch-release-channels.sh "$TAG" "$REPO"

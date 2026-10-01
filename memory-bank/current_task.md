@@ -1,3 +1,10 @@
+# Current (2026-09-30): Align every release channel on the latest stable build
+
+- Goal: align every configured package and container channel to the latest stable release and prevent stale or duplicate publishers from moving a channel backward.
+- Scope: audit registry-visible state; publish `v0.1.86` to lagging PPA, Snap, and Docker Hub compatibility image channels; guard every publisher against stale tags; dispatch each package publisher once; update release docs and memory. Do not create another release or alter existing tags/history.
+- Assumptions: the latest stable tag remains `v0.1.86`; Chocolatey moderation, Winget's Microsoft review, and Snap Store review remain external gates; GHCR, both Docker Hub names, AUR, COPR, PPA, Chocolatey, Winget, and Snap are configured channels.
+- Next: push the verified workflow changes by fast-forward, dispatch lagging `v0.1.86` publishers, confirm actual registry publication, and record any remaining external review gates.
+
 # Completed (2026-09-30): Implement repo-owned opportunity fixes
 
 - Goal: implement the opportunities owned by this repository and reconcile the items that require external package or host state.

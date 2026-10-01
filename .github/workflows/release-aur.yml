@@ -1,8 +1,7 @@
 name: Publish AUR
+run-name: Publish AUR ${{ inputs.tag }}
 
 on:
-  release:
-    types: [published]
   workflow_dispatch:
     inputs:
       tag:
@@ -12,19 +11,21 @@ on:
 permissions:
   contents: read
 
+concurrency:
+  group: release-aur
+  cancel-in-progress: true
+
 jobs:
   publish-aur:
     runs-on: ubuntu-latest
     steps:
       - name: Resolve version
         id: version
+        env:
+          TAG: ${{ inputs.tag }}
         run: |
           set -euo pipefail
-          if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
-            tag="${{ github.event.inputs.tag }}"
-          else
-            tag="${{ github.event.release.tag_name }}"
-          fi
+          tag="$TAG"
           pkgver="${tag#v}"
           echo "tag=${tag}" >> "$GITHUB_OUTPUT"
           echo "pkgver=${pkgver}" >> "$GITHUB_OUTPUT"
@@ -35,10 +36,14 @@ jobs:
           ref: ${{ steps.version.outputs.tag }}
           fetch-depth: 0
 
-      - name: Require release tag on main
+      - name: Require latest release tag
         env:
-          RELEASE_TAG_MAIN_MODE: ancestor
-        run: ./scripts/ensure-release-tag-on-main.sh "${{ steps.version.outputs.tag }}"
+          TAG: ${{ steps.version.outputs.tag }}
+        run: |
+          set -euo pipefail
+          git fetch --quiet origin main --tags
+          RELEASE_REPO_DIR="$GITHUB_WORKSPACE" RELEASE_TAG_MAIN_MODE=latest \
+            bash -c "$(git show origin/main:scripts/ensure-release-tag-on-main.sh)" release-tag-guard "$TAG"
 
       - name: Wait for Linux amd64 release asset
         env:
@@ -84,8 +89,8 @@ jobs:
         run: |
           set -euo pipefail
           if [[ -z "${AUR_SSH_KEY:-}" ]]; then
-            echo "AUR_SSH_KEY is not configured; skipping AUR publish."
-            exit 0
+            echo "AUR_SSH_KEY is not configured; cannot publish the AUR packages." >&2
+            exit 1
           fi
           tmp_key="$(mktemp)"
           trap 'rm -f "$tmp_key"' EXIT
@@ -99,8 +104,12 @@ jobs:
         run: |
           set -euo pipefail
           if [[ -z "${AUR_SSH_KEY:-}" ]]; then
-            exit 0
+            echo "AUR_SSH_KEY is not configured; cannot publish the AUR package." >&2
+            exit 1
           fi
+          git fetch --quiet origin main --tags
+          RELEASE_REPO_DIR="$PWD" RELEASE_TAG_MAIN_MODE=latest \
+            bash -c "$(git show origin/main:scripts/ensure-release-tag-on-main.sh)" release-tag-guard "$TAG"
           bash packaging/scripts/checkout-aur-repo.sh iptvtunerr-bin aur-iptvtunerr-bin
           cp packaging/aur/PKGBUILD-bin aur-iptvtunerr-bin/PKGBUILD
           cp packaging/aur/iptvtunerr.{service,env,sysusers,tmpfiles,install} aur-iptvtunerr-bin/
@@ -115,8 +124,12 @@ jobs:
         run: |
           set -euo pipefail
           if [[ -z "${AUR_SSH_KEY:-}" ]]; then
-            exit 0
+            echo "AUR_SSH_KEY is not configured; cannot publish the AUR package." >&2
+            exit 1
           fi
+          git fetch --quiet origin main --tags
+          RELEASE_REPO_DIR="$PWD" RELEASE_TAG_MAIN_MODE=latest \
+            bash -c "$(git show origin/main:scripts/ensure-release-tag-on-main.sh)" release-tag-guard "$TAG"
           bash packaging/scripts/checkout-aur-repo.sh iptvtunerr aur-iptvtunerr
           cp packaging/aur/PKGBUILD aur-iptvtunerr/PKGBUILD
           cp packaging/aur/iptvtunerr.{service,env,sysusers,tmpfiles,install} aur-iptvtunerr/

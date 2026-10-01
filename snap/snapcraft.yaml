@@ -1,0 +1,40 @@
+name: iptvtunerr
+base: core24
+version: '0.1.0'
+summary: IPTV to Plex, Emby, and Jellyfin bridge
+description: |
+  IPTV Tunerr provides an HDHomeRun-style tuner, XMLTV guide, and streaming
+  interface for Plex, Emby, and Jellyfin. Run `iptvtunerr` with a subcommand
+  such as `serve`, `run`, `index`, or `probe`.
+grade: stable
+confinement: strict
+license: AGPL-3.0-or-later
+
+architectures:
+  - build-on: amd64
+    build-for: amd64
+
+apps:
+  iptvtunerr:
+    command: bin/iptv-tunerr
+    plugs:
+      - home
+      - network
+      - network-bind
+      - removable-media
+
+parts:
+  iptvtunerr:
+    plugin: nil
+    source: .
+    build-snaps:
+      - go/latest/stable
+    override-build: |
+      set -eu
+      mkdir -p "$CRAFT_PART_INSTALL/bin"
+      CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build \
+        -mod=vendor \
+        -trimpath \
+        -ldflags="-s -w -X main.Version=v${SNAPCRAFT_PROJECT_VERSION}" \
+        -o "$CRAFT_PART_INSTALL/bin/iptv-tunerr" \
+        ./cmd/iptv-tunerr

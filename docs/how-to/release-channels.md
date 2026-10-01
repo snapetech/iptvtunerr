@@ -30,6 +30,31 @@ CI runs the same release asset builder and checksum verifier with a dummy
 version so asset naming, archive layout, and checksum coverage stay tested
 before tags are cut.
 
+## Release version parity
+
+The `vX.Y.Z` Git tag is the version source for every release. After the GitHub
+Release and its assets are ready, `.github/workflows/release.yml` dispatches
+Docker plus the AUR, PPA, COPR, Chocolatey, Winget, and Snap publishers through
+[`scripts/dispatch-release-channels.sh`](../../scripts/dispatch-release-channels.sh)
+with that same tag. Each publisher checks that the tag is the newest stable
+`vX.Y.Z` reachable from `main` immediately before submission. Publisher runs
+are serialized per channel so a newer dispatch cancels an older in-progress
+run. AUR, PPA, and COPR are dispatched once by the release workflow; they do
+not also subscribe to the GitHub Release event.
+
+Docker runs from the tag push and publishes both `latest` and the matching
+version tag from the same source revision to GHCR and both configured Docker
+Hub image names.
+
+CI checks the publisher list, latest-tag guard, Docker image names, and tag
+contract. The GitHub Release workflow waits for every dispatched publisher and
+fails if a workflow fails or times out. Launchpad
+publishing waits for the target series' amd64 binary package to reach
+`Published`; a successful source upload alone does not count as availability.
+Chocolatey moderation, Winget's Microsoft review, and Snap Store review remain
+upstream gates, so those packages may take longer to become installable after
+their matching submissions.
+
 ## Release notes and changelog
 
 Each user-facing pull request adds one validated fragment under
@@ -124,13 +149,15 @@ On an Arch host, run `makepkg` inside `packaging/aur/` after copying either
 
 ## Containers
 
-`.github/workflows/docker.yml` publishes multi-arch container images on `v*`
-tags only, after checking that the tag points at current `main`.
+`.github/workflows/docker.yml` publishes multi-arch container images when the
+release workflow dispatches it or on a manual rerun. It rejects any tag other
+than the latest stable release reachable from `main` and publishes `latest`
+and the release tag from the same build.
 
 Configured registries:
 
 - GHCR: `ghcr.io/snapetech/iptvtunerr`
-- Docker Hub: `keefshape/iptvtunerr`
+- Docker Hub: `snapetech/iptvtunerr` and `keefshape/iptvtunerr` (compatibility image)
 
 Credential status:
 
@@ -158,9 +185,8 @@ Credential status:
   `snapetech/iptvtunerr`.
 
 The AUR, PPA, and COPR publisher workflows completed successfully for
-`v0.1.86`. The Launchpad result proves upload completion; source build
-acceptance remains asynchronous. The `v0.1.86` GitHub Release also contains
-direct `.deb` and `.rpm` assets.
+`v0.1.86`; the closeout below records their registry-visible state. The
+`v0.1.86` GitHub Release also contains direct `.deb` and `.rpm` assets.
 
 GitHub Actions secrets from another repository cannot be read back out, so
 future rotations have to re-enter, regenerate, or source values from a local
@@ -171,11 +197,10 @@ not want to use PPA/COPR.
 
 ## Windows Channels
 
-Windows release assets are portable ZIP files from GitHub Releases. Current
-Windows status: the binary cross-builds and package prep passes; native Windows
-host validation is still recommended before making broad Windows parity claims.
-The Windows Smoke workflow now uses `windows-latest`; a fresh native run is
-still needed to establish that proof.
+Windows release assets are portable ZIP files from GitHub Releases. The
+Windows Smoke workflow uses `windows-latest`, and native smoke validation
+passed in run
+[`36793770645`](https://github.com/snapetech/iptvtunerr/actions/runs/36793770645).
 
 Configured packaging:
 
@@ -189,39 +214,45 @@ Configured packaging:
   `https://push.chocolatey.org/`. Package preparation and push run as separate
   Bash steps with a unique runner-temp directory and GitHub step timeouts so
   package preparation or publishing cannot hang indefinitely. The workflow
-  performs its tag-on-main check inline because older tags may not contain the
-  current helper script used by other release workflows.
+  loads the current-main release guard, so even a manual rerun against an old
+  tag is rejected instead of replacing the latest package version.
 - `.github/workflows/publish-winget.yml` submits a Winget PR from a release tag.
-
-These Windows package workflows are manual-only until their external gates are
-clean. The main release workflow intentionally does not auto-dispatch
-Chocolatey or Winget so release tags do not spam Chocolatey push attempts or
-duplicate Winget PRs while validation/account issues are pending.
+- The release dispatcher starts both Windows publishers for each new release.
+  Their manual inputs remain available for catch-up and retries.
 
 Required GitHub secrets:
 
 - `CHOCO_API_KEY` - Chocolatey API key for the `iptvtunerr` package.
 - `WINGETCREATE_GITHUB_TOKEN` - GitHub token that can open PRs against
   `microsoft/winget-pkgs`.
+- `SNAPCRAFT_STORE_CREDENTIALS` - restricted Snap Store credentials for the
+  `iptvtunerr` snap.
 
 Current status:
 
 - `CHOCO_API_KEY` is configured for the `slskdn` Chocolatey account.
 - `WINGETCREATE_GITHUB_TOKEN` is configured.
-- Chocolatey package [`0.1.68`](https://community.chocolatey.org/packages/iptvtunerr)
-  is approved and has passed automated validation, verification, and scanning.
-  The package page still lists `0.1.68`; the `v0.1.86` package has not been
-  submitted.
+- Chocolatey `0.1.86` was accepted by the publisher workflow; the package's
+  moderation state is checked separately from upload success.
 - Winget PR
-  [`microsoft/winget-pkgs#374269`](https://github.com/microsoft/winget-pkgs/pull/374269)
-  for version `0.1.68` merged on 2026-05-19. The `v0.1.86` manifest has not
-  been submitted.
-- These publishers remain manual so release tags do not create package
-  submissions without a release-channel action.
+  [`microsoft/winget-pkgs#444713`](https://github.com/microsoft/winget-pkgs/pull/444713)
+  submits version `0.1.86` and is awaiting Microsoft review.
+- Chocolatey and Winget publisher runs for `v0.1.86`:
+  [Chocolatey](https://github.com/snapetech/iptvtunerr/actions/runs/36795573443),
+  [Winget](https://github.com/snapetech/iptvtunerr/actions/runs/36795573436).
 
-Snap has smoke-test support, but this repository currently has no Snapcraft
-manifest or Snap publisher workflow. Publishing Snap requires a package
-definition and Store credentials before that channel can be exercised.
+## Snap
+
+The registered `iptvtunerr` Snap is built from the release source as a strictly
+confined amd64 CLI. Install it with `snap install iptvtunerr`, then run
+`snap run iptvtunerr serve` or another Tunerr subcommand. It uses the user's
+home directory and network interfaces; connect the `removable-media` plug if
+provider files are stored on removable media. The release dispatcher publishes
+the same version to the Snap Store's stable channel.
+
+Snap Store review controls when a new stable revision becomes available. The
+publisher uses the configured Store credential and records upload failures in
+GitHub Actions.
 
 NuGet is not currently a fit for IPTV Tunerr. The project ships a Go CLI/server
 binary, not a .NET library or .NET global tool.

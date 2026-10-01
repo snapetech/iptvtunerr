@@ -1,0 +1,92 @@
+name: Publish Snap
+run-name: Publish Snap ${{ inputs.tag }}
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Release tag to publish to Snap Store, for example v0.1.86"
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release-snap
+  cancel-in-progress: true
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - name: Checkout release source
+        uses: actions/checkout@v7
+        with:
+          ref: ${{ inputs.tag }}
+          path: source
+          fetch-depth: 0
+
+      - name: Require latest release tag
+        working-directory: source
+        env:
+          TAG: ${{ inputs.tag }}
+        run: |
+          set -euo pipefail
+          git fetch --quiet origin main --tags
+          RELEASE_REPO_DIR="$PWD" RELEASE_TAG_MAIN_MODE=latest \
+            bash -c "$(git show origin/main:scripts/ensure-release-tag-on-main.sh)" release-tag-guard "$TAG"
+
+      - name: Checkout current Snap packaging metadata
+        uses: actions/checkout@v7
+        with:
+          ref: main
+          path: publisher
+
+      - name: Prepare Snapcraft project
+        env:
+          TAG: ${{ inputs.tag }}
+        run: |
+          set -euo pipefail
+          version="${TAG#v}"
+          if [[ ! "$version" =~ ^[0-9]+\.[0-9]+\.[0-9]+([+-][0-9A-Za-z.-]+)?$ ]]; then
+            echo "Invalid release tag: ${TAG}" >&2
+            exit 1
+          fi
+          install -D -m 0644 publisher/snap/snapcraft.yaml source/snap/snapcraft.yaml
+          sed -i "s/^version:.*/version: '${version}'/" source/snap/snapcraft.yaml
+          grep -Fx "version: '${version}'" source/snap/snapcraft.yaml
+
+      - name: Build Snap
+        id: snap
+        uses: snapcore/action-build@v1
+        with:
+          path: source
+
+      - name: Require Snap Store credentials
+        env:
+          SNAPCRAFT_STORE_CREDENTIALS: ${{ secrets.SNAPCRAFT_STORE_CREDENTIALS }}
+        run: |
+          if [[ -z "${SNAPCRAFT_STORE_CREDENTIALS:-}" ]]; then
+          echo "SNAPCRAFT_STORE_CREDENTIALS is not configured." >&2
+          exit 1
+          fi
+
+      - name: Confirm release is still latest
+        working-directory: source
+        env:
+          TAG: ${{ inputs.tag }}
+        run: |
+          set -euo pipefail
+          git fetch --quiet origin main --tags
+          RELEASE_REPO_DIR="$PWD" RELEASE_TAG_MAIN_MODE=latest \
+            bash -c "$(git show origin/main:scripts/ensure-release-tag-on-main.sh)" release-tag-guard "$TAG"
+
+      - name: Publish stable Snap
+        uses: snapcore/action-publish@v1
+        env:
+          SNAPCRAFT_STORE_CREDENTIALS: ${{ secrets.SNAPCRAFT_STORE_CREDENTIALS }}
+        with:
+          snap: ${{ steps.snap.outputs.snap }}
+          release: stable

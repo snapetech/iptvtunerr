@@ -17,6 +17,7 @@ clean: "go clean -cache  # optional; rm -f iptv-tunerr if built to repo root"
 
 # Verification order (scripts/verify-steps.sh)
 verify_steps:
+  - release_channel_wiring  # scripts/check-release-channel-wiring.sh asserts every publisher receives the same stable tag and all container names publish latest plus that version
   - format
   - vet
   - script_syntax  # bash -n scripts/*.sh .githooks/* packaging/scripts/*.sh; python3 -m py_compile scripts/*.py; node --check scripts/*.mjs
@@ -24,6 +25,8 @@ verify_steps:
   - test
   - build
   - smoke
+
+release_channel_wiring: "bash scripts/check-release-channel-wiring.sh  # required channel map, latest stable tag guard, publisher completion wait, and container alias contract"
 
 # Short / QA helpers
 quick_verify: "scripts/verify  # same as CI; ~10–30s"

@@ -1,13 +1,16 @@
 name: Docker
+run-name: Publish Docker ${{ inputs.tag }}
 
 on:
-  push:
-    tags: ['v*']
   workflow_dispatch:
     inputs:
       tag:
         description: "Release tag to (re)publish, for example v0.1.79"
         required: true
+
+concurrency:
+  group: release-docker
+  cancel-in-progress: true
 
 jobs:
   build:
@@ -16,7 +19,6 @@ jobs:
       contents: read
       packages: write
     env:
-      HAS_DOCKERHUB: ${{ secrets.DOCKERHUB_TOKEN != '' && 'true' || 'false' }}
       RELEASE_TAG: ${{ github.event.inputs.tag || github.ref_name }}
     steps:
       - uses: actions/checkout@v7
@@ -25,8 +27,12 @@ jobs:
           fetch-depth: 0
       - name: Require release tag on main
         env:
-          RELEASE_TAG_MAIN_MODE: ancestor
-        run: ./scripts/ensure-release-tag-on-main.sh "${RELEASE_TAG}"
+          TAG: ${{ env.RELEASE_TAG }}
+        run: |
+          set -euo pipefail
+          git fetch --quiet origin main --tags
+          RELEASE_REPO_DIR="$PWD" RELEASE_TAG_MAIN_MODE=latest \
+            bash -c "$(git show origin/main:scripts/ensure-release-tag-on-main.sh)" release-tag-guard "$TAG"
       - uses: docker/setup-qemu-action@v4
       - name: Write BuildKit network config
         id: buildkit-config
@@ -61,9 +67,6 @@ jobs:
           username: ${{ github.repository_owner }}
           password: ${{ secrets.GHCR_TOKEN || secrets.GITHUB_TOKEN }}
       - name: Login to Docker Hub
-        id: dockerhub
-        if: env.HAS_DOCKERHUB == 'true'
-        continue-on-error: true
         uses: docker/login-action@v4
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME || 'snapetech' }}
@@ -74,10 +77,19 @@ jobs:
         with:
           images: |
             ghcr.io/${{ github.repository }}
-            ${{ steps.dockerhub.outcome == 'success' && 'snapetech/iptvtunerr' || '' }}
+            snapetech/iptvtunerr
+            keefshape/iptvtunerr
           tags: |
             type=raw,value=latest
             type=raw,value=${{ env.RELEASE_TAG }}
+      - name: Confirm release is still latest before Docker publish
+        env:
+          TAG: ${{ env.RELEASE_TAG }}
+        run: |
+          set -euo pipefail
+          git fetch --quiet origin main --tags
+          RELEASE_REPO_DIR="$PWD" RELEASE_TAG_MAIN_MODE=latest \
+            bash -c "$(git show origin/main:scripts/ensure-release-tag-on-main.sh)" release-tag-guard "$TAG"
       - name: Build and push Docker image
         id: docker-build
         continue-on-error: true

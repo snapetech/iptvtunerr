@@ -1,4 +1,5 @@
 name: Publish Winget
+run-name: Publish Winget ${{ inputs.version }}
 
 on:
   workflow_dispatch:
@@ -14,6 +15,10 @@ env:
 permissions:
   contents: read
 
+concurrency:
+  group: release-winget
+  cancel-in-progress: true
+
 jobs:
   submit:
     name: Submit Winget PR
@@ -28,8 +33,12 @@ jobs:
       - name: Require release tag on main
         shell: bash
         env:
-          RELEASE_TAG_MAIN_MODE: ancestor
-        run: ./scripts/ensure-release-tag-on-main.sh "${{ inputs.version }}"
+          TAG: ${{ inputs.version }}
+        run: |
+          set -euo pipefail
+          git fetch --quiet origin main --tags
+          RELEASE_REPO_DIR="$PWD" RELEASE_TAG_MAIN_MODE=latest \
+            bash -c "$(git show origin/main:scripts/ensure-release-tag-on-main.sh)" release-tag-guard "$TAG"
 
       - name: Require Winget token
         if: ${{ env.WINGETCREATE_GITHUB_TOKEN == '' }}
@@ -74,6 +83,16 @@ jobs:
           Copy-Item packaging/winget/snapetech.iptvtunerr.installer.yaml $WingetSubmitPath/
           Copy-Item packaging/winget/snapetech.iptvtunerr.locale.en-US.yaml $WingetSubmitPath/
           "WINGET_SUBMIT_PATH=$WingetSubmitPath" | Out-File -FilePath $env:GITHUB_ENV -Append
+
+      - name: Confirm release is still latest
+        shell: bash
+        env:
+          TAG: ${{ inputs.version }}
+        run: |
+          set -euo pipefail
+          git fetch --quiet origin main --tags
+          RELEASE_REPO_DIR="$PWD" RELEASE_TAG_MAIN_MODE=latest \
+            bash -c "$(git show origin/main:scripts/ensure-release-tag-on-main.sh)" release-tag-guard "$TAG"
 
       - name: Submit manifests to winget-pkgs
         shell: pwsh

@@ -9,6 +9,12 @@ ROOT="$PWD"
 err() { echo "[iptv-tunerr verify] ERROR: $*" >&2; exit 1; }
 step() { echo "[iptv-tunerr verify] ==> $*"; }
 
+# --- Release channel parity ---
+step "release-channel wiring (scripts/check-release-channel-wiring.sh)"
+if ! bash ./scripts/check-release-channel-wiring.sh; then
+  err "release-channel wiring contract failed"
+fi
+
 # --- Format (fail if any file needs formatting; vendor/ is excluded) ---
 step "format (gofmt -s -l)"
 # Find all .go files excluding vendor/ and check formatting

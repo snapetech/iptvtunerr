@@ -209,6 +209,27 @@
 - `internal/plexlabelproxy/entitlement.go`
 - `internal/plexlabelproxy/proxy_test.go`
 
+### Loop: Publisher success can leave a release channel on an older build
+
+**Symptom**
+- Release jobs report success, but a package registry still serves an older version or a container compatibility name has a stale `latest` tag.
+- A manual retry for an older release can move a mutable channel pointer backward.
+
+**Why it's tricky**
+- Some workflows stop at upload or PR creation. Launchpad source acceptance precedes amd64 binary publication, and Chocolatey, Winget, and Snap may have separate store review after submission.
+- AUR/PPA/COPR workflows can be triggered both by GitHub Release events and by a release dispatcher, causing duplicate writes for the same tag.
+
+**What works**
+- Dispatch all release publishers once from the GitHub Release workflow and wait for every publisher workflow to finish.
+- Check that a submitted tag is the latest stable tag on `main`; serialize each channel so newer release work supersedes older work.
+- For PPA, wait for the exact source version and its amd64 binary publication. Audit registries and store review separately from workflow completion.
+- Publish all configured container names with `latest` and the exact release tag from one build.
+
+**Where it's documented**
+- `scripts/dispatch-release-channels.sh`
+- `scripts/check-release-channel-wiring.sh`
+- `docs/how-to/release-channels.md`
+
 ### Loop: Plex Web asks for JSON provider metadata, bypassing XML-only entitlement rewrites
 
 **Symptom**
