@@ -317,7 +317,7 @@ These two capabilities run from the same process. They can be used independently
 
 ### Sports Automation
 
-Tunerr can use API-Sports schedules for MLB, NFL, and NCAA Football to find live events in the lineup you already serve. It matches both teams and the scheduled time against Tunerr's merged XMLTV guide, then publishes a separate event playlist and guide without changing your regular lineup. Generated channels still stream through Tunerr's normal `/stream/{channel_id}` gateway.
+Tunerr can use API-Sports schedules for MLB, NFL, NCAA Football, and NBA to find live events in the lineup you already serve. It matches both teams and the scheduled time against Tunerr's merged XMLTV guide, then publishes a separate event playlist and guide without changing your regular lineup. Generated channels still stream through Tunerr's normal `/stream/{channel_id}` gateway.
 
 Manage datasets, team filters, refreshes, and match results from the authenticated Sports page in the WebUI. Enter the API-Sports key there; Tunerr stores it in an owner-only state file and applies it immediately. The operator API is available at `/v1/sports/automation`, `/v1/sports/credentials`, `/v1/sports/status`, `/v1/sports/events`, and `/v1/sports/refresh`; clients can import `/sports/live.m3u` with `/sports/guide.xml`. Deployments that manage secrets through environment variables can still set `IPTV_TUNERR_API_SPORTS_KEY`, which takes precedence. See the [Sports Automation guide](docs/how-to/sports-automation.md) for setup and matching details.
 

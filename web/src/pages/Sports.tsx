@@ -289,14 +289,16 @@ export function Sports() {
                 <Checkbox
                   key={dataset.id}
                   label={dataset.name}
-                  description={`${dataset.product} · league ID ${dataset.remote_league_id}`}
+                  description={dataset.remote_league
+                    ? `${dataset.product} · league ${dataset.remote_league}`
+                    : `${dataset.product} · league ID ${dataset.remote_league_id ?? 'unknown'}`}
                   checked={settings.datasets.includes(dataset.id)}
                   onChange={event => setDataset(dataset.id, event.currentTarget.checked)}
                 />
               ))}
             </Stack>
             <Text size="xs" c="dimmed">
-              These are the API-Sports schedule datasets supported by the reference integration. Other sports continue to use your provider and XMLTV feeds without API-Sports requests.
+              NBA uses API-NBA. Other Basketball leagues and cups are not included yet; other sports continue to use your provider and XMLTV feeds without API-Sports requests.
             </Text>
           </Stack>
         </Card>
@@ -353,10 +355,10 @@ export function Sports() {
               {status.last_success_at ? `Last schedule response ${new Date(status.last_success_at).toLocaleString()}` : 'No API-Sports schedule has been cached yet'}
             </Text>
           </Group>
-          <Table.ScrollContainer minWidth={600}>
+          <Table.ScrollContainer minWidth={720}>
             <Table striped highlightOnHover withTableBorder>
               <Table.Thead>
-                <Table.Tr><Table.Th>Dataset</Table.Th><Table.Th>Cached dates</Table.Th><Table.Th>Events</Table.Th><Table.Th>Stale dates</Table.Th><Table.Th>Last fetch</Table.Th></Table.Tr>
+                <Table.Tr><Table.Th>Dataset</Table.Th><Table.Th>Cached dates</Table.Th><Table.Th>Events</Table.Th><Table.Th>Stale dates</Table.Th><Table.Th>Daily quota</Table.Th><Table.Th>Last fetch</Table.Th></Table.Tr>
               </Table.Thead>
               <Table.Tbody>
                 {status.datasets.map(item => (
@@ -365,15 +367,15 @@ export function Sports() {
                     <Table.Td>{item.cached_dates.length ? item.cached_dates.join(', ') : '—'}</Table.Td>
                     <Table.Td>{item.cached_event_count}</Table.Td>
                     <Table.Td>{item.stale_date_count ? <Badge color="yellow">{item.stale_date_count}</Badge> : '0'}</Table.Td>
+                    <Table.Td>{item.quota?.daily_remaining !== undefined
+                      ? `${item.quota.daily_remaining}${item.quota.daily_limit !== undefined ? ` / ${item.quota.daily_limit}` : ''}`
+                      : '—'}</Table.Td>
                     <Table.Td>{item.last_fetch_at ? new Date(item.last_fetch_at).toLocaleString() : '—'}</Table.Td>
                   </Table.Tr>
                 ))}
               </Table.Tbody>
             </Table>
           </Table.ScrollContainer>
-          {status.quota.daily_remaining !== undefined && (
-            <Text size="xs" c="dimmed">API-Sports daily quota remaining: {status.quota.daily_remaining}{status.quota.daily_limit !== undefined ? ` / ${status.quota.daily_limit}` : ''}</Text>
-          )}
         </Stack>
       </Card>
 

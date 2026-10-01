@@ -1863,7 +1863,8 @@ IPTV_TUNERR_FREE_SOURCE_MODE=merge
 
 ## Paths
 
-- `IPTV_TUNERR_CATALOG`
+- `IPTV_TUNERR_CATALOG_PATH` — catalog JSON path used by indexing, runtime serving, and CLI commands that default to the configured catalog. Defaults to `./catalog.json`; relative paths resolve from the process working directory.
+- `IPTV_TUNERR_CATALOG` — legacy alias for `IPTV_TUNERR_CATALOG_PATH`; used only when the preferred `_PATH` variable is unset or empty.
 - `IPTV_TUNERR_MOUNT`
 - `IPTV_TUNERR_CACHE`
 

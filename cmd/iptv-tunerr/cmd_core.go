@@ -20,10 +20,10 @@ import (
 func coreCommands() []commandSpec {
 	indexCmd := flag.NewFlagSet("index", flag.ExitOnError)
 	m3uURL := indexCmd.String("m3u", "", "M3U URL (default: IPTV_TUNERR_M3U_URL or IPTV_TUNERR_PROVIDER_URL)")
-	catalogPathIndex := indexCmd.String("catalog", "", "Catalog JSON path (default: IPTV_TUNERR_CATALOG)")
+	catalogPathIndex := indexCmd.String("catalog", "", "Catalog JSON path (default: IPTV_TUNERR_CATALOG_PATH (legacy alias: IPTV_TUNERR_CATALOG))")
 
 	serveCmd := flag.NewFlagSet("serve", flag.ExitOnError)
-	catalogPathServe := serveCmd.String("catalog", "", "Catalog JSON path for live channels (default: IPTV_TUNERR_CATALOG)")
+	catalogPathServe := serveCmd.String("catalog", "", "Catalog JSON path for live channels (default: IPTV_TUNERR_CATALOG_PATH (legacy alias: IPTV_TUNERR_CATALOG))")
 	serveAddr := serveCmd.String("addr", ":5004", "Listen address")
 	serveBaseURL := serveCmd.String("base-url", "http://localhost:5004", "Base URL for discover/lineup (set to your host for Plex)")
 	serveDeviceID := serveCmd.String("device-id", "", "HDHR Device ID (default: IPTV_TUNERR_DEVICE_ID)")
@@ -31,7 +31,7 @@ func coreCommands() []commandSpec {
 	serveMode := serveCmd.String("mode", "", "easy = lineup capped at 479 for Plex wizard; full = use IPTV_TUNERR_LINEUP_MAX_CHANNELS or no cap")
 
 	runCmd := flag.NewFlagSet("run", flag.ExitOnError)
-	runCatalog := runCmd.String("catalog", "", "Catalog path (default: IPTV_TUNERR_CATALOG)")
+	runCatalog := runCmd.String("catalog", "", "Catalog path (default: IPTV_TUNERR_CATALOG_PATH (legacy alias: IPTV_TUNERR_CATALOG))")
 	runAddr := runCmd.String("addr", ":5004", "Listen address")
 	runBaseURL := runCmd.String("base-url", "http://localhost:5004", "Base URL for Plex (use your host, e.g. http://192.168.1.10:5004)")
 	runDeviceID := runCmd.String("device-id", "", "HDHR Device ID (default: IPTV_TUNERR_DEVICE_ID)")

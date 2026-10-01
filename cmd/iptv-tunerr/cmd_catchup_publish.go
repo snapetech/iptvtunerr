@@ -15,7 +15,7 @@ import (
 
 func catchupOpsCommands() []commandSpec {
 	catchupPublishCmd := flag.NewFlagSet("catchup-publish", flag.ExitOnError)
-	catchupPublishCatalog := catchupPublishCmd.String("catalog", "", "Input catalog.json (default: IPTV_TUNERR_CATALOG)")
+	catchupPublishCatalog := catchupPublishCmd.String("catalog", "", "Input catalog.json (default: IPTV_TUNERR_CATALOG_PATH (legacy alias: IPTV_TUNERR_CATALOG))")
 	catchupPublishXMLTV := catchupPublishCmd.String("xmltv", "", "Guide/XMLTV file path or http(s) URL (required; /guide.xml works well)")
 	catchupPublishHorizon := catchupPublishCmd.Duration("horizon", 3*time.Hour, "How far ahead to include capsule windows")
 	catchupPublishLimit := catchupPublishCmd.Int("limit", 20, "Max capsules to publish")

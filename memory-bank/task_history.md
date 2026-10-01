@@ -531,3 +531,11 @@
 - Added a masked API key editor to the authenticated Sports page, backed by a protected write-only endpoint and an owner-only state file. Environment-managed credentials remain read-only and take precedence; saved keys apply immediately without restarting Tunerr. Fixed the empty `team_rules` response that crashed the Sports page and documented setup and secret handling.
 - Published immutable release `v0.1.89` from the self-service setup, UI crash fix, refreshed verification baselines, and release changelog.
 - Verification: Go build and WebUI production build passed; `./scripts/release-readiness.sh` passed, including repository verification, Go tests, smoke checks, and focused suites. Release-note validation and changelog tag coverage passed. `npm ci` reported zero vulnerabilities.
+
+## 2026-10-01 - Add NBA schedules and fix catalog path configuration
+
+- Made `IPTV_TUNERR_CATALOG_PATH` the preferred catalog setting across runtime configuration, CLI help, deployment examples, the local QA helper, and the AUR systemd environment file. Kept `IPTV_TUNERR_CATALOG` as a compatible fallback.
+- Added the API-NBA v2 `standard` dataset with season-start year handling, response normalization, independent product quota tracking, and a Sports page quota view. Clarified that the operator settings route accepts `PUT` or `PATCH`; `POST` returns 405.
+- Reconfirmed the 24,908-channel smoketest timeout regression preserves untested rows. Updated the active bug-council backlog count for the new filesystem boundary test.
+- Verification: `./scripts/release-readiness.sh`, focused config/sports/indexer tests, the 24,908-channel regression, WebUI `npm run build`, shell syntax checks, release-note preview/validation, and `git diff --check` passed. `npm ci` reported zero vulnerabilities.
+- Prepared the changes for patch release `v0.1.90`; release publication follows the tagged commit.

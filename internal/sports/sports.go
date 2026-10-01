@@ -36,20 +36,23 @@ var (
 	ErrNoDatasets    = errors.New("no API-Sports datasets are enabled")
 )
 
-// Dataset is a supported canonical schedule feed. Hosts are fixed in code.
+// Dataset is a supported canonical schedule feed. Hosts and remote filters are fixed in code.
 type Dataset struct {
-	ID             string `json:"id"`
-	Name           string `json:"name"`
-	Product        string `json:"product"`
-	Host           string `json:"host"`
-	RemoteLeagueID int    `json:"remote_league_id"`
-	GuideBlock     int    `json:"guide_block"`
+	ID               string `json:"id"`
+	Name             string `json:"name"`
+	Product          string `json:"product"`
+	Host             string `json:"host"`
+	RemoteLeagueID   int    `json:"remote_league_id,omitempty"`
+	RemoteLeague     string `json:"remote_league,omitempty"`
+	GuideBlock       int    `json:"guide_block"`
+	seasonStartMonth time.Month
 }
 
 var datasetCatalog = []Dataset{
 	{ID: "mlb", Name: "MLB", Product: "Baseball", Host: "v1.baseball.api-sports.io", RemoteLeagueID: 1, GuideBlock: 1000},
 	{ID: "nfl", Name: "NFL", Product: "American Football", Host: "v1.american-football.api-sports.io", RemoteLeagueID: 1, GuideBlock: 4000},
 	{ID: "ncaa", Name: "NCAA Football", Product: "American Football", Host: "v1.american-football.api-sports.io", RemoteLeagueID: 2, GuideBlock: 5000},
+	{ID: "nba", Name: "NBA", Product: "Basketball", Host: "v2.nba.api-sports.io", RemoteLeague: "standard", GuideBlock: 6000, seasonStartMonth: time.October},
 }
 
 func Datasets() []Dataset { return append([]Dataset(nil), datasetCatalog...) }
@@ -64,7 +67,7 @@ func DatasetByID(id string) (Dataset, bool) {
 	return Dataset{}, false
 }
 
-// Event is an API-Sports schedule row normalized across Baseball and NFL/NCAA.
+// Event is an API-Sports schedule row normalized across supported products.
 type Event struct {
 	ID           string    `json:"id"`
 	Dataset      string    `json:"dataset"`
@@ -94,6 +97,7 @@ type DatasetStatus struct {
 	LastFetchAt         string   `json:"last_fetch_at,omitempty"`
 	LastFetchEventCount int      `json:"last_fetch_event_count"`
 	StaleDateCount      int      `json:"stale_date_count"`
+	Quota               *Quota   `json:"quota,omitempty"`
 }
 
 type Status struct {
@@ -120,13 +124,19 @@ type cacheEntry struct {
 }
 
 type diskState struct {
-	Version       int          `json:"version"`
-	Entries       []cacheEntry `json:"entries"`
-	LastRequestAt time.Time    `json:"last_request_at,omitempty"`
-	LastSuccessAt time.Time    `json:"last_success_at,omitempty"`
-	LastError     string       `json:"last_error,omitempty"`
-	Quota         Quota        `json:"quota"`
-	QuotaAt       time.Time    `json:"quota_at,omitempty"`
+	Version       int                      `json:"version"`
+	Entries       []cacheEntry             `json:"entries"`
+	LastRequestAt time.Time                `json:"last_request_at,omitempty"`
+	LastSuccessAt time.Time                `json:"last_success_at,omitempty"`
+	LastError     string                   `json:"last_error,omitempty"`
+	Quota         Quota                    `json:"quota"`
+	QuotaAt       time.Time                `json:"quota_at,omitempty"`
+	Quotas        map[string]quotaSnapshot `json:"quotas,omitempty"`
+}
+
+type quotaSnapshot struct {
+	Quota Quota     `json:"quota"`
+	At    time.Time `json:"at"`
 }
 
 type Service struct {
@@ -142,6 +152,7 @@ type Service struct {
 	lastError   string
 	quota       Quota
 	quotaAt     time.Time
+	quotas      map[string]quotaSnapshot
 	nextRequest time.Time
 }
 
@@ -155,6 +166,7 @@ func NewService(key, cachePath string) *Service {
 		},
 		refreshGate: make(chan struct{}, 1),
 		entries:     make(map[string]cacheEntry),
+		quotas:      make(map[string]quotaSnapshot),
 	}
 	s.load()
 	return s
@@ -215,11 +227,17 @@ func (s *Service) RefreshWindow(ctx context.Context, datasetIDs []string, start,
 	var warnings []string
 	for _, date := range dates {
 		needBaseball := selectSet["mlb"] && (force || s.needsRefresh("mlb", date, time.Now()))
+		needNBA := selectSet["nba"] && (force || s.needsRefresh("nba", date, time.Now()))
 		needFootball := (selectSet["nfl"] && (force || s.needsRefresh("nfl", date, time.Now()))) ||
 			(selectSet["ncaa"] && (force || s.needsRefresh("ncaa", date, time.Now())))
 		if needBaseball {
 			if err := s.fetchDate(ctx, "mlb", date); err != nil {
 				warnings = append(warnings, fmt.Sprintf("MLB %s: %s", date, err))
+			}
+		}
+		if needNBA {
+			if err := s.fetchDate(ctx, "nba", date); err != nil {
+				warnings = append(warnings, fmt.Sprintf("NBA %s: %s", date, err))
 			}
 		}
 		if needFootball {
@@ -290,7 +308,12 @@ func (s *Service) Status() Status {
 	}
 	byDataset := map[string]*DatasetStatus{}
 	for _, d := range datasetCatalog {
-		byDataset[d.ID] = &DatasetStatus{ID: d.ID, CachedDates: []string{}}
+		row := &DatasetStatus{ID: d.ID, CachedDates: []string{}}
+		if quota, ok := s.quotas[d.Host]; ok && sameUTCDay(quota.At, time.Now()) {
+			copy := cloneQuota(quota.Quota)
+			row.Quota = &copy
+		}
+		byDataset[d.ID] = row
 	}
 	for _, entry := range s.entries {
 		d := byDataset[entry.Dataset]
@@ -338,9 +361,23 @@ func freshness(date string, now time.Time) time.Duration {
 	return oldScheduleFreshFor
 }
 
+func seasonStartYear(date string, seasonStartMonth time.Month) int {
+	if seasonStartMonth < time.January || seasonStartMonth > time.December {
+		return 0
+	}
+	parsed, err := time.Parse("2006-01-02", date)
+	if err != nil {
+		return 0
+	}
+	if parsed.Month() < seasonStartMonth {
+		return parsed.Year() - 1
+	}
+	return parsed.Year()
+}
+
 func (s *Service) fetchDate(ctx context.Context, datasetID, date string) error {
 	dataset, _ := DatasetByID(datasetID)
-	payload, quota, err := s.request(ctx, dataset.Host, date)
+	payload, quota, err := s.request(ctx, dataset, date)
 	if err != nil {
 		s.recordError(err)
 		return err
@@ -351,13 +388,8 @@ func (s *Service) fetchDate(ctx context.Context, datasetID, date string) error {
 }
 
 func (s *Service) fetchFootballDate(ctx context.Context, date string) error {
-	var host string
-	for _, dataset := range datasetCatalog {
-		if dataset.ID == "nfl" {
-			host = dataset.Host
-		}
-	}
-	payload, quota, err := s.request(ctx, host, date)
+	dataset, _ := DatasetByID("nfl")
+	payload, quota, err := s.request(ctx, dataset, date)
 	if err != nil {
 		s.recordError(err)
 		return err
@@ -371,8 +403,8 @@ func (s *Service) fetchFootballDate(ctx context.Context, date string) error {
 	return nil
 }
 
-func (s *Service) request(ctx context.Context, host, date string) (map[string]json.RawMessage, Quota, error) {
-	if host == "" {
+func (s *Service) request(ctx context.Context, dataset Dataset, date string) (map[string]json.RawMessage, Quota, error) {
+	if dataset.Host == "" {
 		return nil, Quota{}, errors.New("unknown API-Sports host")
 	}
 	key := s.apiKey()
@@ -380,7 +412,8 @@ func (s *Service) request(ctx context.Context, host, date string) (map[string]js
 		return nil, Quota{}, ErrNotConfigured
 	}
 	s.mu.RLock()
-	quotaExhausted := sameUTCDay(s.quotaAt, time.Now()) && s.quota.DailyRemaining != nil && *s.quota.DailyRemaining <= 0
+	quotaState, hasQuota := s.quotas[dataset.Host]
+	quotaExhausted := hasQuota && sameUTCDay(quotaState.At, time.Now()) && quotaState.Quota.DailyRemaining != nil && *quotaState.Quota.DailyRemaining <= 0
 	s.mu.RUnlock()
 	if quotaExhausted {
 		return nil, Quota{}, errors.New("API-Sports daily request quota is exhausted")
@@ -390,10 +423,20 @@ func (s *Service) request(ctx context.Context, host, date string) (map[string]js
 		return nil, Quota{}, ctx.Err()
 	case <-time.After(s.requestWait()):
 	}
-	endpoint := url.URL{Scheme: "https", Host: host, Path: "/games"}
+	endpoint := url.URL{Scheme: "https", Host: dataset.Host, Path: "/games"}
 	query := endpoint.Query()
 	query.Set("date", date)
-	query.Set("timezone", "UTC")
+	if dataset.seasonStartMonth == 0 {
+		query.Set("timezone", "UTC")
+	}
+	if dataset.RemoteLeague != "" {
+		query.Set("league", dataset.RemoteLeague)
+	}
+	if dataset.seasonStartMonth != 0 {
+		if season := seasonStartYear(date, dataset.seasonStartMonth); season > 0 {
+			query.Set("season", strconv.Itoa(season))
+		}
+	}
 	endpoint.RawQuery = query.Encode()
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, endpoint.String(), nil)
 	if err != nil {
@@ -412,7 +455,12 @@ func (s *Service) request(ctx context.Context, host, date string) (map[string]js
 	defer resp.Body.Close()
 	quota := quotaFromHeaders(resp.Header)
 	s.mu.Lock()
-	s.quota, s.quotaAt = cloneQuota(quota), time.Now().UTC()
+	quotaAt := time.Now().UTC()
+	s.quota, s.quotaAt = cloneQuota(quota), quotaAt
+	if s.quotas == nil {
+		s.quotas = make(map[string]quotaSnapshot)
+	}
+	s.quotas[dataset.Host] = quotaSnapshot{Quota: cloneQuota(quota), At: quotaAt}
 	_ = s.saveLocked()
 	s.mu.Unlock()
 	raw, err := io.ReadAll(io.LimitReader(resp.Body, maxBodyBytes+1))
@@ -453,8 +501,13 @@ func normalizePayload(dataset Dataset, payload map[string]json.RawMessage) []Eve
 
 func normalizeEvent(dataset Dataset, root map[string]any) (Event, bool) {
 	game := object(root["game"])
-	league := object(root["league"])
-	if intValue(league["id"]) != dataset.RemoteLeagueID {
+	leagueValue := root["league"]
+	league := object(leagueValue)
+	if dataset.RemoteLeague != "" {
+		if text(leagueValue) != dataset.RemoteLeague {
+			return Event{}, false
+		}
+	} else if intValue(league["id"]) != dataset.RemoteLeagueID {
 		return Event{}, false
 	}
 	gameID := firstText(root["id"], game["id"])
@@ -468,6 +521,9 @@ func normalizeEvent(dataset Dataset, root map[string]any) (Event, bool) {
 	teams := object(root["teams"])
 	home := object(teams["home"])
 	away := object(teams["away"])
+	if len(away) == 0 {
+		away = object(teams["visitors"])
+	}
 	homeName := text(home["name"])
 	awayName := text(away["name"])
 	if homeName == "" || awayName == "" {
@@ -478,6 +534,9 @@ func normalizeEvent(dataset Dataset, root map[string]any) (Event, bool) {
 		status = object(game["status"])
 	}
 	leagueName := text(league["name"])
+	if dataset.RemoteLeague != "" {
+		leagueName = text(leagueValue)
+	}
 	return Event{
 		ID:           dataset.ID + ":" + gameID,
 		Dataset:      dataset.ID,
@@ -504,7 +563,7 @@ func eventStart(root, game map[string]any) time.Time {
 				return parsed
 			}
 		}
-		for _, key := range []string{"timestamp", "date", "datetime", "time", "starts_at"} {
+		for _, key := range []string{"timestamp", "date", "datetime", "time", "starts_at", "start"} {
 			value := item[key]
 			if key == "timestamp" {
 				if n, err := strconv.ParseInt(text(value), 10, 64); err == nil && n > 0 {
@@ -723,13 +782,20 @@ func (s *Service) load() {
 		s.entries[cacheKey(entry.Dataset, entry.Date)] = entry
 	}
 	s.lastRequest, s.lastSuccess, s.lastError, s.quota, s.quotaAt = state.LastRequestAt, state.LastSuccessAt, state.LastError, cloneQuota(state.Quota), state.QuotaAt
+	if state.Quotas != nil {
+		s.quotas = state.Quotas
+	}
 }
 
 func (s *Service) saveLocked() error {
 	if s.cachePath == "" {
 		return nil
 	}
-	state := diskState{Version: 1, LastRequestAt: s.lastRequest, LastSuccessAt: s.lastSuccess, LastError: s.lastError, Quota: cloneQuota(s.quota), QuotaAt: s.quotaAt}
+	quotas := make(map[string]quotaSnapshot, len(s.quotas))
+	for host, quota := range s.quotas {
+		quotas[host] = quotaSnapshot{Quota: cloneQuota(quota.Quota), At: quota.At}
+	}
+	state := diskState{Version: 1, LastRequestAt: s.lastRequest, LastSuccessAt: s.lastSuccess, LastError: s.lastError, Quota: cloneQuota(s.quota), QuotaAt: s.quotaAt, Quotas: quotas}
 	for _, entry := range s.entries {
 		state.Entries = append(state.Entries, entry)
 	}

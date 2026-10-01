@@ -7,6 +7,24 @@ import (
 	"time"
 )
 
+func TestCatalogPathEnvAliases(t *testing.T) {
+	t.Setenv("IPTV_TUNERR_CATALOG_PATH", "")
+	t.Setenv("IPTV_TUNERR_CATALOG", "")
+	if got := Load().CatalogPath; got != "./catalog.json" {
+		t.Fatalf("default catalog path = %q, want ./catalog.json", got)
+	}
+
+	t.Setenv("IPTV_TUNERR_CATALOG", "/legacy/catalog.json")
+	if got := Load().CatalogPath; got != "/legacy/catalog.json" {
+		t.Fatalf("legacy catalog path = %q, want /legacy/catalog.json", got)
+	}
+
+	t.Setenv("IPTV_TUNERR_CATALOG_PATH", " /data/catalog.json ")
+	if got := Load().CatalogPath; got != "/data/catalog.json" {
+		t.Fatalf("preferred catalog path = %q, want /data/catalog.json", got)
+	}
+}
+
 func TestProviderEntries_singleProvider(t *testing.T) {
 	os.Clearenv()
 	os.Setenv("IPTV_TUNERR_PROVIDER_URL", "http://host1")

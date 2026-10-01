@@ -37,7 +37,7 @@ type Config struct {
 	// Paths
 	MountPoint      string // e.g. /mnt/vodfs
 	CacheDir        string // e.g. /var/cache/iptvtunerr
-	CatalogPath     string // e.g. /var/lib/iptvtunerr/catalog.json
+	CatalogPath     string // configured by IPTV_TUNERR_CATALOG_PATH (IPTV_TUNERR_CATALOG legacy alias)
 	VODFSAllowOther bool   // Linux only: mount VODFS with FUSE allow_other (needed for some Plex host setups)
 
 	// Live tuner
@@ -195,7 +195,7 @@ func Load() *Config {
 		M3USupplementVOD:            getEnvBool("IPTV_TUNERR_M3U_SUPPLEMENT_VOD", false),
 		MountPoint:                  getEnv("IPTV_TUNERR_MOUNT", "/mnt/vodfs"),
 		CacheDir:                    getEnv("IPTV_TUNERR_CACHE", "/var/cache/iptvtunerr"),
-		CatalogPath:                 getEnv("IPTV_TUNERR_CATALOG", "./catalog.json"),
+		CatalogPath:                 catalogPathFromEnv(),
 		VODFSAllowOther:             getEnvBool("IPTV_TUNERR_VODFS_ALLOW_OTHER", false),
 		TunerCount:                  getEnvIntOrAuto("IPTV_TUNERR_TUNER_COUNT", 2),
 		LineupMaxChannels:           getEnvInt("IPTV_TUNERR_LINEUP_MAX_CHANNELS", 480),
@@ -489,6 +489,17 @@ func getEnv(key, defaultVal string) string {
 		return v
 	}
 	return defaultVal
+}
+
+// catalogPathFromEnv prefers the documented path-specific name while keeping
+// IPTV_TUNERR_CATALOG working for existing deployments.
+func catalogPathFromEnv() string {
+	for _, key := range []string{"IPTV_TUNERR_CATALOG_PATH", "IPTV_TUNERR_CATALOG"} {
+		if value := strings.TrimSpace(os.Getenv(key)); value != "" {
+			return value
+		}
+	}
+	return "./catalog.json"
 }
 
 func getEnvInt(key string, defaultVal int) int {

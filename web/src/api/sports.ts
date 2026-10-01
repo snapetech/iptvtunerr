@@ -1,11 +1,12 @@
 import { api } from './client'
 
 export interface SportsDataset {
-  id: 'mlb' | 'nfl' | 'ncaa'
+  id: 'mlb' | 'nfl' | 'ncaa' | 'nba'
   name: string
   product: string
   host: string
-  remote_league_id: number
+  remote_league_id?: number
+  remote_league?: string
   guide_block: number
 }
 
@@ -44,6 +45,7 @@ export interface SportsDatasetStatus {
   last_fetch_at?: string
   last_fetch_event_count: number
   stale_date_count: number
+  quota?: SportsQuota
 }
 
 export interface SportsStatus {

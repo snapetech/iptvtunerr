@@ -17,7 +17,7 @@ import (
 func vodCommands() []commandSpec {
 	mountCmd := flag.NewFlagSet("mount", flag.ExitOnError)
 	mountPoint := mountCmd.String("mount", "", "Mount point (default: IPTV_TUNERR_MOUNT)")
-	catalogPathMount := mountCmd.String("catalog", "", "Catalog JSON path (default: IPTV_TUNERR_CATALOG)")
+	catalogPathMount := mountCmd.String("catalog", "", "Catalog JSON path (default: IPTV_TUNERR_CATALOG_PATH (legacy alias: IPTV_TUNERR_CATALOG))")
 	cacheDir := mountCmd.String("cache", "", "Cache dir for VOD (default: IPTV_TUNERR_CACHE); if set, direct-file URLs are downloaded on demand")
 	mountAllowOther := mountCmd.Bool("allow-other", false, "Linux/FUSE: mount with allow_other so other users/processes can access the VODFS mount (may require user_allow_other in /etc/fuse.conf)")
 
@@ -33,11 +33,11 @@ func vodCommands() []commandSpec {
 	vodRefresh := vodRegisterCmd.Bool("refresh", true, "Trigger library refresh after create/reuse")
 
 	vodSplitCmd := flag.NewFlagSet("vod-split", flag.ExitOnError)
-	vodSplitCatalog := vodSplitCmd.String("catalog", "", "Input catalog.json (default: IPTV_TUNERR_CATALOG)")
+	vodSplitCatalog := vodSplitCmd.String("catalog", "", "Input catalog.json (default: IPTV_TUNERR_CATALOG_PATH (legacy alias: IPTV_TUNERR_CATALOG))")
 	vodSplitOutDir := vodSplitCmd.String("out-dir", "", "Output directory for per-lane catalogs (required)")
 
 	vodWebDAVCmd := flag.NewFlagSet("vod-webdav", flag.ExitOnError)
-	vodWebDAVCatalog := vodWebDAVCmd.String("catalog", "", "Catalog JSON path (default: IPTV_TUNERR_CATALOG)")
+	vodWebDAVCatalog := vodWebDAVCmd.String("catalog", "", "Catalog JSON path (default: IPTV_TUNERR_CATALOG_PATH (legacy alias: IPTV_TUNERR_CATALOG))")
 	vodWebDAVCache := vodWebDAVCmd.String("cache", "", "Cache dir for VOD materialization (default: IPTV_TUNERR_CACHE)")
 	vodWebDAVAddr := vodWebDAVCmd.String("addr", "127.0.0.1:58188", "Listen address for the WebDAV VOD server")
 

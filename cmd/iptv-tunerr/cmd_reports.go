@@ -20,20 +20,20 @@ import (
 
 func reportCommands() []commandSpec {
 	channelReportCmd := flag.NewFlagSet("channel-report", flag.ExitOnError)
-	channelReportCatalog := channelReportCmd.String("catalog", "", "Input catalog.json (default: IPTV_TUNERR_CATALOG)")
+	channelReportCatalog := channelReportCmd.String("catalog", "", "Input catalog.json (default: IPTV_TUNERR_CATALOG_PATH (legacy alias: IPTV_TUNERR_CATALOG))")
 	channelReportXMLTV := channelReportCmd.String("xmltv", "", "Optional XMLTV file path or http(s) URL to enrich report with exact/alias/name match details")
 	channelReportAliases := channelReportCmd.String("aliases", "", "Optional alias override JSON (name_to_xmltv_id map)")
 	channelReportOut := channelReportCmd.String("out", "", "Optional JSON report output path (default: stdout)")
 
 	channelLeaderboardCmd := flag.NewFlagSet("channel-leaderboard", flag.ExitOnError)
-	channelLeaderboardCatalog := channelLeaderboardCmd.String("catalog", "", "Input catalog.json (default: IPTV_TUNERR_CATALOG)")
+	channelLeaderboardCatalog := channelLeaderboardCmd.String("catalog", "", "Input catalog.json (default: IPTV_TUNERR_CATALOG_PATH (legacy alias: IPTV_TUNERR_CATALOG))")
 	channelLeaderboardXMLTV := channelLeaderboardCmd.String("xmltv", "", "Optional XMLTV file path or http(s) URL to enrich leaderboard with exact/alias/name match details")
 	channelLeaderboardAliases := channelLeaderboardCmd.String("aliases", "", "Optional alias override JSON (name_to_xmltv_id map)")
 	channelLeaderboardLimit := channelLeaderboardCmd.Int("limit", 10, "Max rows per leaderboard bucket")
 	channelLeaderboardOut := channelLeaderboardCmd.String("out", "", "Optional JSON report output path (default: stdout)")
 
 	channelDNAReportCmd := flag.NewFlagSet("channel-dna-report", flag.ExitOnError)
-	channelDNAReportCatalog := channelDNAReportCmd.String("catalog", "", "Input catalog.json (default: IPTV_TUNERR_CATALOG)")
+	channelDNAReportCatalog := channelDNAReportCmd.String("catalog", "", "Input catalog.json (default: IPTV_TUNERR_CATALOG_PATH (legacy alias: IPTV_TUNERR_CATALOG))")
 	channelDNAReportOut := channelDNAReportCmd.String("out", "", "Optional JSON report output path (default: stdout)")
 
 	ghostHunterCmd := flag.NewFlagSet("ghost-hunter", flag.ExitOnError)
@@ -51,7 +51,7 @@ func reportCommands() []commandSpec {
 	autopilotReportLimit := autopilotReportCmd.Int("limit", 10, "Max hot channels to include")
 
 	catchupCapsulesCmd := flag.NewFlagSet("catchup-capsules", flag.ExitOnError)
-	catchupCapsulesCatalog := catchupCapsulesCmd.String("catalog", "", "Input catalog.json (default: IPTV_TUNERR_CATALOG)")
+	catchupCapsulesCatalog := catchupCapsulesCmd.String("catalog", "", "Input catalog.json (default: IPTV_TUNERR_CATALOG_PATH (legacy alias: IPTV_TUNERR_CATALOG))")
 	catchupCapsulesXMLTV := catchupCapsulesCmd.String("xmltv", "", "Guide/XMLTV file path or http(s) URL (required; /guide.xml works well)")
 	catchupCapsulesHorizon := catchupCapsulesCmd.Duration("horizon", 3*time.Hour, "How far ahead to include candidate programme windows")
 	catchupCapsulesLimit := catchupCapsulesCmd.Int("limit", 20, "Max capsules to export")
@@ -61,7 +61,7 @@ func reportCommands() []commandSpec {
 	catchupCapsulesReplayTemplate := catchupCapsulesCmd.String("replay-url-template", strings.TrimSpace(os.Getenv("IPTV_TUNERR_CATCHUP_REPLAY_URL_TEMPLATE")), "Optional source-backed replay URL template; when set, capsules include replay URLs instead of launcher-only metadata")
 
 	catchupRecordCmd := flag.NewFlagSet("catchup-record", flag.ExitOnError)
-	catchupRecordCatalog := catchupRecordCmd.String("catalog", "", "Input catalog.json (default: IPTV_TUNERR_CATALOG)")
+	catchupRecordCatalog := catchupRecordCmd.String("catalog", "", "Input catalog.json (default: IPTV_TUNERR_CATALOG_PATH (legacy alias: IPTV_TUNERR_CATALOG))")
 	catchupRecordXMLTV := catchupRecordCmd.String("xmltv", "", "Guide/XMLTV file path or http(s) URL (required; /guide.xml works well)")
 	catchupRecordHorizon := catchupRecordCmd.Duration("horizon", 3*time.Hour, "How far ahead to inspect capsule windows")
 	catchupRecordLimit := catchupRecordCmd.Int("limit", 20, "Max capsules to inspect for recording")
@@ -73,7 +73,7 @@ func reportCommands() []commandSpec {
 	catchupRecordUpstreamFallback := catchupRecordCmd.Bool("record-upstream-fallback", true, "Include catalog stream_url/stream_urls after the Tunerr /stream/<id> URL so capture can fail over between upstreams")
 
 	catchupDaemonCmd := flag.NewFlagSet("catchup-daemon", flag.ExitOnError)
-	catchupDaemonCatalog := catchupDaemonCmd.String("catalog", "", "Input catalog.json (default: IPTV_TUNERR_CATALOG)")
+	catchupDaemonCatalog := catchupDaemonCmd.String("catalog", "", "Input catalog.json (default: IPTV_TUNERR_CATALOG_PATH (legacy alias: IPTV_TUNERR_CATALOG))")
 	catchupDaemonXMLTV := catchupDaemonCmd.String("xmltv", "", "Guide/XMLTV file path or http(s) URL (required; /guide.xml works well)")
 	catchupDaemonHorizon := catchupDaemonCmd.Duration("horizon", 3*time.Hour, "How far ahead to inspect capsule windows")
 	catchupDaemonLimit := catchupDaemonCmd.Int("limit", 100, "Max capsules to inspect per scheduler pass")

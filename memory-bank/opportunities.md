@@ -3,7 +3,7 @@
 ## Sports Automation follow-ups (2026-10-01)
 
 - **Team aliases for EPG matching.** Provider XMLTV often uses short names or city-only labels unlike API-Sports. Add an operator-managed alias map or curated per-dataset aliases with explicit ambiguity handling; do not weaken the team-plus-time match based on guesswork.
-- **Additional canonical datasets.** Extend beyond MLB/NFL/NCAA only after implementing and validating sport-specific response adapters, season/date semantics, and status handling.
+- **Additional canonical datasets.** Extend beyond MLB/NFL/NCAA/NBA only after implementing and validating sport-specific response adapters, season/date semantics, and status handling. Broader API-Basketball leagues and cups remain unsupported.
 - **Live API and provider validation.** The implementation has no production API key in this checkout. Confirm response normalization, real quota headers, representative EPG matches, and end-to-end playback with an operator-controlled test instance before broad rollout.
 - **Live refresh policy.** The first version avoids automatic polling to protect provider quotas. If live polling is added, make it visible, cache-aware, bounded to live games, and adjustable by the operator.
 

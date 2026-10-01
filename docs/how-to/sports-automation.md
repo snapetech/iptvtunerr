@@ -26,7 +26,7 @@ The saved key is write-only in the WebUI. The status API reports whether it is c
 
 For deployments that manage secrets through environment variables, set `IPTV_TUNERR_API_SPORTS_KEY` in the Tunerr server environment and restart the process. This value takes precedence over the key saved in the WebUI, and the page will explain that the environment owns the key. Tunerr sends the key only in the request header to fixed API-Sports hosts.
 
-The implemented schedule datasets are MLB, NFL, and NCAA Football. NFL and NCAA Football share the American Football API endpoint, so Tunerr fetches one response per date and partitions it by league ID. Other sports continue to use ordinary provider and XMLTV data and do not cause API-Sports calls.
+The implemented schedule datasets are MLB, NFL, NCAA Football, and NBA. NFL and NCAA Football share the American Football API endpoint, so Tunerr fetches one response per date and partitions it by league ID. NBA uses the separate API-NBA v2 product with the `standard` league and season year; its season year is the starting year (for example, `2026` for the 2026-27 season). API-Basketball is a separate product; its broader leagues and cups are not included yet. Other sports continue to use ordinary provider and XMLTV data and do not cause API-Sports calls. See the [API-NBA documentation](https://api-sports.io/documentation/nba/v2) for the provider's current request and response contract.
 
 Optional state paths:
 
@@ -46,7 +46,7 @@ Use writable persistent directories for these state files when running in a cont
 4. Set how long to keep games after their scheduled start, schedule lookahead, and the maximum Tunerr feeds to publish for each game.
 5. Save the settings, then select **Refresh schedules**. Later refreshes run automatically every five minutes while automation is enabled and a key is configured.
 
-Team choices come from the currently cached schedule. If the list is empty, save the selected dataset and refresh first. The API-Sports request cache limits routine refreshes; the status panel reports cached dates, stale dates, the last request result, and quota headers when API-Sports returns them. Manual refresh uses fresh requests but will not issue more requests after Tunerr observes that the daily quota is exhausted. Cached schedules remain usable after upstream errors.
+Team choices come from the currently cached schedule. If the list is empty, save the selected dataset and refresh first. The API-Sports request cache limits routine refreshes; the status table reports cached dates, stale dates, the last request result, and daily quota for each API product when headers are available. Tunerr tracks each product's daily quota separately, so exhausting NBA requests does not block Baseball or American Football requests. Cached schedules remain usable after upstream errors. See [API-Sports](https://api-sports.io/) for current product plans and request quotas.
 
 ## Matching and generated feeds
 
@@ -73,7 +73,7 @@ The playlist contains generated event identities and links back to Tunerr's `/st
 | Method and route | Purpose |
 | --- | --- |
 | `GET /v1/sports/automation` | Read settings, supported datasets, cache status, and the current match report. |
-| `PATCH /v1/sports/automation` | Persist automation settings. |
+| `PUT` or `PATCH /v1/sports/automation` | Persist automation settings. `POST` is not supported for this route. |
 | `POST /v1/sports/credentials` | Save the API-Sports key without returning it. |
 | `DELETE /v1/sports/credentials` | Remove the saved API-Sports key. |
 | `GET /v1/sports/status` | Compatibility alias for the automation view. |

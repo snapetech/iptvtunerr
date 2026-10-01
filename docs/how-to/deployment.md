@@ -63,6 +63,8 @@ cp .env.example .env   # edit with your provider and base URL
 ./iptv-tunerr run -addr :5004
 ```
 
+Set `IPTV_TUNERR_CATALOG_PATH` to choose the catalog JSON file used by `index`, `run`, `serve`, and commands that default to the configured catalog. For a container, an absolute path such as `/data/catalog.json` avoids depending on its working directory. The older `IPTV_TUNERR_CATALOG` variable remains supported when `_PATH` is unset. If both variables are set, `_PATH` takes precedence.
+
 Optional for Plex:
 - `-register-plex=api` with `IPTV_TUNERR_PMS_URL` + `IPTV_TUNERR_PMS_TOKEN` is the normal zero-touch path; `PLEX_HOST` + `PLEX_TOKEN` remains a legacy alias
 - DB-path registration remains available only for legacy local-Plex setups where Plex is stopped intentionally
@@ -254,7 +256,7 @@ From the repo root you can run the **local test script** to run tuner vet/tests,
 | **smoke** | HTTP checks of discover, lineup, guide, etc. at `IPTV_TUNERR_BASE_URL` (default `http://$(hostname):5004`). |
 | **all** (default) | qa → start serve or run in background → wait ready → smoke. |
 
-Override: `IPTV_TUNERR_BASE_URL`, `IPTV_TUNERR_ADDR`, `IPTV_TUNERR_CATALOG_PATH`, `WAIT_SECS`.
+Override: `IPTV_TUNERR_BASE_URL`, `IPTV_TUNERR_ADDR`, `IPTV_TUNERR_CATALOG_PATH` (or the legacy `IPTV_TUNERR_CATALOG`), `WAIT_SECS`.
 
 See also
 --------

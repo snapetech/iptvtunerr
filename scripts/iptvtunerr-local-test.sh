@@ -10,14 +10,15 @@ cd "$ROOT"
 HOST_DEFAULT="$(hostname -s 2>/dev/null || hostname)"
 BASE_URL="${IPTV_TUNERR_BASE_URL:-http://${HOST_DEFAULT}:5004}"
 ADDR="${IPTV_TUNERR_ADDR:-:5004}"
-CATALOG_PATH="${IPTV_TUNERR_CATALOG_PATH:-./catalog.json}"
+CATALOG_PATH="${IPTV_TUNERR_CATALOG_PATH:-${IPTV_TUNERR_CATALOG:-./catalog.json}}"
 WAIT_SECS="${WAIT_SECS:-60}"
 LOCAL_GUIDE_FETCH="${IPTV_TUNERR_LOCAL_TEST_FETCH_GUIDE:-false}"
 
 load_env() {
   local base_set="${IPTV_TUNERR_BASE_URL+x}" base_val="${IPTV_TUNERR_BASE_URL-}"
   local addr_set="${IPTV_TUNERR_ADDR+x}" addr_val="${IPTV_TUNERR_ADDR-}"
-  local catalog_set="${IPTV_TUNERR_CATALOG_PATH+x}" catalog_val="${IPTV_TUNERR_CATALOG_PATH-}"
+  local catalog_path_set="${IPTV_TUNERR_CATALOG_PATH+x}" catalog_path_val="${IPTV_TUNERR_CATALOG_PATH-}"
+  local catalog_legacy_set="${IPTV_TUNERR_CATALOG+x}" catalog_legacy_val="${IPTV_TUNERR_CATALOG-}"
   local wait_set="${WAIT_SECS+x}" wait_val="${WAIT_SECS-}"
   if [[ -f .env ]]; then
     set -a
@@ -27,11 +28,12 @@ load_env() {
   fi
   if [[ -n "${base_set:-}" ]]; then export IPTV_TUNERR_BASE_URL="$base_val"; fi
   if [[ -n "${addr_set:-}" ]]; then export IPTV_TUNERR_ADDR="$addr_val"; fi
-  if [[ -n "${catalog_set:-}" ]]; then export IPTV_TUNERR_CATALOG_PATH="$catalog_val"; fi
+  if [[ -n "${catalog_path_set:-}" ]]; then export IPTV_TUNERR_CATALOG_PATH="$catalog_path_val"; fi
+  if [[ -n "${catalog_legacy_set:-}" ]]; then export IPTV_TUNERR_CATALOG="$catalog_legacy_val"; fi
   if [[ -n "${wait_set:-}" ]]; then export WAIT_SECS="$wait_val"; fi
   BASE_URL="${IPTV_TUNERR_BASE_URL:-$BASE_URL}"
   ADDR="${IPTV_TUNERR_ADDR:-$ADDR}"
-  CATALOG_PATH="${IPTV_TUNERR_CATALOG_PATH:-$CATALOG_PATH}"
+  CATALOG_PATH="${IPTV_TUNERR_CATALOG_PATH:-${IPTV_TUNERR_CATALOG:-$CATALOG_PATH}}"
   WAIT_SECS="${WAIT_SECS:-20}"
 }
 
@@ -59,7 +61,7 @@ Commands:
 Env overrides:
   IPTV_TUNERR_BASE_URL     Default: ${BASE_URL}
   IPTV_TUNERR_ADDR        Default: ${ADDR}
-  IPTV_TUNERR_CATALOG_PATH  Default: ${CATALOG_PATH}
+  IPTV_TUNERR_CATALOG_PATH  Default: ${CATALOG_PATH} (legacy alias: IPTV_TUNERR_CATALOG)
   IPTV_TUNERR_LOCAL_TEST_FETCH_GUIDE  Default: ${LOCAL_GUIDE_FETCH} (set true to keep provider/external XMLTV fetches during local smoke)
   PLEX_DATA_DIR          Plex Media Server data root (required for zero-touch; stop Plex first)
   WAIT_SECS              Default: ${WAIT_SECS}

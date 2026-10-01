@@ -15,7 +15,7 @@
 ## Sports Automation
 
 - **Event matching depends on provider and guide naming.** API-Sports does not provide channel carriage or stream URLs. Tunerr matches canonical team names/codes in current lineup channel names and merged XMLTV programme text, with programme starts limited to three hours from the canonical start. Provider-specific abbreviations and generic guide labels can leave a real game unmatched. Only current lineup channels with streams can be generated.
-- **Canonical schedule coverage is limited to MLB, NFL, and NCAA Football.** NFL and NCAA Football share one API-Sports product endpoint and are partitioned by league ID. Other competitions continue to rely on provider/EPG behavior without canonical schedule matching.
+- **Canonical schedule coverage is limited to MLB, NFL, NCAA Football, and NBA.** NFL and NCAA Football share one API-Sports product endpoint and are partitioned by league ID. NBA uses API-NBA v2; other Basketball leagues and cups still rely on provider/EPG behavior without canonical schedule matching.
 
 ## Release / Packaging
 

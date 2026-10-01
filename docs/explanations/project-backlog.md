@@ -69,7 +69,7 @@ The opportunities file is authoritative for **dated entries** (including **Statu
 - **Catch-up:** programme-bound / “true replay” vs near-live launcher; category libraries / scans (large scope).
 - **Migration / janitor:** identity-cutover/OIDC follow-through and the larger “Tunerr as a general-purpose library janitor” direction remain future backlog themes; see `memory-bank/opportunities.md`.
 - **Product surface:** first-run onboarding is now narrower (`setup-doctor`, `.env.minimal.example`, readiness-first deck copy/lane ordering, advanced raw/workflow deck surfaces hidden by default), but deeper persona splitting between simple user, operator, and lab surfaces remains open; see `memory-bank/opportunities.md`.
-- **Sports Automation:** API-Sports MLB/NFL/NCAA fixtures are matched to Tunerr lineup feeds and published through separate event M3U/XMLTV outputs. Team-name aliases, additional sport adapters, and live-provider validation remain in `memory-bank/opportunities.md`.
+- **Sports Automation:** API-Sports MLB/NFL/NCAA/NBA fixtures are matched to Tunerr lineup feeds and published through separate event M3U/XMLTV outputs. Team-name aliases, further sport adapters, and live-provider validation remain in `memory-bank/opportunities.md`.
 - **Plex / host adjacent:** split-pipeline instrumentation, postvalidate tuning, external scripts — often **sibling repo**; read each entry’s **Context**.
 - **Gateway / WebSafe:** ffmpeg DNS vs host service names, IDR-aware startup, TS debug — see opportunities.
 - **Maintainability:** e.g. dedupe **`hdhomerun`** env helpers vs **`internal/config`** (refactor), and continue splitting dense route/controller files like **`internal/tuner/server.go`** and **`internal/webui/webui.go`**.

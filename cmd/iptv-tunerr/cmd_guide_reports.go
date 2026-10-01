@@ -19,21 +19,21 @@ import (
 
 func guideReportCommands() []commandSpec {
 	epgLinkReportCmd := flag.NewFlagSet("epg-link-report", flag.ExitOnError)
-	epgLinkCatalog := epgLinkReportCmd.String("catalog", "", "Input catalog.json (default: IPTV_TUNERR_CATALOG)")
+	epgLinkCatalog := epgLinkReportCmd.String("catalog", "", "Input catalog.json (default: IPTV_TUNERR_CATALOG_PATH (legacy alias: IPTV_TUNERR_CATALOG))")
 	epgLinkXMLTV := epgLinkReportCmd.String("xmltv", "", "XMLTV file path or http(s) URL (required)")
 	epgLinkAliases := epgLinkReportCmd.String("aliases", "", "Optional alias override JSON (name_to_xmltv_id map)")
 	epgLinkOut := epgLinkReportCmd.String("out", "", "Optional full JSON report output path")
 	epgLinkUnmatchedOut := epgLinkReportCmd.String("unmatched-out", "", "Optional unmatched-only JSON output path")
 
 	guideHealthCmd := flag.NewFlagSet("guide-health", flag.ExitOnError)
-	guideHealthCatalog := guideHealthCmd.String("catalog", "", "Input catalog.json (default: IPTV_TUNERR_CATALOG)")
+	guideHealthCatalog := guideHealthCmd.String("catalog", "", "Input catalog.json (default: IPTV_TUNERR_CATALOG_PATH (legacy alias: IPTV_TUNERR_CATALOG))")
 	guideHealthGuide := guideHealthCmd.String("guide", "", "Guide XML file path or http(s) URL (required; /guide.xml works well)")
 	guideHealthXMLTV := guideHealthCmd.String("xmltv", "", "Optional source XMLTV file path or http(s) URL for deterministic match provenance")
 	guideHealthAliases := guideHealthCmd.String("aliases", "", "Optional alias override JSON (name_to_xmltv_id map)")
 	guideHealthOut := guideHealthCmd.String("out", "", "Optional JSON report output path (default: stdout)")
 
 	epgDoctorCmd := flag.NewFlagSet("epg-doctor", flag.ExitOnError)
-	epgDoctorCatalog := epgDoctorCmd.String("catalog", "", "Input catalog.json (default: IPTV_TUNERR_CATALOG)")
+	epgDoctorCatalog := epgDoctorCmd.String("catalog", "", "Input catalog.json (default: IPTV_TUNERR_CATALOG_PATH (legacy alias: IPTV_TUNERR_CATALOG))")
 	epgDoctorGuide := epgDoctorCmd.String("guide", "", "Guide XML file path or http(s) URL (required; /guide.xml works well)")
 	epgDoctorXMLTV := epgDoctorCmd.String("xmltv", "", "Optional source XMLTV file path or http(s) URL for deterministic match provenance")
 	epgDoctorAliases := epgDoctorCmd.String("aliases", "", "Optional alias override JSON (name_to_xmltv_id map)")

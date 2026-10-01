@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Soak-test helper: run catchup-daemon with -run-for <duration> plus any extra args.
-# Configure catalog/XMLTV via flags or IPTV_TUNERR_BASE_URL / IPTV_TUNERR_CATALOG.
+# Configure catalog/XMLTV via flags or IPTV_TUNERR_BASE_URL / IPTV_TUNERR_CATALOG_PATH (legacy alias: IPTV_TUNERR_CATALOG).
 #
 # Example:
 #   ./scripts/recorder-daemon-soak.sh 45m \
