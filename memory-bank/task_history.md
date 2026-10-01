@@ -525,3 +525,9 @@
 - Completed the operator WebUI, API, generated sports M3U/XMLTV feeds, documentation, and README TOC integration, then published immutable release `v0.1.88`.
 - GitHub Release, GHCR `latest` and version tags, AUR, COPR, Chocolatey, and Winget completed. Snap and Docker Hub were skipped per the user's instruction. The full release-readiness gate, repository verification, WebUI production build, release asset checks, and CI/security workflows passed; current CodeQL and Dependabot alert counts are zero.
 - Pushed Launchpad retry fixes by normal fast-forward, preserving the release tag. Exact Jammy and Noble source packages are published; both amd64 builds report `Successfully built` on the latest check, but Launchpad has not published either exact binary. PPA run [36893644836](https://github.com/snapetech/iptvtunerr/actions/runs/36893644836) failed during earlier polling; SPH-008 remains open until the existing binaries reach `Published`.
+
+## 2026-10-01 - Add self-service API-Sports credentials and release v0.1.89
+
+- Added a masked API key editor to the authenticated Sports page, backed by a protected write-only endpoint and an owner-only state file. Environment-managed credentials remain read-only and take precedence; saved keys apply immediately without restarting Tunerr. Fixed the empty `team_rules` response that crashed the Sports page and documented setup and secret handling.
+- Published immutable release `v0.1.89` from the self-service setup, UI crash fix, refreshed verification baselines, and release changelog.
+- Verification: Go build and WebUI production build passed; `./scripts/release-readiness.sh` passed, including repository verification, Go tests, smoke checks, and focused suites. Release-note validation and changelog tag coverage passed. `npm ci` reported zero vulnerabilities.

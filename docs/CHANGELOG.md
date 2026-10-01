@@ -11,6 +11,14 @@ All notable changes to IPTV Tunerr are documented here. Repo: [github.com/snapet
 
 ---
 
+## [v0.1.89] - 2026-10-01
+
+### User-facing changes
+
+#### Added
+
+- **Sports Automation:** Operators can connect API-Sports from the authenticated Sports page without editing server environment files; Tunerr stores the key in an owner-only state file and applies it immediately. The page also handles empty team filters safely.
+
 ## [v0.1.88] - 2026-10-01
 
 ### User-facing changes
