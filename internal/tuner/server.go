@@ -81,6 +81,8 @@ type Server struct {
 	Series                    []catalog.Series
 	Channels                  []catalog.LiveChannel
 	Sports                    *sports.Service
+	SportsKeyFile             string
+	SportsKeyFromEnv          bool
 	SportsAutomationFile      string
 	RawChannels               []catalog.LiveChannel
 	GuidePolicySourceChannels []catalog.LiveChannel
@@ -2138,6 +2140,7 @@ func (s *Server) Run(ctx context.Context) error {
 	mux.Handle("/guide/capsules.json", s.serveCatchupCapsules())
 	mux.Handle("/v1/sports/status", s.serveSportsAutomation())
 	mux.Handle("/v1/sports/automation", s.serveSportsAutomation())
+	mux.Handle("/v1/sports/credentials", s.serveSportsCredentials())
 	mux.Handle("/v1/sports/events", s.serveSportsEvents())
 	mux.Handle("/v1/sports/refresh", s.serveSportsRefresh())
 	mux.Handle("/sports/live.m3u", s.serveSportsEventM3U())

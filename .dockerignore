@@ -2,6 +2,7 @@
 .env
 .env.*
 !.env.example
+sports-api-key
 *.db
 *.sqlite*
 catalog.json

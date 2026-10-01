@@ -113,6 +113,8 @@ export interface SportsAutomationView {
   configured: boolean
   settings_writable: boolean
   api_key_configured: boolean
+  api_key_writable: boolean
+  api_key_source: 'none' | 'saved' | 'environment'
   datasets: SportsDataset[]
   available_teams: SportsTeamOption[]
   settings: SportsAutomationSettings
@@ -126,6 +128,12 @@ export const sportsApi = {
     api.patch<{ ok: boolean; settings: SportsAutomationSettings; view: SportsAutomationView }>(
       '/api/v1/sports/automation', settings,
     ),
+  saveKey: (key: string) =>
+    api.post<{ ok: boolean; view: SportsAutomationView }>(
+      '/api/v1/sports/credentials', { api_key: key },
+    ),
+  removeKey: () =>
+    api.del<{ ok: boolean; view: SportsAutomationView }>('/api/v1/sports/credentials'),
   refresh: () => api.post<{ ok: boolean; warning?: string; report: SportsAutomationReport; status: SportsStatus }>(
     '/api/v1/sports/refresh',
   ),

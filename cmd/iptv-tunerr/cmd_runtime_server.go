@@ -52,6 +52,28 @@ func loadRuntimeCatalog(cfg *config.Config, path, providerBase, providerUser, pr
 	return movies, series, live, nil
 }
 
+func sameRuntimeFilePath(left, right string) bool {
+	left = strings.TrimSpace(left)
+	right = strings.TrimSpace(right)
+	if left == "" || right == "" {
+		return false
+	}
+	if leftInfo, err := os.Stat(left); err == nil {
+		if rightInfo, rightErr := os.Stat(right); rightErr == nil && os.SameFile(leftInfo, rightInfo) {
+			return true
+		}
+	}
+	leftAbs, leftErr := filepath.Abs(filepath.Clean(left))
+	rightAbs, rightErr := filepath.Abs(filepath.Clean(right))
+	if leftErr != nil || rightErr != nil {
+		return false
+	}
+	if os.PathSeparator == '\\' {
+		return strings.EqualFold(leftAbs, rightAbs)
+	}
+	return leftAbs == rightAbs
+}
+
 func newRuntimeServer(cfg *config.Config, addr, baseURL, deviceID, friendlyName string, lineupCap int, providerBase, providerUser, providerPass string) *tuner.Server {
 	providerIDs := make([]tuner.ProviderIdentity, 0, len(cfg.ProviderEntries()))
 	for _, entry := range cfg.ProviderEntries() {
@@ -78,6 +100,26 @@ func newRuntimeServer(cfg *config.Config, addr, baseURL, deviceID, friendlyName 
 	if sportsAutomationFile == "" && strings.TrimSpace(cfg.CatalogPath) != "" {
 		sportsAutomationFile = filepath.Join(filepath.Dir(cfg.CatalogPath), "sports-automation.json")
 	}
+	sportsAPIKeyFile := strings.TrimSpace(os.Getenv("IPTV_TUNERR_API_SPORTS_KEY_FILE"))
+	if sportsAPIKeyFile == "" && sportsAutomationFile != "" {
+		sportsAPIKeyFile = filepath.Join(filepath.Dir(sportsAutomationFile), "sports-api-key")
+	}
+	for _, stateFile := range []string{sportsAutomationFile, sportsCacheFile, cfg.CatalogPath} {
+		if sameRuntimeFilePath(sportsAPIKeyFile, stateFile) {
+			log.Printf("Sports Automation: API-Sports key file conflicts with another state file; key management is disabled")
+			sportsAPIKeyFile = ""
+			break
+		}
+	}
+	sportsAPIKey := strings.TrimSpace(cfg.APISportsKey)
+	sportsAPIKeyFromEnvironment := sportsAPIKey != ""
+	if !sportsAPIKeyFromEnvironment && sportsAPIKeyFile != "" {
+		savedKey, err := sports.LoadAPIKey(sportsAPIKeyFile)
+		if err != nil {
+			log.Printf("Sports Automation: stored API-Sports key could not be loaded: %v", err)
+		}
+		sportsAPIKey = savedKey
+	}
 	srv := &tuner.Server{
 		Addr:                       addr,
 		AppVersion:                 Version,
@@ -92,7 +134,9 @@ func newRuntimeServer(cfg *config.Config, addr, baseURL, deviceID, friendlyName 
 		AutopilotStateFile:         cfg.AutopilotStateFile,
 		RecorderStateFile:          os.Getenv("IPTV_TUNERR_CATCHUP_RECORDER_STATE_FILE"),
 		RecordingRulesFile:         strings.TrimSpace(cfg.RecordingRulesFile),
-		Sports:                     sports.NewService(cfg.APISportsKey, sportsCacheFile),
+		Sports:                     sports.NewService(sportsAPIKey, sportsCacheFile),
+		SportsKeyFile:              sportsAPIKeyFile,
+		SportsKeyFromEnv:           sportsAPIKeyFromEnvironment,
 		SportsAutomationFile:       sportsAutomationFile,
 		ProgrammingRecipeFile:      strings.TrimSpace(os.Getenv("IPTV_TUNERR_PROGRAMMING_RECIPE_FILE")),
 		PlexLineupHarvestFile:      strings.TrimSpace(os.Getenv("IPTV_TUNERR_PLEX_LINEUP_HARVEST_FILE")),

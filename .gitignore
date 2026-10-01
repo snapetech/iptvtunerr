@@ -155,6 +155,7 @@ k3s/
 *.subscription.txt
 *.subscription.*.txt
 sync-secrets*.sh
+sports-api-key
 
 # Generated supervisor configs (contain provider URLs with creds)
 *.generated.json

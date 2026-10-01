@@ -12,14 +12,19 @@ Tunerr adapts the Sports Automation design in [M3U Web Picker](https://github.co
 ## Preconditions
 
 - Tunerr is running with a current live-channel catalog and a merged XMLTV guide.
-- The operator WebUI can reach the tuner API.
-- For canonical schedules, an API-Sports key is available to the server.
+- You can sign in to the authenticated operator WebUI.
 
 Without an API-Sports key, Tunerr does not make schedule requests. The normal lineup, guide, and streams keep working.
 
-## Configure the server key
+## Connect API-Sports
 
-Set `IPTV_TUNERR_API_SPORTS_KEY` in Tunerr's private environment and restart the process. Tunerr sends the key only in the request header to fixed API-Sports hosts; the API and WebUI return only whether a key is configured.
+1. Get an API key from your API-Sports account.
+2. Open **Sports** in Tunerr's authenticated WebUI and paste the key into **API-Sports connection**.
+3. Select **Save API-Sports key**. Tunerr stores it beside the Sports Automation state file with owner-only file permissions and uses it immediately; no environment-file edits or restart are needed.
+
+The saved key is write-only in the WebUI. The status API reports whether it is configured but never returns its value. You can replace or remove it from the same section.
+
+For deployments that manage secrets through environment variables, set `IPTV_TUNERR_API_SPORTS_KEY` in the Tunerr server environment and restart the process. This value takes precedence over the key saved in the WebUI, and the page will explain that the environment owns the key. Tunerr sends the key only in the request header to fixed API-Sports hosts.
 
 The implemented schedule datasets are MLB, NFL, and NCAA Football. NFL and NCAA Football share the American Football API endpoint, so Tunerr fetches one response per date and partitions it by league ID. Other sports continue to use ordinary provider and XMLTV data and do not cause API-Sports calls.
 
@@ -29,8 +34,9 @@ Optional state paths:
 | --- | --- | --- |
 | `IPTV_TUNERR_SPORTS_CACHE_FILE` | `<cache-dir>/sports-schedules.json` | Persistent schedule, refresh, and quota cache. |
 | `IPTV_TUNERR_SPORTS_AUTOMATION_FILE` | Beside the catalog as `sports-automation.json` | Persisted automation settings and team rules. |
+| `IPTV_TUNERR_API_SPORTS_KEY_FILE` | Beside the automation file as `sports-api-key` | Optional path for the key saved through the WebUI. Tunerr writes this file with owner-only permissions. |
 
-Both files are written with owner-only permissions. Use a writable persistent directory for each when running in a container.
+Use writable persistent directories for these state files when running in a container. Do not mount the key file into a public web directory or commit it.
 
 ## Enable event channels
 
@@ -68,6 +74,8 @@ The playlist contains generated event identities and links back to Tunerr's `/st
 | --- | --- |
 | `GET /v1/sports/automation` | Read settings, supported datasets, cache status, and the current match report. |
 | `PATCH /v1/sports/automation` | Persist automation settings. |
+| `POST /v1/sports/credentials` | Save the API-Sports key without returning it. |
+| `DELETE /v1/sports/credentials` | Remove the saved API-Sports key. |
 | `GET /v1/sports/status` | Compatibility alias for the automation view. |
 | `GET /v1/sports/events` | Read matched and unmatched scheduled events. |
 | `POST /v1/sports/refresh` | Force a schedule refresh for enabled datasets and the configured time window. |
@@ -92,7 +100,7 @@ An empty generated feed is expected until a current XMLTV programme matches both
 
 ## Troubleshooting
 
-- **Key not configured:** confirm `IPTV_TUNERR_API_SPORTS_KEY` is set in the tuner process environment, then restart Tunerr.
+- **Key not configured:** enter the key in the Sports page. If the page says the key is managed by the server environment, update `IPTV_TUNERR_API_SPORTS_KEY` in the container or service configuration and restart Tunerr.
 - **No team choices:** enable a dataset, save settings, and refresh schedules.
 - **Schedule cached but no feeds:** check the merged XMLTV programme title/subtitle/description, both team names, and its start time. Tunerr requires a close match to avoid publishing unrelated channels.
 - **Stale schedule or quota warning:** Tunerr keeps the last cached schedule on upstream failures. Review cache status and wait for API-Sports quota to recover.

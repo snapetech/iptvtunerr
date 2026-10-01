@@ -24,7 +24,7 @@ type AutomationSettings struct {
 	Version             int        `json:"version"`
 	Enabled             bool       `json:"enabled"`
 	Datasets            []string   `json:"datasets"`
-	TeamRules           []TeamRule `json:"team_rules,omitempty"`
+	TeamRules           []TeamRule `json:"team_rules"`
 	PastHours           int        `json:"past_hours"`
 	LookaheadDays       int        `json:"lookahead_days"`
 	MaxChannelsPerEvent int        `json:"max_channels_per_event"`

@@ -23,6 +23,8 @@ type SportsAutomationView struct {
 	Configured       bool                      `json:"configured"`
 	SettingsWritable bool                      `json:"settings_writable"`
 	APIKeyConfigured bool                      `json:"api_key_configured"`
+	APIKeyWritable   bool                      `json:"api_key_writable"`
+	APIKeySource     string                    `json:"api_key_source"`
 	Datasets         []sports.Dataset          `json:"datasets"`
 	AvailableTeams   []SportsTeamOption        `json:"available_teams"`
 	Settings         sports.AutomationSettings `json:"settings"`
@@ -476,10 +478,19 @@ func (s *Server) sportsAutomationView() SportsAutomationView {
 	}
 	snapshot := s.sportsSnapshot(settings)
 	report := s.buildSportsAutomationReport(settings, snapshot)
+	keySource := "none"
+	if s.SportsKeyFromEnv {
+		keySource = "environment"
+	} else if snapshot.Status.Configured {
+		keySource = "saved"
+	}
 	return SportsAutomationView{
 		GeneratedAt: time.Now().UTC().Format(time.RFC3339), Configured: snapshot.Status.Configured,
 		SettingsWritable: strings.TrimSpace(s.SportsAutomationFile) != "",
-		APIKeyConfigured: snapshot.Status.Configured, Datasets: sports.Datasets(), AvailableTeams: sportsAvailableTeams(settings, snapshot), Settings: settings,
+		APIKeyConfigured: snapshot.Status.Configured,
+		APIKeyWritable:   !s.SportsKeyFromEnv && strings.TrimSpace(s.SportsKeyFile) != "" && s.Sports != nil,
+		APIKeySource:     keySource,
+		Datasets:         sports.Datasets(), AvailableTeams: sportsAvailableTeams(settings, snapshot), Settings: settings,
 		Status: snapshot.Status, Report: report,
 	}
 }
@@ -553,6 +564,62 @@ func (s *Server) serveSportsAutomation() http.Handler {
 			writeSportsJSON(w, http.StatusOK, map[string]any{"ok": true, "settings": saved, "view": s.sportsAutomationView()})
 		default:
 			writeMethodNotAllowedJSON(w, http.MethodGet, http.MethodPatch, http.MethodPut)
+		}
+	})
+}
+
+func (s *Server) serveSportsCredentials() http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json; charset=utf-8")
+		if !operatorUIAllowed(w, r) {
+			return
+		}
+		if r.Method != http.MethodPost && r.Method != http.MethodDelete {
+			writeMethodNotAllowedJSON(w, http.MethodPost, http.MethodDelete)
+			return
+		}
+		if s.SportsKeyFromEnv {
+			writeServerJSONError(w, http.StatusConflict, "API-Sports key is managed by the server environment")
+			return
+		}
+		if strings.TrimSpace(s.SportsKeyFile) == "" || s.Sports == nil {
+			writeServerJSONError(w, http.StatusServiceUnavailable, "API-Sports key storage is not configured")
+			return
+		}
+
+		switch r.Method {
+		case http.MethodPost:
+			limited := http.MaxBytesReader(w, r.Body, 4<<10)
+			defer limited.Close()
+			var input struct {
+				APIKey string `json:"api_key"`
+			}
+			decoder := json.NewDecoder(limited)
+			decoder.DisallowUnknownFields()
+			if err := decoder.Decode(&input); err != nil {
+				writeServerJSONError(w, http.StatusBadRequest, "invalid API-Sports key request")
+				return
+			}
+			key, err := sports.ValidateAPIKey(input.APIKey)
+			if err != nil {
+				writeServerJSONError(w, http.StatusBadRequest, "invalid API-Sports key")
+				return
+			}
+			if err := sports.SaveAPIKey(s.SportsKeyFile, key); err != nil {
+				log.Printf("Sports Automation: API-Sports key could not be saved: %v", err)
+				writeServerJSONError(w, http.StatusInternalServerError, "could not save API-Sports key")
+				return
+			}
+			s.Sports.SetAPIKey(key)
+			writeSportsJSON(w, http.StatusOK, map[string]any{"ok": true, "view": s.sportsAutomationView()})
+		case http.MethodDelete:
+			if err := sports.RemoveAPIKey(s.SportsKeyFile); err != nil {
+				log.Printf("Sports Automation: API-Sports key could not be removed: %v", err)
+				writeServerJSONError(w, http.StatusInternalServerError, "could not remove API-Sports key")
+				return
+			}
+			s.Sports.SetAPIKey("")
+			writeSportsJSON(w, http.StatusOK, map[string]any{"ok": true, "view": s.sportsAutomationView()})
 		}
 	})
 }

@@ -1,6 +1,6 @@
 import {
   Alert, Badge, Button, Card, Checkbox, Code, CopyButton, Group, MultiSelect,
-  NumberInput, SimpleGrid, Stack, Table, Text, Anchor, Modal,
+  NumberInput, PasswordInput, SimpleGrid, Stack, Table, Text, Anchor, Modal,
 } from '@mantine/core'
 import {
   IconAlertCircle, IconCalendarEvent, IconCheck, IconCopy, IconPlayerPlay,
@@ -69,6 +69,7 @@ export function Sports() {
   const [draft, setDraft] = useState<SportsAutomationSettings | null>(null)
   const [dirty, setDirty] = useState(false)
   const [playing, setPlaying] = useState<SportsEventChannel | null>(null)
+  const [apiKeyDraft, setApiKeyDraft] = useState('')
   const query = useQuery({
     queryKey: ['sports-automation'],
     queryFn: () => sportsApi.automation(),
@@ -90,6 +91,23 @@ export function Sports() {
       notifications.show({ title: 'Sports automation saved', message: 'Tunerr will use these rules during schedule refresh.', color: 'teal' })
     },
     onError: error => notifications.show({ title: 'Could not save settings', message: String(error), color: 'red' }),
+  })
+
+  const saveAPIKey = useMutation({
+    mutationFn: (key: string | null) => key === null ? sportsApi.removeKey() : sportsApi.saveKey(key),
+    onSuccess: result => {
+      setApiKeyDraft('')
+      queryClient.setQueryData(['sports-automation'], result.view)
+      void queryClient.invalidateQueries({ queryKey: ['sports-automation'] })
+      notifications.show({
+        title: result.view.api_key_configured ? 'API-Sports key saved' : 'API-Sports key removed',
+        message: result.view.api_key_configured
+          ? 'Sports Automation can use the key now. It is stored on the server and will not be shown again.'
+          : 'Sports Automation is disconnected from API-Sports.',
+        color: 'teal',
+      })
+    },
+    onError: error => notifications.show({ title: 'Could not update API-Sports key', message: String(error), color: 'red' }),
   })
 
   const refresh = useMutation({
@@ -145,7 +163,7 @@ export function Sports() {
     update({ team_rules: rules })
   }
 
-  const selectedTeamValues = settings?.team_rules.map(rule => `${rule.dataset}|${rule.team}`) ?? []
+  const selectedTeamValues = settings?.team_rules?.map(rule => `${rule.dataset}|${rule.team}`) ?? []
   const m3uURL = absoluteFeedURL(sportsApi.playlistURL)
   const guideURL = absoluteFeedURL(sportsApi.guideURL)
 
@@ -191,11 +209,57 @@ export function Sports() {
         </Group>
       </Group>
 
-      {!view.api_key_configured && (
-        <Alert color="blue" title="Connect API-Sports" icon={<IconTrophy size={16} />}>
-          Add <Code>IPTV_TUNERR_API_SPORTS_KEY</Code> to the Tunerr server environment and restart it. The key is never returned by the API or sent to this page.
-        </Alert>
-      )}
+      <Card withBorder padding="md" radius="md">
+        <Stack gap="sm">
+          <Group justify="space-between" wrap="wrap">
+            <Text fw={650}>API-Sports connection</Text>
+            <Badge color={view.api_key_configured ? 'teal' : 'gray'} variant="light">
+              {view.api_key_configured ? 'Connected' : 'Not connected'}
+            </Badge>
+          </Group>
+          {view.api_key_writable ? (
+            <>
+              <Text size="sm" c="dimmed">
+                Paste your API-Sports key here. Tunerr saves it as an owner-only file in its state directory and starts using it immediately; the saved key is never shown again.
+              </Text>
+              <PasswordInput
+                label={view.api_key_configured ? 'Replace API-Sports key' : 'API-Sports key'}
+                placeholder={view.api_key_configured ? 'Enter a new key to replace the saved one' : 'Paste your API-Sports key'}
+                autoComplete="new-password"
+                value={apiKeyDraft}
+                onChange={event => setApiKeyDraft(event.currentTarget.value)}
+              />
+              <Group>
+                <Button
+                  leftSection={<IconTrophy size={15} />}
+                  loading={saveAPIKey.isPending}
+                  disabled={!apiKeyDraft.trim()}
+                  onClick={() => saveAPIKey.mutate(apiKeyDraft)}
+                >
+                  Save API-Sports key
+                </Button>
+                {view.api_key_configured && (
+                  <Button
+                    variant="default"
+                    loading={saveAPIKey.isPending}
+                    onClick={() => {
+                      if (window.confirm('Remove the saved API-Sports key?')) saveAPIKey.mutate(null)
+                    }}
+                  >
+                    Remove saved key
+                  </Button>
+                )}
+              </Group>
+            </>
+          ) : (
+            <Alert color={view.api_key_source === 'environment' ? 'teal' : 'blue'} title={view.api_key_source === 'environment' ? 'Key supplied by the server environment' : 'Connect API-Sports'} icon={<IconTrophy size={16} />}>
+              {view.api_key_source === 'environment'
+                ? <>The key comes from <Code>IPTV_TUNERR_API_SPORTS_KEY</Code>. Change it in your container or service environment, then restart Tunerr.</>
+                : <>This instance has no writable key file. Set <Code>IPTV_TUNERR_API_SPORTS_KEY</Code> in the Tunerr server environment and restart it. The key is never returned by the API.</>}
+            </Alert>
+          )}
+        </Stack>
+      </Card>
       {!view.settings_writable && (
         <Alert color="yellow" title="Settings are read-only">
           Set <Code>IPTV_TUNERR_SPORTS_AUTOMATION_FILE</Code> to a writable state file to save automation rules.

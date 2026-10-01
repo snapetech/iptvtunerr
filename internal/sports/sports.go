@@ -160,13 +160,35 @@ func NewService(key, cachePath string) *Service {
 	return s
 }
 
+func (s *Service) SetAPIKey(key string) {
+	if s == nil {
+		return
+	}
+	s.mu.Lock()
+	s.key = strings.TrimSpace(key)
+	s.mu.Unlock()
+}
+
+func (s *Service) apiKey() string {
+	if s == nil {
+		return ""
+	}
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+	return s.key
+}
+
+func (s *Service) APIKeyConfigured() bool {
+	return s.apiKey() != ""
+}
+
 func cacheKey(dataset, date string) string { return dataset + "\x00" + date }
 
 // RefreshWindow fetches only missing/expired selected schedule dates. The American
 // Football endpoint is called once per date and its response is partitioned into NFL
 // and NCAA caches, which avoids duplicate quota use when both are enabled.
 func (s *Service) RefreshWindow(ctx context.Context, datasetIDs []string, start, end time.Time, force bool) (Snapshot, error) {
-	if s == nil || s.key == "" {
+	if s == nil || !s.APIKeyConfigured() {
 		return Snapshot{Status: s.Status()}, ErrNotConfigured
 	}
 	if start.IsZero() || end.IsZero() || !end.After(start) || start.Before(time.Now().Add(-maxWindowPast)) || end.After(time.Now().Add(maxWindowFuture)) {
@@ -254,11 +276,12 @@ func (s *Service) CachedWindow(datasetIDs []string, start, end time.Time) Snapsh
 }
 
 func (s *Service) Status() Status {
-	out := Status{Provider: "API-Sports", Configured: s != nil && strings.TrimSpace(s.key) != "", Datasets: []DatasetStatus{}}
+	out := Status{Provider: "API-Sports", Datasets: []DatasetStatus{}}
 	if s == nil {
 		return out
 	}
 	s.mu.RLock()
+	out.Configured = strings.TrimSpace(s.key) != ""
 	out.LastRequestAt = formatTime(s.lastRequest)
 	out.LastSuccessAt = formatTime(s.lastSuccess)
 	out.LastError = s.lastError
@@ -352,6 +375,10 @@ func (s *Service) request(ctx context.Context, host, date string) (map[string]js
 	if host == "" {
 		return nil, Quota{}, errors.New("unknown API-Sports host")
 	}
+	key := s.apiKey()
+	if key == "" {
+		return nil, Quota{}, ErrNotConfigured
+	}
 	s.mu.RLock()
 	quotaExhausted := sameUTCDay(s.quotaAt, time.Now()) && s.quota.DailyRemaining != nil && *s.quota.DailyRemaining <= 0
 	s.mu.RUnlock()
@@ -374,7 +401,7 @@ func (s *Service) request(ctx context.Context, host, date string) (map[string]js
 	}
 	// The American Football API can reject automatically supplied User-Agent headers.
 	req.Header["User-Agent"] = []string{""}
-	req.Header.Set("x-apisports-key", s.key)
+	req.Header.Set("x-apisports-key", key)
 	s.mu.Lock()
 	s.lastRequest = time.Now().UTC()
 	s.mu.Unlock()
