@@ -318,3 +318,23 @@
 - `.github/workflows/publish-chocolatey.yml`
 - `docs/how-to/release-channels.md`
 - `memory-bank/task_history.md`
+
+### Loop: Transient Launchpad API errors can fail a still-pending PPA release
+
+**Symptom**
+- A PPA workflow fails during a source/build/binary status poll even though the Launchpad source upload remains accepted and pending.
+- The workflow error is an intermittent HTTP 5xx response from the Launchpad API, not a rejected source or failed package build.
+
+**Why it's tricky**
+- The polling step runs with `set -e`; a single `curl --fail` response exits the step before the next scheduled poll.
+- Source upload, successful build, and published binary are separate states, so retrying or reporting success must preserve the exact series/version/amd64 checks.
+
+**What works**
+- Route every Launchpad GET through one helper with bounded curl retries for transient HTTP/network failures.
+- Keep terminal source/build/binary failures fatal and keep waiting until the exact amd64 binary publication is `Published`.
+- After a retry-policy change, rerun only the PPA publisher for the immutable release tag and verify the exact source and binary records in Launchpad.
+
+**Where it's documented**
+- `.github/workflows/release-ppa.yml`
+- `scripts/check-release-channel-wiring.sh`
+- `docs/how-to/release-channels.md`

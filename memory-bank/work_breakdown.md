@@ -12,7 +12,8 @@ Objective: implement the supplied M3U Web Picker Sports Automation model in Tune
 | SPH-004 | Add operator-gated configuration/status/events/refresh APIs and typed WebUI functions. | Completed |
 | SPH-005 | Replace the scoreboard page with Sports Automation controls, dataset/cache health, matched/unmatched events, and generated feed links. | Completed |
 | SPH-006 | Update feature/how-to/reference docs and memory; run prescribed non-test verification without committing or publishing. | Completed |
-| SPH-007 | Add README TOC and feature coverage, prepare a user-facing release note, keep Snap and Docker Hub paused while retaining GHCR `latest`, run release verification, then commit, push, and publish v0.1.88 by fast-forward. | In progress |
+| SPH-007 | Add README TOC and feature coverage, prepare a user-facing release note, keep Snap and Docker Hub paused while retaining GHCR `latest`, run release verification, then commit, push, and publish v0.1.88 by fast-forward. | Completed; release and applicable package channels published |
+| SPH-008 | Retry transient Launchpad API polling errors, preserve exact amd64 binary publication checks, push the publisher fix, and rerun/audit only the PPA for immutable tag `v0.1.88`. | In progress |
 
 Guardrail: preserve manual channels and standard lineup state; API-Sports is canonical schedule data, never a stream provider. Use fixed upstream hosts, conservative date windows, cached schedule fallback, and only current Tunerr catalog channels for generated event playback. Do not expose the API key or provider stream URLs. Preserve published Git history and tags; push only by normal fast-forward. Skip Snap and Docker Hub for this release.
 

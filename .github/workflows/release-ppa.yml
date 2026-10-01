@@ -154,8 +154,17 @@ jobs:
           series_link="https://api.launchpad.net/1.0/ubuntu/${UBUNTU_SERIES}"
           consecutive_missing_sources=0
 
+          launchpad_get() {
+            local url="$1"
+            shift
+            curl --fail --silent --show-error \
+              --retry 5 --retry-delay 2 --retry-max-time 30 --retry-connrefused \
+              --connect-timeout 10 --max-time 30 \
+              --get "$url" "$@"
+          }
+
           for attempt in $(seq 1 70); do
-            source_response="$(curl --fail --silent --show-error --get "$archive" \
+            source_response="$(launchpad_get "$archive" \
               --data-urlencode 'ws.op=getPublishedSources' \
               --data-urlencode 'source_name=iptvtunerr' \
               --data-urlencode "version=${PPA_VERSION}" \
@@ -184,7 +193,7 @@ jobs:
               exit 1
             fi
 
-            build_response="$(curl --fail --silent --show-error --get "$source_link" \
+            build_response="$(launchpad_get "$source_link" \
               --data-urlencode 'ws.op=getBuilds' \
               --data-urlencode 'ws.size=20')"
             build_entry="$(jq -c '[.entries[]? | select(.arch_tag == "amd64")][0] // {}' \
@@ -199,7 +208,7 @@ jobs:
               exit 1
             fi
 
-            binary_response="$(curl --fail --silent --show-error --get "$source_link" \
+            binary_response="$(launchpad_get "$source_link" \
               --data-urlencode 'ws.op=getPublishedBinaries' \
               --data-urlencode 'active_binaries_only=false' \
               --data-urlencode 'ws.size=10')"

@@ -54,20 +54,21 @@ The runtime image uses Debian Bookworm package archives for FFmpeg and its
 supporting tools. The Docker publisher runs BuildKit with host networking so
 its build sandbox can resolve package mirrors through the GitHub runner's DNS;
 the hosted builder failed to resolve Debian mirrors on its isolated network.
-The `v0.1.87` run built all three target architectures and published matching
-`latest` and version tags to GHCR and `snapetech/iptvtunerr`. Docker Hub returned
-`insufficient_scope` for the compatibility image `keefshape/iptvtunerr`, so that
-namespace remains stale. Further Docker Hub publishing is currently deferred.
+The `v0.1.88` run built all three target architectures and published matching
+`latest` and version tags to GHCR. Docker Hub publishing is paused per the
+operator's direction, so Docker Hub images were not updated for this release.
+An earlier attempt to publish the compatibility image `keefshape/iptvtunerr`
+returned `insufficient_scope`; that namespace may remain behind.
 
 CI checks the publisher list, latest-tag guard, Docker image names, and tag
 contract. The GitHub Release workflow waits for every dispatched publisher and
-fails if a workflow fails or times out. Launchpad publishing waits for the
-target series' amd64 binary package to reach `Published`; a successful source
-upload alone does not count as availability. For `v0.1.87`, Noble and Jammy
-builds succeeded but Launchpad had not yet published the binaries at last
-check. Chocolatey `0.1.87` is accepted, and Winget PR #444749 merged. Snap
-stable remains `0.1.78` after the `v0.1.87` submission failed authentication;
-further Snap publishing is currently deferred.
+fails if a workflow fails or times out. Launchpad polling retries transient API
+failures, then waits for the target series' amd64 binary package to reach
+`Published`; a successful source upload or build alone does not count as
+availability. The `v0.1.88` Jammy and Noble source uploads are pending Launchpad
+publication, so the PPA is not yet reported as updated. Chocolatey `0.1.88`
+and Winget `0.1.88` have been submitted successfully. Snap and Docker Hub
+publishing are paused per the operator's direction.
 
 ## Release notes and changelog
 
