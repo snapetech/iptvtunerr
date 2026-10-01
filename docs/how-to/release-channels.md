@@ -67,9 +67,14 @@ failures and slow requests with a three-minute retry budget, and allows 20
 minutes for an uploaded source to appear in the exact series query. It then
 waits for the target series' amd64 binary package to reach `Published`; a
 successful source upload or build alone does not count as availability. For
-`v0.1.88`, Jammy's amd64 build has succeeded but its binary is not yet
-published; Noble's amd64 build is still queued. The PPA is not yet reported as
-updated.
+`v0.1.88`, both exact source packages are published. Jammy's amd64 build
+reports `Successfully built`; Noble's state has varied between `Uploading
+build` and `Currently building` across Launchpad API reads. Neither exact
+amd64 binary has a `Published` record yet, so the PPA is not reported as
+updated. The PPA workflow run [36893644836](https://github.com/snapetech/iptvtunerr/actions/runs/36893644836)
+failed while those builds were still processing; retry and poller fixes are on
+`main`. Continue monitoring the existing builds without re-uploading the
+release or moving its tag.
 Chocolatey `0.1.88` and Winget `0.1.88` have been submitted successfully. Snap
 and Docker Hub publishing are paused per the operator's direction.
 

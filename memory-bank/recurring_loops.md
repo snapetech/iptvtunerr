@@ -334,7 +334,8 @@
 - Keep the total curl retry budget longer than each transfer's `--max-time`, or one full timeout can consume the budget without a retry.
 - Allow 20 minutes for the exact source record to appear, then start a separate 70-check binary-publication window; a source upload or build record is not release availability.
 - Keep terminal source/build/binary failures fatal and keep waiting until the exact amd64 binary publication is `Published`.
-- After a retry-policy change, rerun only the PPA publisher for the immutable release tag and verify the exact source and binary records in Launchpad.
+- If the source upload has already succeeded but polling failed, monitor those exact source/build records first. Do not blindly rerun the full publisher: it creates a new timestamped source version and another build rather than reusing the existing upload.
+- After a retry-policy change, use a publisher retry only when it can safely reuse the existing source or when a deliberate new source revision is warranted; verify exact source and binary records in Launchpad.
 
 **Where it's documented**
 - `.github/workflows/release-ppa.yml`
