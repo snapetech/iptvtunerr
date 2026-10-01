@@ -11,6 +11,14 @@ All notable changes to IPTV Tunerr are documented here. Repo: [github.com/snapet
 
 ---
 
+## [v0.1.88] - 2026-10-01
+
+### User-facing changes
+
+#### Added
+
+- **Sports Automation:** Operators can match API-Sports schedules against Tunerr's lineup and merged XMLTV guide, manage event feeds through the WebUI and API, and publish separate live sports playlists.
+
 ## [v0.1.87] - 2026-09-30
 
 ### User-facing changes
