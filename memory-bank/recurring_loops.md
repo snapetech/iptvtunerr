@@ -217,17 +217,36 @@
 
 **Why it's tricky**
 - Some workflows stop at upload or PR creation. Launchpad source acceptance precedes amd64 binary publication, and Chocolatey, Winget, and Snap may have separate store review after submission.
+- Launchpad's source query can briefly omit an already-seen record while publication progresses. A cumulative missing-record counter can therefore report a false rejection after many intermittent misses; a successful build record also does not prove that its binary reached the apt archive.
 - AUR/PPA/COPR workflows can be triggered both by GitHub Release events and by a release dispatcher, causing duplicate writes for the same tag.
 
 **What works**
 - Dispatch all release publishers once from the GitHub Release workflow and wait for every publisher workflow to finish.
 - Check that a submitted tag is the latest stable tag on `main`; serialize each channel so newer release work supersedes older work.
 - For PPA, wait for the exact source version and its amd64 binary publication. Audit registries and store review separately from workflow completion.
+- Reset the Launchpad missing-source counter whenever the exact source record reappears, inspect that source record's amd64 build state, and query its own binary publications before reporting success.
 - Publish all configured container names with `latest` and the exact release tag from one build.
 
 **Where it's documented**
 - `scripts/dispatch-release-channels.sh`
 - `scripts/check-release-channel-wiring.sh`
+- `docs/how-to/release-channels.md`
+
+### Loop: Alpine mirrors can work locally but fail in hosted BuildKit
+
+**Symptom**
+- A Docker image builds locally after falling back from Alpine's primary CDN, while GitHub Actions BuildKit fails to fetch indexes from the same mirror and other official mirrors.
+
+**Why it's tricky**
+- Local Docker and hosted BuildKit use different network paths. A local mirror fallback smoke does not prove that the release workflow can build and push all target architectures.
+
+**What works**
+- Verify the full multi-architecture publisher on GitHub Actions before treating a local build as release-channel proof.
+- Use Debian Bookworm package archives for runtime FFmpeg dependencies and retry transient apt failures; retain the Alpine Go builder because it does not fetch runtime packages.
+
+**Where it's documented**
+- `Dockerfile`
+- `.github/workflows/docker.yml`
 - `docs/how-to/release-channels.md`
 
 ### Loop: Plex Web asks for JSON provider metadata, bypassing XML-only entitlement rewrites

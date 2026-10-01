@@ -152,7 +152,7 @@ jobs:
           set -euo pipefail
           archive="https://api.launchpad.net/1.0/~keefshape/+archive/ubuntu/iptvtunerr"
           series_link="https://api.launchpad.net/1.0/ubuntu/${UBUNTU_SERIES}"
-          missing_count=0
+          consecutive_missing_sources=0
 
           for attempt in $(seq 1 70); do
             source_response="$(curl --fail --silent --show-error --get "$archive" \
@@ -162,13 +162,15 @@ jobs:
               --data-urlencode "distro_series=${series_link}" \
               --data-urlencode 'exact_match=true' \
               --data-urlencode 'ws.size=10')"
-            source_status="$(jq -r --arg version "$PPA_VERSION" \
-              '.entries[]? | select(.source_package_version == $version) | .status' \
+            source_entry="$(jq -c --arg version "$PPA_VERSION" \
+              '.entries[]? | select(.source_package_version == $version) | {self_link, status}' \
               <<< "$source_response" | head -n 1)"
+            source_link="$(jq -r '.self_link // empty' <<< "${source_entry:-null}")"
+            source_status="$(jq -r '.status // empty' <<< "${source_entry:-null}")"
 
-            if [[ -z "$source_status" ]]; then
-              missing_count=$((missing_count + 1))
-              if (( missing_count >= 20 )); then
+            if [[ -z "$source_link" ]]; then
+              consecutive_missing_sources=$((consecutive_missing_sources + 1))
+              if (( consecutive_missing_sources >= 20 )); then
                 echo "Launchpad has no source publication record for ${PPA_VERSION} (${UBUNTU_SERIES}); inspect its upload queue/rejection notice." >&2
                 exit 1
               fi
@@ -176,22 +178,33 @@ jobs:
               sleep 30
               continue
             fi
+            consecutive_missing_sources=0
             if [[ "$source_status" == "Superseded" || "$source_status" == "Deleted" ]]; then
               echo "Launchpad reports source ${PPA_VERSION} as ${source_status} for ${UBUNTU_SERIES}." >&2
               exit 1
             fi
 
-            binary_response="$(curl --fail --silent --show-error --get "$archive" \
+            build_response="$(curl --fail --silent --show-error --get "$source_link" \
+              --data-urlencode 'ws.op=getBuilds' \
+              --data-urlencode 'ws.size=20')"
+            build_entry="$(jq -c '[.entries[]? | select(.arch_tag == "amd64")][0] // {}' \
+              <<< "$build_response")"
+            build_state="$(jq -r '.buildstate // empty' <<< "$build_entry")"
+            build_link="$(jq -r '.self_link // empty' <<< "$build_entry")"
+            build_log="$(jq -r '.build_log_url // empty' <<< "$build_entry")"
+            if [[ "$build_state" == "Failed to build" || "$build_state" == "Failed to upload" || \
+              "$build_state" == "Chroot problem" || "$build_state" == "Build for superseded Source" || \
+              "$build_state" == "Cancelled build" ]]; then
+              echo "Launchpad amd64 build failed (${build_state}): ${build_link} ${build_log}" >&2
+              exit 1
+            fi
+
+            binary_response="$(curl --fail --silent --show-error --get "$source_link" \
               --data-urlencode 'ws.op=getPublishedBinaries' \
-              --data-urlencode 'binary_name=iptvtunerr' \
-              --data-urlencode "version=${PPA_VERSION}" \
-              --data-urlencode "distro_series=${series_link}" \
-              --data-urlencode "distro_arch_series=${series_link}/amd64" \
-              --data-urlencode 'status=Published' \
-              --data-urlencode 'exact_match=true' \
+              --data-urlencode 'active_binaries_only=false' \
               --data-urlencode 'ws.size=10')"
             binary_status="$(jq -r --arg version "$PPA_VERSION" \
-              '.entries[]? | select(.binary_package_name == "iptvtunerr" and .binary_package_version == $version) | .status' \
+              '.entries[]? | select(.binary_package_name == "iptvtunerr" and .binary_package_version == $version and (.distro_arch_series_link | endswith("/amd64"))) | .status' \
               <<< "$binary_response" | head -n 1)"
 
             if [[ "$source_status" == "Published" && "$binary_status" == "Published" ]]; then
@@ -203,9 +216,9 @@ jobs:
               exit 1
             fi
 
-            echo "Launchpad source status is ${source_status}; waiting for ${UBUNTU_SERIES}/amd64 binary publication (${attempt}/70)."
+            echo "Launchpad source is ${source_status}; amd64 build is ${build_state:-pending}; waiting for binary publication (${attempt}/70)."
             sleep 60
           done
 
-          echo "Launchpad did not publish binary ${PPA_VERSION} for ${UBUNTU_SERIES}/amd64 before timeout." >&2
+          echo "Launchpad did not publish binary ${PPA_VERSION} for ${UBUNTU_SERIES}/amd64 after 70 checks. Inspect ${build_link:-the source build record} ${build_log:-}." >&2
           exit 1

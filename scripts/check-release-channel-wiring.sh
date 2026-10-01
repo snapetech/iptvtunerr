@@ -100,11 +100,19 @@ if ! rg -Fq 'build-args: VERSION=${{ env.RELEASE_TAG }}' "$docker_workflow"; the
   exit 1
 fi
 if ! rg -q 'git show origin/main:Dockerfile > Dockerfile' "$docker_workflow" || \
-   ! rg -q 'apk package install failed.*retrying after backoff' "$root/Dockerfile" || \
-   ! rg -Fq 'https://mirrors.edge.kernel.org/alpine' "$root/Dockerfile" || \
-   ! rg -Fq 'https://us.mirror.ionos.com/linux/distributions/alpine' "$root/Dockerfile" || \
-   ! rg -Fq 'https://mirror.csclub.uwaterloo.ca/alpine' "$root/Dockerfile"; then
-  echo "Docker must use the current packaging recipe, retry mirror errors, and fall back across official Alpine mirrors." >&2
+   ! rg -Fxq 'FROM debian:bookworm-slim' "$root/Dockerfile" || \
+   ! rg -Fq 'apt-get -o Acquire::Retries=3 update' "$root/Dockerfile" || \
+   ! rg -q 'Debian package install failed.*retrying after backoff' "$root/Dockerfile"; then
+  echo "Docker must use the current Debian packaging recipe and retry transient package mirror failures." >&2
+  exit 1
+fi
+ppa_workflow="$root/.github/workflows/release-ppa.yml"
+if ! rg -Fq 'consecutive_missing_sources=0' "$ppa_workflow" || \
+   ! rg -Fq 'consecutive_missing_sources=0' <(sed -n '/source_link=/,/if \[\[ "\$source_status"/p' "$ppa_workflow") || \
+   ! rg -Fq "ws.op=getBuilds" "$ppa_workflow" || \
+   ! rg -Fq "ws.op=getPublishedBinaries" "$ppa_workflow" || \
+   ! rg -Fq 'after 70 checks' "$ppa_workflow"; then
+  echo "PPA polling must tolerate intermittent source records and confirm the exact built amd64 binary." >&2
   exit 1
 fi
 snap_manifest="$root/snap/snapcraft.yaml"
