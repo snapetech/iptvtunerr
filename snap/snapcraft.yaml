@@ -10,9 +10,10 @@ grade: stable
 confinement: strict
 license: AGPL-3.0-or-later
 
-architectures:
-  - build-on: amd64
-    build-for: amd64
+platforms:
+  amd64:
+    build-on: [amd64]
+    build-for: [amd64]
 
 apps:
   iptvtunerr:

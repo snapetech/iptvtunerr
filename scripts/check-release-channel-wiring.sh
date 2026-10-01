@@ -99,6 +99,13 @@ if ! rg -Fq 'build-args: VERSION=${{ env.RELEASE_TAG }}' "$docker_workflow"; the
   echo "The Docker binary version must come from the dispatched release tag." >&2
   exit 1
 fi
+snap_manifest="$root/snap/snapcraft.yaml"
+if ! rg -Fxq 'base: core24' "$snap_manifest" || \
+   ! rg -Fxq 'platforms:' "$snap_manifest" || \
+   ! rg -Fxq '    build-for: [amd64]' "$snap_manifest"; then
+  echo "The Core24 Snap manifest must declare its amd64 platform using the platforms field." >&2
+  exit 1
+fi
 if ! rg -q 'build-release-assets\.sh' "$release_workflow" || \
    ! rg -q 'build-linux-package-assets\.sh' "$release_workflow"; then
   echo "The GitHub Release workflow must build versioned binaries and Linux packages." >&2
