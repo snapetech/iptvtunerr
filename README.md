@@ -83,6 +83,7 @@ The current limits are deliberate: Tunerr does not clone Plex passwords, it does
 - [Fastest First Run](#fastest-first-run)
 - [Getting Your Binary](#getting-your-binary)
 - [Core Capabilities](#core-capabilities)
+- [Sports Automation](#sports-automation)
 - [Channel Intelligence](#channel-intelligence)
 - [Programming Manager](#programming-manager)
 - [Downstream Publishing And Virtual Channels](#downstream-publishing-and-virtual-channels)
@@ -313,6 +314,12 @@ curl -s http://127.0.0.1:5004/guide/aliases.json | jq
 ```
 
 These two capabilities run from the same process. They can be used independently: point your media server at the tuner URL for streams and at a different guide source, or use IPTV Tunerr for both.
+
+### Sports Automation
+
+Tunerr can use API-Sports schedules for MLB, NFL, and NCAA Football to find live events in the lineup you already serve. It matches both teams and the scheduled time against Tunerr's merged XMLTV guide, then publishes a separate event playlist and guide without changing your regular lineup. Generated channels still stream through Tunerr's normal `/stream/{channel_id}` gateway.
+
+Manage datasets, team filters, refreshes, and match results from the authenticated Sports page in the WebUI. The operator API is available at `/v1/sports/automation`, `/v1/sports/status`, `/v1/sports/events`, and `/v1/sports/refresh`; clients can import `/sports/live.m3u` with `/sports/guide.xml`. Set `IPTV_TUNERR_API_SPORTS_KEY` in the server environment. The key stays server-side. See the [Sports Automation guide](docs/how-to/sports-automation.md) for setup and matching details.
 
 ### 3. Multi-provider and failover
 
@@ -1543,6 +1550,7 @@ docs/                 Reference, how-to guides, runbooks
 - [`docs/explanations/project-backlog.md`](docs/explanations/project-backlog.md) — **Open work index** (epics, `memory-bank/opportunities.md`, `known_issues`, `docs-gaps`, features limits)
 
 **How-To**
+- [`docs/how-to/sports-automation.md`](docs/how-to/sports-automation.md) — Configure API-Sports schedules, WebUI automation, operator API, and generated event feeds
 - [`docs/how-to/connect-plex-to-iptv-tunerr.md`](docs/how-to/connect-plex-to-iptv-tunerr.md) — Connect Plex (UI wizard vs `-register-plex` vs API; channelmap, limits)
 - [`docs/how-to/deployment.md`](docs/how-to/deployment.md) — Binary, Docker, systemd deployment
 - [`docs/how-to/platform-requirements.md`](docs/how-to/platform-requirements.md) — FFmpeg, FUSE, platform notes
@@ -1587,6 +1595,7 @@ This project is dual-licensed under the GNU Affero General Public License v3.0-o
 
 ## Recent Changes
 
+- **Sports Automation is available in the WebUI and API:** API-Sports schedules can be matched against Tunerr's current lineup and merged XMLTV guide, then exposed through separate generated M3U/XMLTV feeds — see the [setup guide](docs/how-to/sports-automation.md).
 - **Release-readiness is explicit now:** use [`scripts/release-readiness.sh`](scripts/release-readiness.sh) plus [`docs/explanations/release-readiness-matrix.md`](docs/explanations/release-readiness-matrix.md) to see which surfaces are unit-proven, smoke-proven, or host-proven before tagging.
 - **Programming Manager is now a real product surface:** server-backed category browse, quick filters, manual order, exact-backup grouping and preference, harvest assists/import, and live preview all ship in the dedicated deck — see [`docs/features.md`](docs/features.md) and [`docs/epics/EPIC-programming-manager.md`](docs/epics/EPIC-programming-manager.md).
 - **Virtual channels now publish downstream, not just preview:** the owned-media schedule path now has `/virtual-channels/guide.xml`, focused detail/schedule surfaces, and Xtream live exposure through `player_api.php`, `get.php`, and `/live/<user>/<pass>/virtual.<id>.mp4`.

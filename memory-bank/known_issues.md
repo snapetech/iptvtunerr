@@ -12,6 +12,11 @@
 
 - **Live TV abuse blocking must not override valid Plex authorization.** A source/IP block can be triggered by missing-token probes from Plex clients or shared networks. The proxy must allow an already-authorized Plex token to bypass the source block while continuing to deny missing or unauthorized tokens.
 
+## Sports Automation
+
+- **Event matching depends on provider and guide naming.** API-Sports does not provide channel carriage or stream URLs. Tunerr matches canonical team names/codes in current lineup channel names and merged XMLTV programme text, with programme starts limited to three hours from the canonical start. Provider-specific abbreviations and generic guide labels can leave a real game unmatched. Only current lineup channels with streams can be generated.
+- **Canonical schedule coverage is limited to MLB, NFL, and NCAA Football.** NFL and NCAA Football share one API-Sports product endpoint and are partitioned by league ID. Other competitions continue to rely on provider/EPG behavior without canonical schedule matching.
+
 ## Release / Packaging
 
 - **Winget ZIP manifests must point at the executable inside the archive directory.** The Windows release ZIP contains `iptv-tunerr-vX.Y.Z-windows-amd64/iptv-tunerr.exe`, not a root-level `iptv-tunerr-vX.Y.Z-windows-amd64.exe`. A wrong `NestedInstallerFiles.RelativeFilePath` downloads and hashes fine but fails Microsoft install validation.

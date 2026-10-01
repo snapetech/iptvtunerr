@@ -20,6 +20,7 @@ Where to find what. This repo uses the [Diátaxis](https://diataxis.fr/) split b
 | **[adr/](adr/index.md)** | Decision log: architecture decision records. |
 | **[runbooks/](runbooks/index.md)** | Operational procedures ([troubleshooting](runbooks/iptvtunerr-troubleshooting.md) §8: **`/healthz`**, **`/readyz`**). |
 | **[how-to/deployment.md](how-to/deployment.md)** | Deploy IPTV Tunerr (binary, Docker, systemd, k3s, local test script). |
+| **[how-to/sports-automation.md](how-to/sports-automation.md)** | API-Sports schedule matching, operator controls, and generated sports event feeds. |
 | **[how-to/mac-baremetal-smoke.md](how-to/mac-baremetal-smoke.md)** | Cross-build, wake, SSH, and prove the app on a real macOS host. |
 | **[how-to/windows-baremetal-smoke.md](how-to/windows-baremetal-smoke.md)** | Prepare and run the Windows bare-metal smoke lane when the host/VM is available. |
 | **[how-to/plex-lineup-harvest.md](how-to/plex-lineup-harvest.md)** | Probe Plex lineup variants, capture harvest bundles, and feed Programming Manager import/assist flows. |

@@ -3,7 +3,7 @@ import {
 } from '@mantine/core'
 import {
   IconPlaylistAdd, IconMovie, IconAntenna, IconCalendarTime, IconRecordMail,
-  IconChartBar, IconPuzzle, IconUsers, IconPhoto, IconSettings, IconSearch,
+  IconBallFootball, IconChartBar, IconPuzzle, IconUsers, IconPhoto, IconSettings, IconSearch,
   IconChevronRight,
 } from '@tabler/icons-react'
 import { useState, useEffect, useRef, useCallback } from 'react'
@@ -14,6 +14,7 @@ const COMMANDS = [
   { path: '/vods',      label: 'VODs',           Icon: IconMovie,         keys: 'v' },
   { path: '/m3u-epg',  label: 'M3U & EPG',      Icon: IconAntenna,       keys: 'm' },
   { path: '/tv-guide', label: 'TV Guide',        Icon: IconCalendarTime,  keys: 'g' },
+  { path: '/sports',   label: 'Sports',          Icon: IconBallFootball,  keys: null },
   { path: '/dvr',      label: 'DVR',             Icon: IconRecordMail,    keys: 'd' },
   { path: '/stats',    label: 'Stats',           Icon: IconChartBar,      keys: 's' },
   { path: '/plugins',  label: 'Plugins',         Icon: IconPuzzle,        keys: null },

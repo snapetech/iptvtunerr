@@ -2080,6 +2080,9 @@ Fetches EPG directly from your IPTV provider using existing credentials. No sepa
 - `IPTV_TUNERR_CATCHUP_REPLAY_URL_TEMPLATE` — optional source-backed replay URL template for capsules/publishing; when set, replay URLs are rendered with programme and channel tokens instead of falling back to live-channel launchers
 - `IPTV_TUNERR_RECORD_DEPRIORITIZE_HOSTS` — comma-separated hostnames; for `catchup-daemon` / `catchup-record` with `-record-upstream-fallback`, catalog capture fallbacks whose host matches (or is a subdomain of) these names are tried after other fallbacks (Tunerr `/stream/<id>` stays first)
 - `IPTV_TUNERR_XMLTV_MATCH_ENABLE` — repair/assign channel `TVGID`s from provider/external XMLTV channel metadata during catalog build (default `true`)
+- `IPTV_TUNERR_API_SPORTS_KEY` — optional server-side API-Sports key for Sports Automation; it is sent only to fixed API-Sports hosts and never returned by Tunerr APIs
+- `IPTV_TUNERR_SPORTS_CACHE_FILE` — optional persistent canonical schedule cache path (default: `<cache-dir>/sports-schedules.json`)
+- `IPTV_TUNERR_SPORTS_AUTOMATION_FILE` — optional persistent Sports Automation settings path (default: `sports-automation.json` beside the catalog)
 - `IPTV_TUNERR_XMLTV_TIMEOUT` — fetch timeout (default `45s`)
 - `IPTV_TUNERR_XMLTV_CACHE_TTL` — refresh interval when provider EPG cache TTL is not set (default `10m`)
 - `IPTV_TUNERR_LIVE_EPG_ONLY` — at **catalog build**, keep only channels with **`epg_linked`** / a **`tvg-id`** (drops unlinked rows before save). See [lineup-epg-hygiene](lineup-epg-hygiene.md).

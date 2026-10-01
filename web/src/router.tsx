@@ -10,6 +10,7 @@ import { Plugins }      from './pages/Plugins'
 import { Users }        from './pages/Users'
 import { LogoManager }  from './pages/LogoManager'
 import { Settings }     from './pages/Settings'
+import { Sports }       from './pages/Sports'
 
 export const router = createBrowserRouter([
   {
@@ -21,6 +22,7 @@ export const router = createBrowserRouter([
       { path: 'vods',      element: <Vods />          },
       { path: 'm3u-epg',  element: <M3UEPGManager /> },
       { path: 'tv-guide', element: <TvGuide />        },
+      { path: 'sports',   element: <Sports />          },
       { path: 'dvr',      element: <Dvr />            },
       { path: 'stats',    element: <Stats />          },
       { path: 'plugins',  element: <Plugins />        },

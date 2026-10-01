@@ -3,6 +3,7 @@ package main
 import (
 	"log"
 	"os"
+	"path/filepath"
 	"regexp"
 	"strings"
 	"time"
@@ -12,6 +13,7 @@ import (
 	"github.com/snapetech/iptvtunerr/internal/config"
 	"github.com/snapetech/iptvtunerr/internal/eventhooks"
 	"github.com/snapetech/iptvtunerr/internal/safeurl"
+	"github.com/snapetech/iptvtunerr/internal/sports"
 	"github.com/snapetech/iptvtunerr/internal/tuner"
 )
 
@@ -68,6 +70,14 @@ func newRuntimeServer(cfg *config.Config, addr, baseURL, deviceID, friendlyName 
 	if friendlyName == "" {
 		friendlyName = cfg.FriendlyName
 	}
+	sportsCacheFile := strings.TrimSpace(os.Getenv("IPTV_TUNERR_SPORTS_CACHE_FILE"))
+	if sportsCacheFile == "" && strings.TrimSpace(cfg.CacheDir) != "" {
+		sportsCacheFile = filepath.Join(cfg.CacheDir, "sports-schedules.json")
+	}
+	sportsAutomationFile := strings.TrimSpace(os.Getenv("IPTV_TUNERR_SPORTS_AUTOMATION_FILE"))
+	if sportsAutomationFile == "" && strings.TrimSpace(cfg.CatalogPath) != "" {
+		sportsAutomationFile = filepath.Join(filepath.Dir(cfg.CatalogPath), "sports-automation.json")
+	}
 	srv := &tuner.Server{
 		Addr:                       addr,
 		AppVersion:                 Version,
@@ -82,6 +92,8 @@ func newRuntimeServer(cfg *config.Config, addr, baseURL, deviceID, friendlyName 
 		AutopilotStateFile:         cfg.AutopilotStateFile,
 		RecorderStateFile:          os.Getenv("IPTV_TUNERR_CATCHUP_RECORDER_STATE_FILE"),
 		RecordingRulesFile:         strings.TrimSpace(cfg.RecordingRulesFile),
+		Sports:                     sports.NewService(cfg.APISportsKey, sportsCacheFile),
+		SportsAutomationFile:       sportsAutomationFile,
 		ProgrammingRecipeFile:      strings.TrimSpace(os.Getenv("IPTV_TUNERR_PROGRAMMING_RECIPE_FILE")),
 		PlexLineupHarvestFile:      strings.TrimSpace(os.Getenv("IPTV_TUNERR_PLEX_LINEUP_HARVEST_FILE")),
 		VirtualChannelsFile:        strings.TrimSpace(os.Getenv("IPTV_TUNERR_VIRTUAL_CHANNELS_FILE")),

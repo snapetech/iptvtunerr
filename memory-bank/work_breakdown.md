@@ -1,5 +1,21 @@
 # Work breakdown
 
+## 2026-10-01 - API-Sports Sports Automation
+
+Objective: implement the supplied M3U Web Picker Sports Automation model in Tunerr: canonical API-Sports schedule anchors, provider/XMLTV reconciliation, temporary event channels, and operator API/WebUI controls.
+
+| Story ID | Scope | Status |
+| --- | --- | --- |
+| SPH-001 | Replace the scoreboard client with fixed MLB/NFL/NCAA schedule adapters, normalized events, bounded persistent date cache, stale fallback, request/quota status, and server-only credentials. | Completed |
+| SPH-002 | Add automation settings and matching rules, then reconcile canonical event anchors against current Tunerr channels and merged XMLTV with conservative team/time matching. | Completed |
+| SPH-003 | Generate event-scoped stable identities and separate temporary sports M3U/XMLTV outputs that route only through Tunerr's existing stream gateway. | Completed |
+| SPH-004 | Add operator-gated configuration/status/events/refresh APIs and typed WebUI functions. | Completed |
+| SPH-005 | Replace the scoreboard page with Sports Automation controls, dataset/cache health, matched/unmatched events, and generated feed links. | Completed |
+| SPH-006 | Update feature/how-to/reference docs and memory; run prescribed non-test verification without committing or publishing. | Completed |
+| SPH-007 | Add README TOC and feature coverage, prepare a user-facing release note, keep Snap and Docker Hub paused while retaining GHCR `latest`, run release verification, then commit, push, and publish v0.1.88 by fast-forward. | In progress |
+
+Guardrail: preserve manual channels and standard lineup state; API-Sports is canonical schedule data, never a stream provider. Use fixed upstream hosts, conservative date windows, cached schedule fallback, and only current Tunerr catalog channels for generated event playback. Do not expose the API key or provider stream URLs. Preserve published Git history and tags; push only by normal fast-forward. Skip Snap and Docker Hub for this release.
+
 ## 2026-09-30 - Opportunity backlog implementation sweep
 
 Objective: implement all repo-owned open opportunities, reconcile the items that require package-service or live-host state, and push the result without rewriting history.

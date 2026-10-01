@@ -1,5 +1,16 @@
 # Opportunities
 
+## Sports Automation follow-ups (2026-10-01)
+
+- **Team aliases for EPG matching.** Provider XMLTV often uses short names or city-only labels unlike API-Sports. Add an operator-managed alias map or curated per-dataset aliases with explicit ambiguity handling; do not weaken the team-plus-time match based on guesswork.
+- **Additional canonical datasets.** Extend beyond MLB/NFL/NCAA only after implementing and validating sport-specific response adapters, season/date semantics, and status handling.
+- **Live API and provider validation.** The implementation has no production API key in this checkout. Confirm response normalization, real quota headers, representative EPG matches, and end-to-end playback with an operator-controlled test instance before broad rollout.
+- **Live refresh policy.** The first version avoids automatic polling to protect provider quotas. If live polling is added, make it visible, cache-aware, bounded to live games, and adjustable by the operator.
+
+## WebUI bundle follow-up (2026-10-01)
+
+- **Split the operator deck into route chunks.** The production JavaScript bundle is about 1.35 MB minified (roughly 400 KB gzipped), above Vite's 500 KB chunk warning. The Sports page adds only a small increment; assess route-level splitting across the existing deck instead of optimizing this feature in isolation.
+
 ## Release-channel audit on 2026-10-01
 
 - **Smoketest timeout data loss — fixed and released.** `v0.1.87` retains channels whose probes were interrupted or unsampled when the total smoketest budget expires, while only completed probe failures are removed. The 24,908-channel timeout regression passes; see [the release](https://github.com/snapetech/iptvtunerr/releases/tag/v0.1.87).

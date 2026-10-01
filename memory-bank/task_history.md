@@ -1,3 +1,11 @@
+## 2026-09-30 - Add API-Sports Sports Hub
+
+- Researched the requested IPTV sports reference. The exact `m3u-web-picker` name did not resolve publicly; Lume's merged Sports Hub is the closest relevant implementation and uses ESPN. Its design and API research informed Tunerr's EPG-first matcher, while Tunerr uses API-Sports directly as requested.
+- Added a server-only API-Sports client for football, basketball, American football, baseball, hockey, and rugby, with fixed upstream hosts, bounded date access, global request pacing, duplicate-call coalescing, 90-second cache/stale fallback, quota metadata, and no browser-visible key.
+- Added tuner REST routes for status, schedules, and lineup channel search; matched fixture teams and kickoff windows against the current merged XMLTV; added typed WebUI functions and a Sports page that plays only Tunerr lineup channels.
+- Updated setup/how-to/reference docs, navigation, embedded production WebUI assets, feature/backlog indexes, and memory-bank state. Future team follows, more sports, and controlled live refresh are filed in `opportunities.md`.
+- Verification: `gofmt` format check, `git diff --check`, `go vet ./...`, `go build -o /dev/null ./cmd/iptv-tunerr`, and WebUI `npm run build` passed. No tests were added or run for this feature.
+
 ## 2026-09-30 - Prepare safe GitLab mirror reconciliation
 
 - Prepared merge candidate `4b5d293` from GitLab's cached `main` plus GitHub `main` through `4e98af0`, preserving both histories and rebuilding the combined embedded WebUI.
@@ -504,3 +512,10 @@
 - Added dated link-only sections for the 17 releases, a reasoned exception registry for the two no-release tags, and a documented history audit. Existing changelog sections were preserved byte-for-byte. Pushed follow-up `585d204` to GitHub `main` as a normal fast-forward; no tags or releases were created.
 - Verification: changelog coverage passed for 79 stable tags including the two exceptions; release-note gate, JavaScript syntax, local identity scan, and diff checks passed. CI retry `36785910764` attempt 2 passed full `scripts/verify`, binary smoke, and release asset build/validation; CodeQL, Gitleaks, and Local Identity checks passed.
 - Observation: the first CI attempt for `585d204` failed once in `TestServer_reapplyDeferredGuidePolicyDoesNotCumulativelyShrink`; the unchanged retry passed. Filed as an opportunity to investigate if it recurs. No Go tests were run locally.
+
+## 2026-10-01 - Replace scoreboard proposal with M3U Web Picker Sports Automation
+
+- Corrected the initial reference research after the user supplied `https://github.com/zschmook/m3u-web-picker`. The reference implements provider/XMLTV sports automation with optional API-Sports canonical MLB, NFL, and NCAA Football schedules, and publishes temporary event channels in a namespace separate from saved manual channels. The earlier scoreboard interpretation was wrong and remains superseded by this entry.
+- Replaced the scoreboard page/client with fixed-host API-Sports adapters, normalized schedules, a bounded persistent date cache with stale fallback and quota status, persisted operator rules, strict team/time matching against Tunerr's current lineup and merged XMLTV, and independent sports M3U/XMLTV feeds routed through Tunerr's stream gateway.
+- Added operator-gated configuration, events, status, and refresh routes; WebUI controls for datasets, teams, schedule windows, cache status, matched feeds, and playback; docs and memory-bank updates. Recorded remaining alias and live-provider validation gaps in `opportunities.md`.
+- Verification: changed Go files passed `gofmt -s -l`, `go vet ./...`, and `go build -o /dev/null ./cmd/iptv-tunerr`; `cd web && npm run build` passed. The repository's full `gofmt -s -l .` also reports formatting differences in vendored dependencies, which were left untouched. Tests were not run per the task instruction. No commit, push, or release was requested.

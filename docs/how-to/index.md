@@ -20,6 +20,7 @@ Goal → preconditions → steps → verify.
 | [mac-baremetal-smoke](mac-baremetal-smoke.md) | Cross-build, wake, SSH, and prove a real macOS host path from Linux. |
 | [windows-baremetal-smoke](windows-baremetal-smoke.md) | Prepare and run the Windows host smoke lane when the VM/host is ready. |
 | [fix-guide-data-with-epg-doctor](fix-guide-data-with-epg-doctor.md) | Diagnose and fix bad guide data, placeholder-only channels, and weak XMLTV matches. |
+| [sports-automation](sports-automation.md) | Configure API-Sports schedule matching and publish separate temporary event M3U/XMLTV feeds. |
 | [package-test-builds](package-test-builds.md) | Build cross-platform test bundles (Linux/macOS/Windows) for binary + supervisor testing. |
 | [tester-handoff-checklist](tester-handoff-checklist.md) | Final handoff checklist for sending tester bundles and collecting useful bug reports. |
 | [tester-release-notes-draft](tester-release-notes-draft.md) | Draft release notes / tester-facing summary for current validation builds. |

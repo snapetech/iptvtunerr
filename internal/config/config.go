@@ -53,6 +53,7 @@ type Config struct {
 	// HlsMuxCORS: when true, add CORS headers for ?mux=hls (playlist + seg) and answer OPTIONS preflight.
 	HlsMuxCORS         bool
 	AutopilotStateFile string // optional JSON state file for remembered channel/client playback decisions
+	APISportsKey       string // optional server-side API-Sports key; never returned by configuration APIs
 	XMLTVURL           string // optional external XMLTV source to proxy/remap into /guide.xml
 	XMLTVAliases       string // optional file path or http(s) URL for deterministic XMLTV alias overrides
 	XMLTVMatchEnable   bool   // when true, repair/assign TVGIDs during catalog build from XMLTV channel metadata
@@ -206,6 +207,7 @@ func Load() *Config {
 		StreamTranscodeMode:         getEnvTranscodeMode("IPTV_TUNERR_STREAM_TRANSCODE", "off"),
 		HlsMuxCORS:                  getEnvBool("IPTV_TUNERR_HLS_MUX_CORS", false),
 		AutopilotStateFile:          os.Getenv("IPTV_TUNERR_AUTOPILOT_STATE_FILE"),
+		APISportsKey:                strings.TrimSpace(os.Getenv("IPTV_TUNERR_API_SPORTS_KEY")),
 		XMLTVURL:                    getEnvURL("IPTV_TUNERR_XMLTV_URL"),
 		XMLTVAliases:                os.Getenv("IPTV_TUNERR_XMLTV_ALIASES"),
 		XMLTVMatchEnable:            getEnvBool("IPTV_TUNERR_XMLTV_MATCH_ENABLE", true),

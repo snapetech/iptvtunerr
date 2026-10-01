@@ -26,6 +26,7 @@ import (
 	"github.com/snapetech/iptvtunerr/internal/httpclient"
 	"github.com/snapetech/iptvtunerr/internal/plexharvest"
 	"github.com/snapetech/iptvtunerr/internal/programming"
+	"github.com/snapetech/iptvtunerr/internal/sports"
 	"github.com/snapetech/iptvtunerr/internal/virtualchannels"
 )
 
@@ -79,6 +80,8 @@ type Server struct {
 	Movies                    []catalog.Movie
 	Series                    []catalog.Series
 	Channels                  []catalog.LiveChannel
+	Sports                    *sports.Service
+	SportsAutomationFile      string
 	RawChannels               []catalog.LiveChannel
 	GuidePolicySourceChannels []catalog.LiveChannel
 	ProgrammingRecipeFile     string
@@ -138,6 +141,7 @@ type Server struct {
 	runtimeMu       sync.RWMutex
 
 	// health state updated by UpdateChannels; read by /healthz and /readyz.
+	channelsMu     sync.RWMutex
 	healthMu       sync.RWMutex
 	healthChannels int
 	healthRefresh  time.Time
@@ -298,7 +302,9 @@ func (s *Server) setExposedChannels(live []catalog.LiveChannel) {
 			s.TunerCount = 1
 		}
 	}
+	s.channelsMu.Lock()
 	s.Channels = live
+	s.channelsMu.Unlock()
 	s.healthMu.Lock()
 	s.healthChannels = len(live)
 	s.healthRefresh = time.Now()
@@ -2069,6 +2075,7 @@ func (s *Server) Run(ctx context.Context) error {
 	xmltv.OnGuideHealthReady = s.reapplyDeferredGuidePolicyAfterGuideHealthReady
 	s.xmltv = xmltv
 	xmltv.StartRefresh(ctx)
+	s.startSportsScheduleRefresh(ctx)
 	m3uServe := &M3UServe{BaseURL: s.BaseURL, Channels: s.Channels, EpgPruneUnlinked: s.EpgPruneUnlinked}
 	s.m3uServe = m3uServe
 
@@ -2129,6 +2136,12 @@ func (s *Server) Run(ctx context.Context) error {
 	mux.Handle("/guide/highlights.json", s.serveGuideHighlights())
 	mux.Handle("/guide/epg-store.json", s.serveEpgStoreReport())
 	mux.Handle("/guide/capsules.json", s.serveCatchupCapsules())
+	mux.Handle("/v1/sports/status", s.serveSportsAutomation())
+	mux.Handle("/v1/sports/automation", s.serveSportsAutomation())
+	mux.Handle("/v1/sports/events", s.serveSportsEvents())
+	mux.Handle("/v1/sports/refresh", s.serveSportsRefresh())
+	mux.Handle("/sports/live.m3u", s.serveSportsEventM3U())
+	mux.Handle("/sports/guide.xml", s.serveSportsEventGuide())
 	mux.Handle("/live.m3u", m3uServe)
 	mux.Handle("/stream/", gateway)
 	// Plex can tune activated HDHR channels through /auto/v<guide-number>, not only /stream/<channel-id>.
