@@ -1,3 +1,8 @@
+# 2026-10-01 - Repair v0.1.90 AUR publication
+
+- Fixed the stale `iptvtunerr.env` checksum in both AUR package recipes. The AUR workflow now regenerates local-source hashes from the selected release tag before validating and publishing package metadata.
+- Verification: `validate-aur-pkgbuild-hashes.sh` passed, and the release-step simulation recovered from the previous checksum in both recipes. AUR workflow run [36938828432](https://github.com/snapetech/iptvtunerr/actions/runs/36938828432) published both `iptvtunerr-bin` and `iptvtunerr` for v0.1.90.
+
 ## 2026-09-30 - Add API-Sports Sports Hub
 
 - Researched the requested IPTV sports reference. The exact `m3u-web-picker` name did not resolve publicly; Lume's merged Sports Hub is the closest relevant implementation and uses ESPN. Its design and API research informed Tunerr's EPG-first matcher, while Tunerr uses API-Sports directly as requested.
