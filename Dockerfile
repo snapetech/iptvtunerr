@@ -31,8 +31,22 @@ RUN set -eu; \
 	  done; \
 	}; \
 	if ! install_from "https://dl-cdn.alpinelinux.org/alpine"; then \
-	  echo "Primary Alpine mirror unavailable; trying the official Waterloo mirror"; \
-	  install_from "https://mirror.csclub.uwaterloo.ca/alpine"; \
+	  fallback_ok=0; \
+	  for mirror in \
+	    "https://mirrors.edge.kernel.org/alpine" \
+	    "https://us.mirror.ionos.com/linux/distributions/alpine" \
+	    "https://plug-mirror.rcac.purdue.edu/alpine" \
+	    "https://mirror.csclub.uwaterloo.ca/alpine"; do \
+	    echo "Primary Alpine mirror unavailable; trying official mirror ${mirror}"; \
+	    if install_from "${mirror}"; then \
+	      fallback_ok=1; \
+	      break; \
+	    fi; \
+	  done; \
+	  if [ "${fallback_ok}" -ne 1 ]; then \
+	    echo "All configured official Alpine mirrors failed" >&2; \
+	    exit 1; \
+	  fi; \
 	fi
 COPY --from=build /iptv-tunerr /usr/local/bin/iptv-tunerr
 EXPOSE 5004

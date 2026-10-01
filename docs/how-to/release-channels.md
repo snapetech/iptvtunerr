@@ -46,8 +46,8 @@ The dispatcher starts Docker from the current `main` workflow definition. The
 image uses the exact release tag for application source and version, with the
 current `main` Dockerfile packaging recipe, then publishes both `latest` and
 the matching version tag to GHCR and both configured Docker Hub image names.
-The Dockerfile retries Alpine package installation and falls back to another
-official HTTPS mirror if the primary CDN remains unavailable.
+The Dockerfile retries Alpine package installation and falls back across
+several official HTTPS mirrors if the primary CDN remains unavailable.
 
 CI checks the publisher list, latest-tag guard, Docker image names, and tag
 contract. The GitHub Release workflow waits for every dispatched publisher and
@@ -157,8 +157,8 @@ release workflow dispatches it or on a manual rerun. It rejects any tag other
 than the latest stable release reachable from `main` and publishes `latest`
 and the release tag from the same build. It uses the Dockerfile from current
 `main` with application source checked out at the exact release tag. Alpine
-package downloads retry transient failures and fall back to a second official
-HTTPS mirror if the CDN remains unavailable.
+package downloads retry transient failures and fall back across several
+official HTTPS mirrors if the CDN remains unavailable.
 
 Configured registries:
 

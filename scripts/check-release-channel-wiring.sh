@@ -101,8 +101,10 @@ if ! rg -Fq 'build-args: VERSION=${{ env.RELEASE_TAG }}' "$docker_workflow"; the
 fi
 if ! rg -q 'git show origin/main:Dockerfile > Dockerfile' "$docker_workflow" || \
    ! rg -q 'apk package install failed.*retrying after backoff' "$root/Dockerfile" || \
+   ! rg -Fq 'https://mirrors.edge.kernel.org/alpine' "$root/Dockerfile" || \
+   ! rg -Fq 'https://us.mirror.ionos.com/linux/distributions/alpine' "$root/Dockerfile" || \
    ! rg -Fq 'https://mirror.csclub.uwaterloo.ca/alpine' "$root/Dockerfile"; then
-  echo "Docker must use the current packaging recipe, retry mirror errors, and fall back to an official Alpine mirror." >&2
+  echo "Docker must use the current packaging recipe, retry mirror errors, and fall back across official Alpine mirrors." >&2
   exit 1
 fi
 snap_manifest="$root/snap/snapcraft.yaml"
@@ -110,6 +112,13 @@ if ! rg -Fxq 'base: core24' "$snap_manifest" || \
    ! rg -Fxq 'platforms:' "$snap_manifest" || \
    ! rg -Fxq '    build-for: [amd64]' "$snap_manifest"; then
   echo "The Core24 Snap manifest must declare its amd64 platform using the platforms field." >&2
+  exit 1
+fi
+copr_workflow="$root/.github/workflows/release-copr.yml"
+if ! rg -q 'libkrb5-dev' "$copr_workflow" || \
+   ! rg -q 'krb5-devel' "$copr_workflow" || \
+   ! rg -q 'krb5-dev' "$copr_workflow"; then
+  echo "COPR tooling must install Kerberos development files for requests-gssapi on supported runner distributions." >&2
   exit 1
 fi
 if ! rg -q 'build-release-assets\.sh' "$release_workflow" || \

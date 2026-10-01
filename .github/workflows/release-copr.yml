@@ -62,15 +62,15 @@ jobs:
           set -euo pipefail
           if command -v apt-get >/dev/null 2>&1; then
             sudo apt-get update
-            sudo DEBIAN_FRONTEND=noninteractive apt-get install -y ca-certificates krb5-user oathtool rpm python3-pip python3-venv
+            sudo DEBIAN_FRONTEND=noninteractive apt-get install -y ca-certificates krb5-user libkrb5-dev oathtool rpm python3-pip python3-venv
           elif command -v pacman >/dev/null 2>&1; then
             sudo pacman -Sy --needed --noconfirm oath-toolkit krb5 rpm-tools python-pip python-virtualenv
           elif command -v dnf >/dev/null 2>&1; then
-            sudo dnf install -y oath-toolkit krb5-workstation rpm-build python3-pip
+            sudo dnf install -y oath-toolkit krb5-workstation krb5-devel rpm-build python3-pip
           elif command -v yum >/dev/null 2>&1; then
-            sudo yum install -y oath-toolkit krb5-workstation rpm-build python3-pip
+            sudo yum install -y oath-toolkit krb5-workstation krb5-devel rpm-build python3-pip
           elif command -v apk >/dev/null 2>&1; then
-            sudo apk add --no-cache oath-toolkit-oathtool krb5 rpm python3 py3-pip
+            sudo apk add --no-cache oath-toolkit-oathtool krb5 krb5-dev rpm python3 py3-pip
           else
             echo "No supported package manager found for COPR tooling" >&2
             exit 1
