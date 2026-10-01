@@ -326,11 +326,12 @@
 - The workflow error is an intermittent HTTP 5xx response from the Launchpad API, not a rejected source or failed package build.
 
 **Why it's tricky**
-- The polling step runs with `set -e`; a single `curl --fail` response exits the step before the next scheduled poll.
-- Source upload, successful build, and published binary are separate states. Launchpad may expose the exact source record only after the previous short missing-source cutoff has nearly elapsed.
+- The polling step runs with `set -e`; an exhausted `curl --fail` retry exits the step before the next scheduled poll.
+- Source upload, successful build, and published binary are separate states. Launchpad may expose the exact source record only after the previous short missing-source cutoff has nearly elapsed, and equal per-request and total retry limits leave no retry time after a full request timeout.
 
 **What works**
 - Route every Launchpad GET through one helper with bounded curl retries for transient HTTP/network failures.
+- Keep the total curl retry budget longer than each transfer's `--max-time`, or one full timeout can consume the budget without a retry.
 - Allow 20 minutes for the exact source record to appear, then start a separate 70-check binary-publication window; a source upload or build record is not release availability.
 - Keep terminal source/build/binary failures fatal and keep waiting until the exact amd64 binary publication is `Published`.
 - After a retry-policy change, rerun only the PPA publisher for the immutable release tag and verify the exact source and binary records in Launchpad.

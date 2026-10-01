@@ -119,7 +119,7 @@ ppa_workflow="$root/.github/workflows/release-ppa.yml"
 if ! rg -Fq 'consecutive_missing_sources=0' "$ppa_workflow" || \
    ! rg -Fq 'consecutive_missing_sources=0' <(sed -n '/source_link=/,/if \[\[ "\$source_status"/p' "$ppa_workflow") || \
    ! rg -Fq 'launchpad_get()' "$ppa_workflow" || \
-   ! rg -Fq -- '--retry 5 --retry-delay 2 --retry-max-time 30 --retry-connrefused' "$ppa_workflow" || \
+   ! rg -Fq -- '--retry 5 --retry-delay 2 --retry-max-time 180 --retry-connrefused' "$ppa_workflow" || \
    ! rg -Fq 'launchpad_get "$archive"' "$ppa_workflow" || \
    ! rg -Fq 'launchpad_get "$source_link"' "$ppa_workflow" || \
    ! rg -Fq 'while (( binary_checks < 70 )); do' "$ppa_workflow" || \
