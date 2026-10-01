@@ -11,7 +11,7 @@ Objective: implement all repo-owned open opportunities, reconcile the items that
 | OPP-003 | Send the same curated release notes to Matrix as to GitHub/Discord, with bounded chunks and safe HTML rendering. | Implemented; first delivery awaits the next release |
 | OPP-004 | Reconcile first-run package and direct package asset results for v0.1.86; retain only absent Snap or new-version external gates. | Completed for configured channels and direct assets; Snap publisher is not configured |
 | OPP-005 | Check whether the single CI retry failure recurred; fix only if source evidence identifies a repeatable defect. | Closed for now; no recurrence found and latest main CI is green |
-| OPP-006 | Run the existing Windows native smoke on a GitHub-hosted Windows runner when Go code changes reach main. | Workflow wired; pending the post-push result |
+| OPP-006 | Run the existing Windows native smoke on a GitHub-hosted Windows runner when Go code changes reach main. | Completed; run 36793770645 succeeded |
 | OPP-007 | Reconcile the Plex Live TV watchdog schedule and snapshots; separate repo-owned implementation from host-managed state. | Pending deployment-host timer/service inspection and a fresh snapshot |
 
 Guardrail: do not publish package versions, change a live host, or rewrite history. Preserve the original dirty local checkout; let normal post-push CI provide code and Windows smoke evidence without running tests locally.

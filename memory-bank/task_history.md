@@ -459,6 +459,18 @@
 - The Live TV watchdog service was inactive with its latest saved snapshot dated 2026-06-18. The ingress and media tunnel were active, though the latest media tunnel health-check service invocation failed while its timer remained active.
 - Verification: read-only service status, bounded system/Plex logs, active session and transcode summaries, and GitHub release metadata. No tests, deployment changes, or restarts were performed. The installed binary version and end-to-end stream remained unverified because the available host diagnostics did not expose a safe binary-version or arbitrary local HTTP probe.
 
+## 2026-09-30 - Implement repository-owned opportunity fixes
+
+- Changed Plex internal-fetcher adaptation so explicit per-channel profile overrides win over the global `IPTV_TUNERR_PLEX_INTERNAL_FETCHER_PROFILE` fallback; documented channel-ID, guide-number, and TVG-ID precedence.
+- Migrated public GitHub workflow jobs from self-hosted runners to GitHub-hosted Ubuntu/Windows runners, removing private checkout/tool paths from public action logs.
+- Updated Matrix release announcements to include the generated curated release body in bounded, escaped messages and to replace same-day retry chunks. Added a release-note fragment; the next tagged release will confirm Matrix delivery.
+- Wired Windows Smoke to run for relevant `main` pushes. The new native Windows run passed: [36793770645](https://github.com/snapetech/iptvtunerr/actions/runs/36793770645).
+- Reconciled release evidence: AUR, PPA, and COPR publisher workflows succeeded for `v0.1.86`; its GitHub Release contains `.deb` and `.rpm` assets. Chocolatey `0.1.68` is approved and Winget PR 374269 for `0.1.68` merged. The manual Windows publishers have not submitted `v0.1.86`; Snap publishing is not configured.
+- The transient `TestServer_reapplyDeferredGuidePolicyDoesNotCumulativelyShrink` failure did not recur. The unchanged retry had passed earlier, and current-main CI is green.
+- Push evidence: commits `acabc21` and `5717246` advanced GitHub `main` from `c6cbc9b` by fast-forward. [CI run 36793770646](https://github.com/snapetech/iptvtunerr/actions/runs/36793770646), [CodeQL 36793770611](https://github.com/snapetech/iptvtunerr/actions/runs/36793770611), [Gitleaks 36793770617](https://github.com/snapetech/iptvtunerr/actions/runs/36793770617), [Local Identity 36793770643](https://github.com/snapetech/iptvtunerr/actions/runs/36793770643), and Windows Smoke passed.
+- Static verification: `gofmt`, `git diff --check`, and the extracted Matrix shell block (`bash -n`) passed. No tests ran locally; normal GitHub push workflows ran remotely. No new release, external package submission, or live host change was made.
+- GitLab was left unchanged because its ref listing continues to fail with a multi-pack-index signature error. The Snap publisher, `v0.1.86` Windows package submissions, the next Matrix delivery, and host-managed watchdog schedule remain in [opportunities.md](opportunities.md).
+
 ## 2026-09-30 - Add curated release notes and rich Discord announcements
 
 - Ported SeerrNG's validated release-note fragment format, PR template, preview, staged validation, and CI fragment-or-internal-only gate to Tunerr. Fragments record category, audience, area, required action, and breaking status and are scanned for private local identity terms.
