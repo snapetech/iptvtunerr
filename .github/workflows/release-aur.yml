@@ -79,6 +79,40 @@ jobs:
 
           for pkgbuild in PKGBUILD PKGBUILD-bin; do
             sed -i "s/^pkgver=.*/pkgver=${PKGVER}/" "$pkgbuild"
+
+            mapfile -t sources < <(bash -c 'source "$1"; printf "%s\n" "${source[@]}"' bash "$pkgbuild")
+            mapfile -t existing_sums < <(bash -c 'source "$1"; printf "%s\n" "${sha256sums[@]}"' bash "$pkgbuild")
+            [[ "${#sources[@]}" -eq "${#existing_sums[@]}" ]]
+
+            sums=()
+            for i in "${!sources[@]}"; do
+              if [[ "${existing_sums[$i]}" == "SKIP" ]]; then
+                sums+=("SKIP")
+                continue
+              fi
+
+              source_name="${sources[$i]%%::*}"
+              source_name="${source_name##*/}"
+              [[ -f "$source_name" ]] || { echo "Missing local AUR source: $source_name" >&2; exit 1; }
+              sums+=("$(sha256sum "$source_name" | awk '{print $1}')")
+            done
+
+            python3 - "$pkgbuild" "${sums[@]}" <<'PY'
+          import pathlib
+          import re
+          import shlex
+          import sys
+
+          path = pathlib.Path(sys.argv[1])
+          sums = sys.argv[2:]
+          text = path.read_text()
+          replacement = "sha256sums=(" + shlex.quote(sums[0])
+          replacement += "".join("\n            " + shlex.quote(value) for value in sums[1:]) + ")"
+          updated, count = re.subn(r"(?ms)^sha256sums=\(.*?\)[ \t]*$", replacement, text, count=1)
+          if count != 1:
+              raise SystemExit(f"Could not update sha256sums in {path}")
+          path.write_text(updated)
+          PY
           done
 
           bash ../scripts/validate-aur-pkgbuild-hashes.sh PKGBUILD PKGBUILD-bin
