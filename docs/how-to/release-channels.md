@@ -52,18 +52,18 @@ its build sandbox can resolve package mirrors through the GitHub runner's DNS;
 the hosted builder failed to resolve Debian mirrors on its isolated network.
 The `v0.1.87` run built all three target architectures and published matching
 `latest` and version tags to GHCR and `snapetech/iptvtunerr`. Docker Hub returned
-`insufficient_scope` for the compatibility image `keefshape/iptvtunerr`; the
-Docker Hub identity used by Actions needs write permission to that repository
-before those tags can be updated.
+`insufficient_scope` for the compatibility image `keefshape/iptvtunerr`, so that
+namespace remains stale. Further Docker Hub publishing is currently deferred.
 
 CI checks the publisher list, latest-tag guard, Docker image names, and tag
 contract. The GitHub Release workflow waits for every dispatched publisher and
-fails if a workflow fails or times out. Launchpad
-publishing waits for the target series' amd64 binary package to reach
-`Published`; a successful source upload alone does not count as availability.
-Chocolatey moderation, Winget's Microsoft review, and Snap Store review remain
-upstream gates, so those packages may take longer to become installable after
-their matching submissions.
+fails if a workflow fails or times out. Launchpad publishing waits for the
+target series' amd64 binary package to reach `Published`; a successful source
+upload alone does not count as availability. For `v0.1.87`, Noble and Jammy
+builds succeeded but Launchpad had not yet published the binaries at last
+check. Chocolatey `0.1.87` is accepted, and Winget PR #444749 merged. Snap
+stable remains `0.1.78` after the `v0.1.87` submission failed authentication;
+further Snap publishing is currently deferred.
 
 ## Release notes and changelog
 
@@ -245,14 +245,11 @@ Current status:
 
 - `CHOCO_API_KEY` is configured for the `slskdn` Chocolatey account.
 - `WINGETCREATE_GITHUB_TOKEN` is configured.
-- Chocolatey `0.1.86` was accepted by the publisher workflow; the package's
-  moderation state is checked separately from upload success.
-- Winget PR
-  [`microsoft/winget-pkgs#444713`](https://github.com/microsoft/winget-pkgs/pull/444713)
-  submits version `0.1.86` and is awaiting Microsoft review.
-- Chocolatey and Winget publisher runs for `v0.1.86`:
-  [Chocolatey](https://github.com/snapetech/iptvtunerr/actions/runs/36795573443),
-  [Winget](https://github.com/snapetech/iptvtunerr/actions/runs/36795573436).
+- Chocolatey `0.1.87` is in the public feed.
+- Winget PR [`microsoft/winget-pkgs#444749`](https://github.com/microsoft/winget-pkgs/pull/444749)
+  submitted version `0.1.87` and merged on October 1, 2026.
+- Further Snap Store submissions are deferred; the public stable channel remains
+  at `0.1.78` after the `v0.1.87` publisher was rejected for authentication.
 
 ## Snap
 

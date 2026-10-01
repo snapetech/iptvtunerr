@@ -489,6 +489,14 @@
 - Fixed hosted BuildKit DNS with host networking. Docker run `36810312961` built all three platforms and pushed GHCR and Docker Hub `snapetech/iptvtunerr` `latest` and `v0.1.87` at matching digest `sha256:baab1bd9ff3a640ee951c2e994f626f2187e9a1469b204c132433ca6a4831a6f`. Pulled that image and verified the app version, `ffmpeg`, and `ffprobe`. Docker Hub denied `keefshape/iptvtunerr` with `insufficient_scope`, leaving that compatibility namespace stale.
 - Remaining external gates: Snap stable is `0.1.78` because the Store credential was rejected; Winget PR [#444749](https://github.com/microsoft/winget-pkgs/pull/444749) is open for review; Docker Hub needs write access for the configured identity on `keefshape/iptvtunerr`; Launchpad has not yet published the built amd64 binaries.
 
+## 2026-10-01 - Reconcile v0.1.87 release-channel status
+
+- Verified Microsoft merged Winget PR [#444749](https://github.com/microsoft/winget-pkgs/pull/444749), submitting package version `0.1.87`.
+- Launchpad Noble and Jammy source builds succeeded; publisher run `36809148695` remains active while waiting for the resulting amd64 binaries to publish.
+- Per the user's instruction, deferred further Snap and Docker Hub publisher work for now. Snap stable remains `0.1.78`; the Docker Hub compatibility image `keefshape/iptvtunerr` remains stale after the registry denied write scope. The already published `snapetech/iptvtunerr` and GHCR images remain at `.87`.
+- Updated the current task, known-issue and opportunity records, release-channel work breakdown, and release-channel guide to reflect the merged Winget submission and the requested deferrals.
+- Verification: `git diff --check` and the repository local-identity scan passed; no application code changed and no additional tests were run.
+
 ## 2026-09-30 - Complete curated release notes and historical changelog coverage
 
 - Added Seerrng-style validated release-note fragments, changelog preparation and tag coverage tooling, and full-content Discord embeds in commit `63f4aac`.
