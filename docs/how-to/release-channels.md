@@ -63,12 +63,13 @@ returned `insufficient_scope`; that namespace may remain behind.
 CI checks the publisher list, latest-tag guard, Docker image names, and tag
 contract. The GitHub Release workflow waits for every dispatched publisher and
 fails if a workflow fails or times out. Launchpad polling retries transient API
-failures, then waits for the target series' amd64 binary package to reach
+failures and allows 20 minutes for an uploaded source to appear in the exact
+series query. It then waits for the target series' amd64 binary package to reach
 `Published`; a successful source upload or build alone does not count as
-availability. The `v0.1.88` Jammy and Noble source uploads are pending Launchpad
-publication, so the PPA is not yet reported as updated. Chocolatey `0.1.88`
-and Winget `0.1.88` have been submitted successfully. Snap and Docker Hub
-publishing are paused per the operator's direction.
+availability. For `v0.1.88`, Jammy and Noble source packages are published and
+their amd64 builds are queued; the PPA is not yet reported as updated.
+Chocolatey `0.1.88` and Winget `0.1.88` have been submitted successfully. Snap
+and Docker Hub publishing are paused per the operator's direction.
 
 ## Release notes and changelog
 

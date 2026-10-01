@@ -153,6 +153,7 @@ jobs:
           archive="https://api.launchpad.net/1.0/~keefshape/+archive/ubuntu/iptvtunerr"
           series_link="https://api.launchpad.net/1.0/ubuntu/${UBUNTU_SERIES}"
           consecutive_missing_sources=0
+          binary_checks=0
 
           launchpad_get() {
             local url="$1"
@@ -163,7 +164,7 @@ jobs:
               --get "$url" "$@"
           }
 
-          for attempt in $(seq 1 70); do
+          while (( binary_checks < 70 )); do
             source_response="$(launchpad_get "$archive" \
               --data-urlencode 'ws.op=getPublishedSources' \
               --data-urlencode 'source_name=iptvtunerr' \
@@ -179,15 +180,16 @@ jobs:
 
             if [[ -z "$source_link" ]]; then
               consecutive_missing_sources=$((consecutive_missing_sources + 1))
-              if (( consecutive_missing_sources >= 20 )); then
-                echo "Launchpad has no source publication record for ${PPA_VERSION} (${UBUNTU_SERIES}); inspect its upload queue/rejection notice." >&2
+              if (( consecutive_missing_sources >= 40 )); then
+                echo "Launchpad has no source publication record for ${PPA_VERSION} (${UBUNTU_SERIES}) after 40 checks; inspect its upload queue/rejection notice." >&2
                 exit 1
               fi
-              echo "Waiting for Launchpad to accept ${PPA_VERSION} for ${UBUNTU_SERIES} (${attempt}/70)."
+              echo "Waiting for Launchpad to expose ${PPA_VERSION} for ${UBUNTU_SERIES} (${consecutive_missing_sources}/40 source checks)."
               sleep 30
               continue
             fi
             consecutive_missing_sources=0
+            binary_checks=$((binary_checks + 1))
             if [[ "$source_status" == "Superseded" || "$source_status" == "Deleted" ]]; then
               echo "Launchpad reports source ${PPA_VERSION} as ${source_status} for ${UBUNTU_SERIES}." >&2
               exit 1
@@ -225,7 +227,7 @@ jobs:
               exit 1
             fi
 
-            echo "Launchpad source is ${source_status}; amd64 build is ${build_state:-pending}; waiting for binary publication (${attempt}/70)."
+            echo "Launchpad source is ${source_status}; amd64 build is ${build_state:-pending}; waiting for binary publication (${binary_checks}/70)."
             sleep 60
           done
 

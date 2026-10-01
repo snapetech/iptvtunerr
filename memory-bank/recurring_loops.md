@@ -327,10 +327,11 @@
 
 **Why it's tricky**
 - The polling step runs with `set -e`; a single `curl --fail` response exits the step before the next scheduled poll.
-- Source upload, successful build, and published binary are separate states, so retrying or reporting success must preserve the exact series/version/amd64 checks.
+- Source upload, successful build, and published binary are separate states. Launchpad may expose the exact source record only after the previous short missing-source cutoff has nearly elapsed.
 
 **What works**
 - Route every Launchpad GET through one helper with bounded curl retries for transient HTTP/network failures.
+- Allow 20 minutes for the exact source record to appear, then start a separate 70-check binary-publication window; a source upload or build record is not release availability.
 - Keep terminal source/build/binary failures fatal and keep waiting until the exact amd64 binary publication is `Published`.
 - After a retry-policy change, rerun only the PPA publisher for the immutable release tag and verify the exact source and binary records in Launchpad.
 

@@ -122,10 +122,12 @@ if ! rg -Fq 'consecutive_missing_sources=0' "$ppa_workflow" || \
    ! rg -Fq -- '--retry 5 --retry-delay 2 --retry-max-time 30 --retry-connrefused' "$ppa_workflow" || \
    ! rg -Fq 'launchpad_get "$archive"' "$ppa_workflow" || \
    ! rg -Fq 'launchpad_get "$source_link"' "$ppa_workflow" || \
+   ! rg -Fq 'while (( binary_checks < 70 )); do' "$ppa_workflow" || \
+   ! rg -Fq 'consecutive_missing_sources >= 40' "$ppa_workflow" || \
    ! rg -Fq "ws.op=getBuilds" "$ppa_workflow" || \
    ! rg -Fq "ws.op=getPublishedBinaries" "$ppa_workflow" || \
    ! rg -Fq 'after 70 checks' "$ppa_workflow"; then
-  echo "PPA polling must retry transient Launchpad API failures, tolerate intermittent source records, and confirm the exact built amd64 binary." >&2
+  echo "PPA polling must retry transient Launchpad API failures, allow delayed source indexing, and confirm the exact built amd64 binary." >&2
   exit 1
 fi
 snap_manifest="$root/snap/snapcraft.yaml"
