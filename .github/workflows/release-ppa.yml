@@ -107,17 +107,29 @@ jobs:
           echo "ppa_version=${ppa_version}" >> "$GITHUB_OUTPUT"
 
       - name: Build signed source package
+        env:
+          PPA_VERSION: ${{ steps.source.outputs.ppa_version }}
         run: |
           set -euo pipefail
-          cd "iptvtunerr-${{ steps.version.outputs.version }}"
+          src="iptvtunerr-${{ steps.version.outputs.version }}"
+          cd "$src"
           dpkg-source -b .
-          dpkg-genchanges -S -sa -O../iptvtunerr_${{ steps.source.outputs.ppa_version }}_source.changes
           cd ..
-          for signed in *.dsc *.changes; do
-            gpg --batch --yes --local-user 07E2531E1F470F8008ACCFC996A07606FE65392F \
-              --clearsign --digest-algo SHA512 --output "${signed}.asc" "$signed"
-            mv "${signed}.asc" "$signed"
-          done
+          dsc="iptvtunerr_${PPA_VERSION}.dsc"
+          test -s "$dsc"
+          gpg --batch --yes --local-user 07E2531E1F470F8008ACCFC996A07606FE65392F \
+            --clearsign --digest-algo SHA512 --output "${dsc}.asc" "$dsc"
+          mv "${dsc}.asc" "$dsc"
+          gpg --batch --verify "$dsc"
+
+          cd "$src"
+          dpkg-genchanges -S -sa -O"../iptvtunerr_${PPA_VERSION}_source.changes"
+          cd ..
+          changes="iptvtunerr_${PPA_VERSION}_source.changes"
+          gpg --batch --yes --local-user 07E2531E1F470F8008ACCFC996A07606FE65392F \
+            --clearsign --digest-algo SHA512 --output "${changes}.asc" "$changes"
+          mv "${changes}.asc" "$changes"
+          gpg --batch --verify "$changes"
 
       - name: Upload to Launchpad PPA
         env:

@@ -99,6 +99,11 @@ if ! rg -Fq 'build-args: VERSION=${{ env.RELEASE_TAG }}' "$docker_workflow"; the
   echo "The Docker binary version must come from the dispatched release tag." >&2
   exit 1
 fi
+if ! rg -q 'git show origin/main:Dockerfile > Dockerfile' "$docker_workflow" || \
+   ! rg -q 'apk package install failed.*retrying after backoff' "$root/Dockerfile"; then
+  echo "Docker must use the current packaging recipe and retry transient Alpine mirror errors." >&2
+  exit 1
+fi
 snap_manifest="$root/snap/snapcraft.yaml"
 if ! rg -Fxq 'base: core24' "$snap_manifest" || \
    ! rg -Fxq 'platforms:' "$snap_manifest" || \

@@ -152,7 +152,9 @@ On an Arch host, run `makepkg` inside `packaging/aur/` after copying either
 `.github/workflows/docker.yml` publishes multi-arch container images when the
 release workflow dispatches it or on a manual rerun. It rejects any tag other
 than the latest stable release reachable from `main` and publishes `latest`
-and the release tag from the same build.
+and the release tag from the same build. It uses the Dockerfile from current
+`main` with application source checked out at the exact release tag. Alpine
+package-index downloads retry transient mirror failures.
 
 Configured registries:
 

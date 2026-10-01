@@ -15,7 +15,14 @@ RUN set -eu; \
       -o /iptv-tunerr ./cmd/iptv-tunerr
 
 FROM alpine:3.21
-RUN apk add --no-cache ca-certificates curl wget ffmpeg
+RUN set -eu; \
+    attempt=1; \
+    while ! apk add --no-cache ca-certificates curl wget ffmpeg; do \
+      if [ "$attempt" -ge 5 ]; then exit 1; fi; \
+      echo "apk package install failed (attempt ${attempt}/5); retrying after backoff"; \
+      sleep "$((attempt * 5))"; \
+      attempt=$((attempt + 1)); \
+    done
 COPY --from=build /iptv-tunerr /usr/local/bin/iptv-tunerr
 EXPOSE 5004
 ENTRYPOINT ["iptv-tunerr"]

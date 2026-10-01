@@ -33,6 +33,11 @@ jobs:
           git fetch --quiet origin main --tags
           RELEASE_REPO_DIR="$PWD" RELEASE_TAG_MAIN_MODE=latest \
             bash -c "$(git show origin/main:scripts/ensure-release-tag-on-main.sh)" release-tag-guard "$TAG"
+      - name: Use the current Docker packaging recipe
+        run: |
+          set -euo pipefail
+          git show origin/main:Dockerfile > Dockerfile
+          test -s Dockerfile
       - uses: docker/setup-qemu-action@v4
       - name: Write BuildKit network config
         id: buildkit-config
