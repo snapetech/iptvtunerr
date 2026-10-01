@@ -11,6 +11,18 @@ All notable changes to IPTV Tunerr are documented here. Repo: [github.com/snapet
 
 ---
 
+## [v0.1.90] - 2026-10-01
+
+### User-facing changes
+
+#### Added
+
+- **Sports Automation:** Sports Automation now includes NBA schedules from API-NBA v2, follows the current season, and tracks NBA request quota separately from Baseball and American Football schedules.
+
+#### Fixed
+
+- **Deployment:** `IPTV_TUNERR_CATALOG_PATH` now selects the catalog JSON file as documented. Existing deployments can continue to use `IPTV_TUNERR_CATALOG` as a fallback.
+
 ## [v0.1.89] - 2026-10-01
 
 ### User-facing changes
