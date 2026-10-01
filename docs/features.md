@@ -26,7 +26,7 @@ See also:
 | **Multi-subscription merge** | Numbered env suffix (`_2`, `_3`, ...) to pull from separate provider accounts and merge into one catalog; channels with duplicate `tvg-id` are deduplicated with all stream URLs available as fallbacks, and live playback can now spread active streams across distinct provider-account credential sets. Provider-account contention is no longer static only: Tunerr can learn tighter per-account concurrency caps from real upstream limit signals, persist them across restarts with TTL decay, and expose them on `/provider/profile.json`. |
 | **Subscription-file credentials** | Load `Username:` / `Password:` from a subscription file when env vars are not set. |
 | **Live-only / EPG-only** | Filter catalog generation to live-only or EPG-linked channels only. |
-| **Stream smoketest (optional)** | Post-index stream validation: probe each channel's primary URL (Range/HEAD for MPEG-TS, playlist GET for HLS), drop channels that fail. Persistent cache avoids re-probing fresh URLs on subsequent index runs (`IPTV_TUNERR_SMOKETEST_CACHE_FILE`). |
+| **Stream smoketest (optional)** | Post-index stream validation: probe each channel's primary URL (Range GET for MPEG-TS, playlist GET for HLS), drop completed failures, and retain channels left untested by a sample or duration cap. A persistent cache avoids re-probing fresh URLs and lets large catalogs progress across runs (`IPTV_TUNERR_SMOKETEST_CACHE_FILE`). |
 | **EPG-link report (Phase 1)** | Deterministic coverage/unmatched report for live channels vs XMLTV (`epg-link-report`). |
 
 ## 2. Catalog and stream source handling

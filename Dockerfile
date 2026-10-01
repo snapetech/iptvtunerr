@@ -16,13 +16,24 @@ RUN set -eu; \
 
 FROM alpine:3.21
 RUN set -eu; \
-    attempt=1; \
-    while ! apk add --no-cache ca-certificates curl wget ffmpeg; do \
-      if [ "$attempt" -ge 5 ]; then exit 1; fi; \
-      echo "apk package install failed (attempt ${attempt}/5); retrying after backoff"; \
-      sleep "$((attempt * 5))"; \
-      attempt=$((attempt + 1)); \
-    done
+	alpine_version="$(cut -d. -f1,2 /etc/alpine-release)"; \
+	install_from() { \
+	  mirror="$1"; \
+	  printf '%s\n' \
+	    "${mirror}/v${alpine_version}/main" \
+	    "${mirror}/v${alpine_version}/community" > /etc/apk/repositories; \
+	  attempt=1; \
+	  while ! apk add --no-cache ca-certificates curl wget ffmpeg; do \
+	    if [ "$attempt" -ge 3 ]; then return 1; fi; \
+	    echo "apk package install failed on ${mirror} (attempt ${attempt}/3); retrying after backoff"; \
+	    sleep "$((attempt * 5))"; \
+	    attempt=$((attempt + 1)); \
+	  done; \
+	}; \
+	if ! install_from "https://dl-cdn.alpinelinux.org/alpine"; then \
+	  echo "Primary Alpine mirror unavailable; trying the official Waterloo mirror"; \
+	  install_from "https://mirror.csclub.uwaterloo.ca/alpine"; \
+	fi
 COPY --from=build /iptv-tunerr /usr/local/bin/iptv-tunerr
 EXPOSE 5004
 ENTRYPOINT ["iptv-tunerr"]

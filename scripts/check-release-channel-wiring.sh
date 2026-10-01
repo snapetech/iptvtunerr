@@ -100,8 +100,9 @@ if ! rg -Fq 'build-args: VERSION=${{ env.RELEASE_TAG }}' "$docker_workflow"; the
   exit 1
 fi
 if ! rg -q 'git show origin/main:Dockerfile > Dockerfile' "$docker_workflow" || \
-   ! rg -q 'apk package install failed.*retrying after backoff' "$root/Dockerfile"; then
-  echo "Docker must use the current packaging recipe and retry transient Alpine mirror errors." >&2
+   ! rg -q 'apk package install failed.*retrying after backoff' "$root/Dockerfile" || \
+   ! rg -Fq 'https://mirror.csclub.uwaterloo.ca/alpine' "$root/Dockerfile"; then
+  echo "Docker must use the current packaging recipe, retry mirror errors, and fall back to an official Alpine mirror." >&2
   exit 1
 fi
 snap_manifest="$root/snap/snapcraft.yaml"

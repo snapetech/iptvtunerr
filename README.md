@@ -350,7 +350,7 @@ That means the practical answer for “several people are watching the same PPV�
 
 ### 4. Post-index stream validation
 
-After indexing, IPTV Tunerr can optionally probe every channel's primary stream URL and drop channels that don't respond — so dead channels never appear in the lineup.
+After indexing, IPTV Tunerr can optionally probe channels' primary stream URLs and drop channels whose completed probes fail.
 
 ```bash
 IPTV_TUNERR_SMOKETEST_ENABLED=true
@@ -360,7 +360,8 @@ What it does:
 - Probes each channel's primary stream URL concurrently
 - For MPEG-TS streams: sends an HTTP Range request for the first 4 KB (avoids pulling full streams)
 - For HLS streams: fetches the playlist and validates `#EXTM3U` / `#EXTINF` content
-- Channels that return a non-200/206 response or invalid content are dropped from the catalog
+- Channels whose completed probes return a non-200/206 response or invalid content are dropped from the catalog
+- Channels left untested by the sample or five-minute wall-clock cap stay in the catalog; an interrupted probe is not cached as a failure
 
 To avoid re-probing thousands of channels on every restart, set a cache file:
 
@@ -370,6 +371,7 @@ IPTV_TUNERR_SMOKETEST_CACHE_TTL=4h
 ```
 
 Results are cached per URL. On the next index run, channels whose URLs have a fresh cache entry skip the probe entirely — only new or expired entries are re-checked.
+For a large provider, use a persistent cache and optionally set a sample cap. Each capped pass randomizes URLs, so repeated runs can gradually check the full list without replacing untested entries with false failures.
 
 Key tuning variables:
 
@@ -378,8 +380,8 @@ Key tuning variables:
 | `IPTV_TUNERR_SMOKETEST_ENABLED` | `false` | Enable post-index stream probing |
 | `IPTV_TUNERR_SMOKETEST_TIMEOUT` | `8s` | Per-channel probe timeout |
 | `IPTV_TUNERR_SMOKETEST_CONCURRENCY` | `10` | Parallel probes |
-| `IPTV_TUNERR_SMOKETEST_MAX_CHANNELS` | `0` (all) | Cap on channels probed (0 = unlimited) |
-| `IPTV_TUNERR_SMOKETEST_MAX_DURATION` | `5m` | Wall-clock cap for the full probe pass |
+| `IPTV_TUNERR_SMOKETEST_MAX_CHANNELS` | `0` (all) | Random sample cap on unique primary stream URLs (0 = no sample cap) |
+| `IPTV_TUNERR_SMOKETEST_MAX_DURATION` | `5m` | Wall-clock probe budget; remaining channels are kept as untested |
 | `IPTV_TUNERR_SMOKETEST_CACHE_FILE` | — | Path to persistent probe result cache |
 | `IPTV_TUNERR_SMOKETEST_CACHE_TTL` | `4h` | How long a cached result stays valid |
 

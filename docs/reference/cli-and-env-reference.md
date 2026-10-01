@@ -1795,19 +1795,20 @@ Other:
 
 ## Post-index stream validation (smoketest)
 
-Optional: probe each channel's primary stream URL at index time and drop channels that fail. Eliminates dead channels before they ever appear in the lineup.
+Optional: probe each channel's primary stream URL at index time and drop channels whose completed probes fail. Channels not reached before the sample or duration cap remain in the lineup as untested.
 
 - `IPTV_TUNERR_SMOKETEST_ENABLED` (`false`) — enable the probe pass
 - `IPTV_TUNERR_SMOKETEST_TIMEOUT` (`8s`) — per-channel probe timeout
 - `IPTV_TUNERR_SMOKETEST_CONCURRENCY` (`10`) — parallel probe workers
-- `IPTV_TUNERR_SMOKETEST_MAX_CHANNELS` (`0` = unlimited) — random sample cap; 0 probes all channels
-- `IPTV_TUNERR_SMOKETEST_MAX_DURATION` (`5m`) — wall-clock cap for the full probe pass
+- `IPTV_TUNERR_SMOKETEST_MAX_CHANNELS` (`0` = unlimited) — random sample cap on unique primary stream URLs; 0 probes all
+- `IPTV_TUNERR_SMOKETEST_MAX_DURATION` (`5m`) — wall-clock probe budget; remaining channels stay in the catalog as untested
 - `IPTV_TUNERR_SMOKETEST_CACHE_FILE` — path to persistent per-URL result cache; skips re-probing fresh entries on subsequent runs
 - `IPTV_TUNERR_SMOKETEST_CACHE_TTL` (`4h`) — how long a cached result is considered fresh
 
 Probe method:
 - MPEG-TS: HTTP Range request for first 4 KB (avoids pulling full streams); 200 or 206 = pass
 - HLS (`.m3u8`): GET playlist; validates `#EXTM3U` / `#EXTINF` or a non-comment segment URI
+- A global duration timeout cancels in-flight requests without recording them as failures. The next pass can retry them; a persistent cache lets later runs continue checking large lists.
 
 ## Free public sources
 

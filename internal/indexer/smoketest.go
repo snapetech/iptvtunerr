@@ -15,143 +15,101 @@ import (
 	"github.com/snapetech/iptvtunerr/internal/safeurl"
 )
 
-// FilterLiveBySmoketest probes each channel's primary stream URL and returns only
-// channels that respond successfully. Uses Range for non-HLS (first 4K only) and
-// playlist GET for HLS. maxChannels 0 = all; else sample up to maxChannels random.
-// maxDuration caps total runtime (e.g. 5m). client may be nil.
+// FilterLiveBySmoketest probes each channel's primary stream URL and removes
+// channels with a completed failing probe. Uses Range for non-HLS (first 4K
+// only) and playlist GET for HLS. Channels that are not probed before a sample
+// or duration cap are retained because their status is unknown. maxChannels 0 =
+// all; else sample up to maxChannels random URLs. maxDuration caps probe time.
+// client may be nil.
 func FilterLiveBySmoketest(live []catalog.LiveChannel, client *http.Client, timeout time.Duration, concurrency int, maxChannels int, maxDuration time.Duration) []catalog.LiveChannel {
 	return FilterLiveBySmoketestWithCache(live, nil, 0, client, timeout, concurrency, maxChannels, maxDuration)
 }
 
 // FilterLiveBySmoketestWithCache is like FilterLiveBySmoketest but skips probing channels
-// whose primary URL has a fresh entry in cache. After probing, cache is updated with results.
+// whose primary URL has a fresh entry in cache. Completed probes update the cache;
+// sample- or duration-capped channels remain untested in the returned catalog.
 // cache may be nil (behaves identically to FilterLiveBySmoketest). cacheTTL 0 means no caching.
 func FilterLiveBySmoketestWithCache(live []catalog.LiveChannel, cache SmoketestCache, cacheTTL time.Duration, client *http.Client, timeout time.Duration, concurrency int, maxChannels int, maxDuration time.Duration) []catalog.LiveChannel {
+	filtered, _ := FilterLiveBySmoketestWithCacheReport(live, cache, cacheTTL, client, timeout, concurrency, maxChannels, maxDuration)
+	return filtered
+}
+
+// SmoketestStats summarizes the channel-level results of a smoketest pass.
+// Untested channels have no fresh cache result and were not completed before a
+// sample or global-duration cap. They remain in the returned catalog.
+type SmoketestStats struct {
+	Total    int
+	Passed   int
+	Failed   int
+	Untested int
+	Invalid  int
+	Kept     int
+}
+
+// FilterLiveBySmoketestWithCacheReport is like FilterLiveBySmoketestWithCache
+// and also reports how many channels passed, failed, were left untested, or
+// lacked a probeable HTTP(S) URL.
+func FilterLiveBySmoketestWithCacheReport(live []catalog.LiveChannel, cache SmoketestCache, cacheTTL time.Duration, client *http.Client, timeout time.Duration, concurrency int, maxChannels int, maxDuration time.Duration) ([]catalog.LiveChannel, SmoketestStats) {
 	if len(live) == 0 {
-		return live
+		return live, SmoketestStats{}
 	}
 	if cache == nil {
 		cache = make(SmoketestCache)
 	}
-	if client == nil {
-		client = httpclient.WithTimeout(timeout)
-	}
-	if concurrency <= 0 {
-		concurrency = 10
-	}
-	if timeout <= 0 {
-		timeout = 8 * time.Second
-	}
-	if maxDuration <= 0 {
-		maxDuration = 5 * time.Minute
-	}
 
-	// Separate channels into cache-hits (skip probe) and candidates (need probe).
-	type cachedResult struct {
-		ch   catalog.LiveChannel
-		pass bool
-	}
-	var fromCache []cachedResult
-	var needProbe []catalog.LiveChannel
-
-	for _, ch := range live {
-		urls := ch.StreamURLs
-		if len(urls) == 0 && ch.StreamURL != "" {
-			urls = []string{ch.StreamURL}
+	primaries := make([]string, len(live))
+	urls := make([]string, 0, len(live))
+	for i, ch := range live {
+		primary := ""
+		if len(ch.StreamURLs) > 0 {
+			primary = strings.TrimSpace(ch.StreamURLs[0])
+		} else {
+			primary = strings.TrimSpace(ch.StreamURL)
 		}
-		if len(urls) == 0 {
+		if primary == "" || !safeurl.IsHTTPOrHTTPS(primary) {
 			continue
 		}
-		primary := urls[0]
-		if !safeurl.IsHTTPOrHTTPS(primary) {
+		primaries[i] = primary
+		urls = append(urls, primary)
+	}
+
+	results := probeSmoketestURLs(urls, cache, cacheTTL, client, timeout, concurrency, maxChannels, maxDuration, true)
+	filtered := make([]catalog.LiveChannel, 0, len(live))
+	stats := SmoketestStats{Total: len(live)}
+	for i, ch := range live {
+		primary := primaries[i]
+		if primary == "" {
+			stats.Invalid++
 			continue
 		}
-		if cacheTTL > 0 {
-			if pass, fresh := cache.IsFresh(primary, cacheTTL); fresh {
-				fromCache = append(fromCache, cachedResult{ch: ch, pass: pass})
-				continue
-			}
+		result, known := results[primary]
+		if !known {
+			stats.Untested++
+			filtered = append(filtered, ch)
+			continue
 		}
-		needProbe = append(needProbe, ch)
-	}
-
-	// Apply maxChannels sampling only to channels that need probing (cached ones are free).
-	candidates := needProbe
-	if maxChannels > 0 && len(needProbe) > maxChannels {
-		perm := rand.Perm(len(needProbe))
-		candidates = make([]catalog.LiveChannel, 0, maxChannels)
-		for i := 0; i < maxChannels && i < len(perm); i++ {
-			candidates = append(candidates, needProbe[perm[i]])
+		if !result.pass {
+			stats.Failed++
+			continue
 		}
+		stats.Passed++
+		filtered = append(filtered, ch)
 	}
-
-	ctx, cancel := context.WithTimeout(context.Background(), maxDuration)
-	defer cancel()
-
-	sem := make(chan struct{}, concurrency)
-	var wg sync.WaitGroup
-	var mu sync.Mutex
-	var probed []catalog.LiveChannel
-
-	for i := range candidates {
-		ch := candidates[i]
-		urls := ch.StreamURLs
-		if len(urls) == 0 && ch.StreamURL != "" {
-			urls = []string{ch.StreamURL}
-		}
-		primary := urls[0]
-		wg.Add(1)
-		go func(ch catalog.LiveChannel, primary string) {
-			defer wg.Done()
-			select {
-			case sem <- struct{}{}:
-			case <-ctx.Done():
-				return
-			}
-			defer func() { <-sem }()
-			pass := ProbeStream(ctx, primary, client, timeout)
-			mu.Lock()
-			cache[primary] = smoketestEntry{Pass: pass, At: time.Now()}
-			if pass {
-				probed = append(probed, ch)
-			}
-			mu.Unlock()
-		}(ch, primary)
-	}
-	wg.Wait()
-
-	// Combine: cache-hit passes + newly probed passes.
-	result := make([]catalog.LiveChannel, 0, len(fromCache)+len(probed))
-	for _, r := range fromCache {
-		if r.pass {
-			result = append(result, r.ch)
-		}
-	}
-	result = append(result, probed...)
-	return result
+	stats.Kept = len(filtered)
+	return filtered, stats
 }
 
 // FilterLiveByFeedSmoketestWithCache probes every stream URL on each channel,
-// prunes failing feed URLs, and keeps a channel when at least one feed passes.
-// Unprobed URLs are kept if the global duration cap is reached before they run.
+// prunes completed failing feeds, and keeps untested feeds as fallbacks when
+// the sample or duration budget stops the pass early.
+// Unprobed URLs are kept if the sample or global duration cap prevents them
+// from running. A globally interrupted request is not cached as a failure.
 func FilterLiveByFeedSmoketestWithCache(live []catalog.LiveChannel, cache SmoketestCache, cacheTTL time.Duration, client *http.Client, timeout time.Duration, concurrency int, maxFeeds int, maxDuration time.Duration) []catalog.LiveChannel {
 	if len(live) == 0 {
 		return live
 	}
 	if cache == nil {
 		cache = make(SmoketestCache)
-	}
-	if client == nil {
-		client = httpclient.WithTimeout(timeout)
-	}
-	if concurrency <= 0 {
-		concurrency = 10
-	}
-	if timeout <= 0 {
-		timeout = 8 * time.Second
-	}
-	if maxDuration <= 0 {
-		maxDuration = 5 * time.Minute
 	}
 
 	seen := make(map[string]struct{})
@@ -169,51 +127,7 @@ func FilterLiveByFeedSmoketestWithCache(live []catalog.LiveChannel, cache Smoket
 			urls = append(urls, u)
 		}
 	}
-	if maxFeeds > 0 && len(urls) > maxFeeds {
-		urls = urls[:maxFeeds]
-	}
-
-	type probeResult struct {
-		pass  bool
-		known bool
-	}
-	results := make(map[string]probeResult, len(urls))
-	var needProbe []string
-	for _, u := range urls {
-		if cacheTTL > 0 {
-			if pass, fresh := cache.IsFresh(u, cacheTTL); fresh {
-				results[u] = probeResult{pass: pass, known: true}
-				continue
-			}
-		}
-		needProbe = append(needProbe, u)
-	}
-
-	ctx, cancel := context.WithTimeout(context.Background(), maxDuration)
-	defer cancel()
-
-	sem := make(chan struct{}, concurrency)
-	var wg sync.WaitGroup
-	var mu sync.Mutex
-	for _, u := range needProbe {
-		streamURL := u
-		wg.Add(1)
-		go func() {
-			defer wg.Done()
-			select {
-			case sem <- struct{}{}:
-			case <-ctx.Done():
-				return
-			}
-			defer func() { <-sem }()
-			pass := ProbeStream(ctx, streamURL, client, timeout)
-			mu.Lock()
-			cache[streamURL] = smoketestEntry{Pass: pass, At: time.Now()}
-			results[streamURL] = probeResult{pass: pass, known: true}
-			mu.Unlock()
-		}()
-	}
-	wg.Wait()
+	results := probeSmoketestURLs(urls, cache, cacheTTL, client, timeout, concurrency, maxFeeds, maxDuration, false)
 
 	out := make([]catalog.LiveChannel, 0, len(live))
 	for _, ch := range live {
@@ -224,8 +138,8 @@ func FilterLiveByFeedSmoketestWithCache(live []catalog.LiveChannel, cache Smoket
 			if u == "" || !safeurl.IsHTTPOrHTTPS(u) {
 				continue
 			}
-			r, ok := results[u]
-			if !ok || !r.known || r.pass {
+			r, known := results[u]
+			if !known || r.pass {
 				kept = append(kept, u)
 			}
 		}
@@ -238,6 +152,110 @@ func FilterLiveByFeedSmoketestWithCache(live []catalog.LiveChannel, cache Smoket
 		out = append(out, next)
 	}
 	return out
+}
+
+type smoketestProbeResult struct {
+	pass bool
+}
+
+// probeSmoketestURLs probes unique URLs with a bounded worker pool. Results
+// canceled by the overall duration cap are omitted from both the returned map
+// and persistent cache, so callers can distinguish an unknown URL from a
+// confirmed failure.
+func probeSmoketestURLs(urls []string, cache SmoketestCache, cacheTTL time.Duration, client *http.Client, timeout time.Duration, concurrency int, maxProbes int, maxDuration time.Duration, randomize bool) map[string]smoketestProbeResult {
+	if cache == nil {
+		cache = make(SmoketestCache)
+	}
+	if timeout <= 0 {
+		timeout = 8 * time.Second
+	}
+	if concurrency <= 0 {
+		concurrency = 10
+	}
+	if maxDuration <= 0 {
+		maxDuration = 5 * time.Minute
+	}
+	if client == nil {
+		client = httpclient.WithTimeout(timeout)
+	}
+
+	results := make(map[string]smoketestProbeResult, len(urls))
+	seen := make(map[string]struct{}, len(urls))
+	var pending []string
+	for _, raw := range urls {
+		u := strings.TrimSpace(raw)
+		if u == "" || !safeurl.IsHTTPOrHTTPS(u) {
+			continue
+		}
+		if _, exists := seen[u]; exists {
+			continue
+		}
+		seen[u] = struct{}{}
+		if cacheTTL > 0 {
+			if pass, fresh := cache.IsFresh(u, cacheTTL); fresh {
+				results[u] = smoketestProbeResult{pass: pass}
+				continue
+			}
+		}
+		pending = append(pending, u)
+	}
+
+	// Randomize every capped pass, including a duration-only cap, so repeated
+	// runs with a persistent cache do not keep favoring the start of the list.
+	if randomize && len(pending) > 1 {
+		rand.Shuffle(len(pending), func(i, j int) {
+			pending[i], pending[j] = pending[j], pending[i]
+		})
+	}
+	if maxProbes > 0 && len(pending) > maxProbes {
+		pending = pending[:maxProbes]
+	}
+	if len(pending) == 0 {
+		return results
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), maxDuration)
+	defer cancel()
+
+	jobs := make(chan string)
+	workerCount := concurrency
+	if workerCount > len(pending) {
+		workerCount = len(pending)
+	}
+	var wg sync.WaitGroup
+	var mu sync.Mutex
+	for i := 0; i < workerCount; i++ {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			for u := range jobs {
+				if ctx.Err() != nil {
+					continue
+				}
+				pass := ProbeStream(ctx, u, client, timeout)
+				if ctx.Err() != nil {
+					continue
+				}
+				mu.Lock()
+				results[u] = smoketestProbeResult{pass: pass}
+				cache[u] = smoketestEntry{Pass: pass, At: time.Now()}
+				mu.Unlock()
+			}
+		}()
+	}
+
+	for _, u := range pending {
+		if ctx.Err() != nil {
+			break
+		}
+		select {
+		case jobs <- u:
+		case <-ctx.Done():
+		}
+	}
+	close(jobs)
+	wg.Wait()
+	return results
 }
 
 func liveChannelStreamURLs(ch catalog.LiveChannel) []string {
@@ -254,6 +272,11 @@ func liveChannelStreamURLs(ch catalog.LiveChannel) []string {
 // playlist. It rejects empty direct streams and obvious provider black/slate
 // redirect targets such as /video/black.ts.
 func ProbeStream(ctx context.Context, streamURL string, client *http.Client, timeout time.Duration) bool {
+	if timeout > 0 {
+		var cancel context.CancelFunc
+		ctx, cancel = context.WithTimeout(ctx, timeout)
+		defer cancel()
+	}
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, streamURL, nil)
 	if err != nil {
 		return false

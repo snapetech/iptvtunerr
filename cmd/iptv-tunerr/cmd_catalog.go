@@ -908,9 +908,9 @@ func fetchCatalog(cfg *config.Config, m3uOverride string) (catalogResult, error)
 	}
 	if cfg.SmoketestEnabled {
 		cache := indexer.LoadSmoketestCache(cfg.SmoketestCacheFile)
-		before := len(res.Live)
+		var stats indexer.SmoketestStats
 		_ = logCatalogPhase("smoketest filter", func() error {
-			res.Live = indexer.FilterLiveBySmoketestWithCache(
+			res.Live, stats = indexer.FilterLiveBySmoketestWithCacheReport(
 				res.Live, cache, cfg.SmoketestCacheTTL, nil,
 				cfg.SmoketestTimeout, cfg.SmoketestConcurrency,
 				cfg.SmoketestMaxChannels, cfg.SmoketestMaxDuration,
@@ -922,7 +922,8 @@ func fetchCatalog(cfg *config.Config, m3uOverride string) (catalogResult, error)
 				log.Printf("Smoketest cache save failed: %v", err)
 			}
 		}
-		log.Printf("Smoketest: %d/%d passed", len(res.Live), before)
+		log.Printf("Smoketest: passed=%d failed=%d untested=%d invalid=%d kept=%d/%d",
+			stats.Passed, stats.Failed, stats.Untested, stats.Invalid, stats.Kept, stats.Total)
 	}
 
 	return res, nil

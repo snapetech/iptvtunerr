@@ -100,8 +100,8 @@ type Config struct {
 	SmoketestEnabled     bool
 	SmoketestTimeout     time.Duration
 	SmoketestConcurrency int
-	SmoketestMaxChannels int           // 0 = all; else sample up to N random channels to cap runtime
-	SmoketestMaxDuration time.Duration // hard cap total smoketest runtime (e.g. 5m); 0 = 5m default
+	SmoketestMaxChannels int           // 0 = all; else sample up to N random unique primary stream URLs
+	SmoketestMaxDuration time.Duration // probe wall-clock budget (e.g. 5m); untested channels are retained; 0 = 5m default
 	// Smoketest cache: persist probe results across runs to avoid re-probing fresh entries.
 	SmoketestCacheFile string        // path to JSON cache; "" = disabled
 	SmoketestCacheTTL  time.Duration // how long a probe result is considered fresh (default 4h)

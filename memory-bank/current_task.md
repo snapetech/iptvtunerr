@@ -1,9 +1,14 @@
-# Current (2026-09-30): Align every release channel on the latest stable build
+# Current (2026-10-01): Fix large-provider smoketest truncation and release v0.1.87
 
-- Goal: align every configured package and container channel to the latest stable release and prevent stale or duplicate publishers from moving a channel backward.
-- Scope: audit registry-visible state; publish `v0.1.86` to lagging PPA, Snap, and Docker Hub compatibility image channels; guard every publisher against stale tags; dispatch each package publisher once; update release docs and memory. Do not create another release or alter existing tags/history.
-- Assumptions: the latest stable tag remains `v0.1.86`; Chocolatey moderation, Winget's Microsoft review, and Snap Store review remain external gates; GHCR, both Docker Hub names, AUR, COPR, PPA, Chocolatey, Winget, and Snap are configured channels.
-- Next: push the verified workflow changes by fast-forward, dispatch lagging `v0.1.86` publishers, confirm actual registry publication, and record any remaining external review gates.
+- Goal: prevent a wall-clock-limited smoketest from deleting channels it never completed, verify the fix against the tester's 24,908-channel scale, and cut a release that advances every configured package/container channel together.
+- Scope: fix primary/feed smoketest result handling and bounded probing; report passed/failed/untested counts; update user docs and release notes; harden Docker package-mirror fallback; run prescribed verification; push by fast-forward; tag and publish `v0.1.87`; audit publisher workflow results and public channel versions. Do not rewrite history or alter existing tags.
+- Assumptions: `v0.1.86` is the latest stable tag before this work; the new release will be `v0.1.87`; the existing Snap Store credential is expired and no local Snapcraft login is available, so Snap publication may require a credential refresh outside this checkout.
+- Success: a 24,908-channel capped pass keeps all untested channels, only confirmed failures are cached/dropped, logs expose result counts, the forced Docker fallback build succeeds, CI and release gates pass, and the `v0.1.87` release dispatches the same version to every configured channel.
+- In: indexer and CLI smoketest behavior, focused tests, relevant docs/release note, Docker packaging fallback, required memory updates, normal commits/pushes, and `v0.1.87` publication.
+- Out: new provider-specific stream heuristics, tuning the tester's credentials or provider config, changing installed production services, and rewriting/deleting tags or commits.
+- Plan: finish code/docs, run focused and full verification, commit and push by fast-forward, prepare the versioned changelog, push that preparation, tag/publish `v0.1.87`, then audit release workflows and registries.
+- Verification: focused indexer tests, including the 24,908-channel fixture, pass; Docker amd64 build and `v0.1.87` version smoke pass with the primary mirror forced unavailable; `scripts/check-release-channel-wiring.sh` and `./scripts/release-readiness.sh` pass. Remote CI/release jobs and public registry versions remain to be checked after push/tag.
+- Next: finish implementation and tests, complete release readiness, push the verified commit, publish the new release, then record channel-by-channel results and any external review/credential gates.
 
 # Completed (2026-09-30): Implement repo-owned opportunity fixes
 
