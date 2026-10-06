@@ -524,7 +524,7 @@ func (s *Server) serveRecordingRules() http.Handler {
 			if !operatorUIAllowed(w, r) {
 				return
 			}
-			body, err := json.MarshalIndent(s.reloadRecordingRules(), "", "  ")
+			body, err := json.MarshalIndent(withRecordingRuleFeatures(s.reloadRecordingRules()), "", "  ")
 			if err != nil {
 				writeServerJSONError(w, http.StatusInternalServerError, "encode recording rules")
 				return
@@ -569,7 +569,7 @@ func (s *Server) serveRecordingRules() http.Handler {
 				writeServerJSONError(w, http.StatusBadGateway, "save recording rules failed")
 				return
 			}
-			body, err := json.MarshalIndent(saved, "", "  ")
+			body, err := json.MarshalIndent(withRecordingRuleFeatures(saved), "", "  ")
 			if err != nil {
 				writeServerJSONError(w, http.StatusInternalServerError, "encode recording rules")
 				return

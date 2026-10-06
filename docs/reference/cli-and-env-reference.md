@@ -1180,6 +1180,9 @@ Related env:
 - `/provider/profile.json` and `/debug/runtime.json` now also expose the learned-limit state file path and TTL so the persistence/decay policy is visible at runtime.
 - `IPTV_TUNERR_PROGRAMMING_RECIPE_FILE` — optional JSON file storing the server-side Programming Manager recipe. When set, Tunerr applies the saved category/channel selection, manual/custom order, and optional exact-backup collapse after guide/DNA intelligence and before final lineup exposure. Surfaced via `/programming/categories.json`, `/programming/channels.json`, `/programming/order.json`, `/programming/backups.json`, `/programming/recipe.json`, `/programming/preview.json`, and `/debug/runtime.json`.
 - `IPTV_TUNERR_RECORDING_RULES_FILE` — optional JSON file storing durable server-side recording rules. Surfaced via `/recordings/rules.json`, `/recordings/rules/preview.json`, `/recordings/history.json`, and `/debug/runtime.json`.
+  - Rule fields: `include_lanes`, `include_channel_ids`, `include_guide_numbers`, `include_tvg_ids`, `include_categories`, `states`, `title_contains` (substring), `title_equals` (whole title, ignoring case and repeated spaces), and `start_after` / `start_before` (RFC3339, inclusive bounds on the programme start; an unparsable bound matches nothing).
+  - `/recordings/rules.json` responses include `features` (`rules_only_recorder`, `start_window`, `title_equals`) so API clients can detect these capabilities. `features` is never written to the rules file.
+- `IPTV_TUNERR_RECORDER_RULES_ONLY` — `1`/`true` makes `catchup-daemon` record only rule matches (same as `-rules-only`).
 
 ## Programming Manager foundation endpoints
 
@@ -1408,6 +1411,8 @@ Common flags:
 - `-record-upstream-fallback` — build an ordered URL list from Tunerr `/stream/<id>` plus catalog `stream_url` / `stream_urls` so capture can switch upstream after failures (default `true`)
 - `-retain-completed-max-age` — drop completed recordings whose `StoppedAt` is older than this duration (`72h`, `7d`, etc.); empty means off
 - `-retain-completed-max-age-per-lane` — per-lane max age for completed items (e.g. `sports=72h,general=24h`)
+- `-rules-only` — record only programmes matched by an enabled recording rule (env `IPTV_TUNERR_RECORDER_RULES_ONLY=1`). Rules are re-read when the file changes and are applied before `-limit`, so requested programmes are not crowded out. A missing rules file records nothing; an unreadable one records nothing until it is fixed. Use this for request-driven recording, for example SeerrNG recording requests.
+- `-recording-rules-file` — rules JSON for `-rules-only` (default: `IPTV_TUNERR_RECORDING_RULES_FILE`, the file the server's `/recordings/rules.json` edits)
 - `-once`
 - `-run-for`
 

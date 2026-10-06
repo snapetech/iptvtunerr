@@ -544,3 +544,10 @@
 - Reconfirmed the 24,908-channel smoketest timeout regression preserves untested rows. Updated the active bug-council backlog count for the new filesystem boundary test.
 - Verification: `./scripts/release-readiness.sh`, focused config/sports/indexer tests, the 24,908-channel regression, WebUI `npm run build`, shell syntax checks, release-note preview/validation, and `git diff --check` passed. `npm ci` reported zero vulnerabilities.
 - Prepared the changes for patch release `v0.1.90`; release publication follows the tagged commit.
+
+## 2026-10-06 - Request-driven recording rules for SeerrNG
+
+- Added exact-title (`title_equals`) and start-window (`start_after`/`start_before`) rule fields, applied consistently in rule preview, history, and recorder matching; unparsable bounds match nothing.
+- `/recordings/rules.json` responses now include `features` (`rules_only_recorder`, `start_window`, `title_equals`); the field is never persisted.
+- Added `catchup-daemon -rules-only` with `-recording-rules-file` (default `IPTV_TUNERR_RECORDING_RULES_FILE`). The daemon filters capsules by enabled rules before `-limit` via `BuildCatchupCapsulePreviewFiltered`, re-reads the rules file on change, and fails closed.
+- Verification: new focused tests in `internal/tuner/recording_rules_seerrng_test.go`, existing rule tests, `go vet` for touched packages, `go build ./...`, and `go test -count=1 ./...` passed. Local Go 1.27 `gofmt -s -l .` flags vendored files (untouched). Branch is local only; no push or release.

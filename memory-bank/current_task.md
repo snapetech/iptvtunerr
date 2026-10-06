@@ -1,4 +1,13 @@
-# Current task: API-Sports Sports Automation release closeout
+# Current task: Request-driven recording for SeerrNG
+
+- **Goal:** let an external request app (SeerrNG) schedule exact recordings through recording rules, and make the recorder honor them.
+- **Scope:** `title_equals` and `start_after`/`start_before` rule fields (rule preview, history, and recorder matching); response-only `features` on `/recordings/rules.json`; `catchup-daemon -rules-only` / `-recording-rules-file` (`IPTV_TUNERR_RECORDER_RULES_ONLY`) that filters capsules by enabled rules before `-limit`; docs and a release-note fragment.
+- **Assumptions:** default recorder behavior is unchanged; rules-only fails closed (missing file = no rules, unreadable file = record nothing). SeerrNG reaches rules through the authenticated deck (`IPTV_TUNERR_WEBUI_ALLOW_LAN=1` + deck credentials), so no new tuner auth was added.
+- **Status:** implemented on local branch `feat/seerrng-recording-rules` (not pushed). Focused tests and `go test -count=1 ./...` passed. Not exercised against a real IPTV provider (none available on the dev laptop).
+
+---
+
+# Previous task (SPH-008 still open): API-Sports Sports Automation release closeout
 
 - **Goal:** adapt the API-Sports integration from M3U Web Picker to Tunerr's IPTV tuner architecture. Use canonical MLB/NFL/NCAA Football schedules to reconcile provider channel and merged XMLTV event rows, generate temporary event channels, and expose automation through the tuner API and operator WebUI.
 - **Story IDs:** SPH-001 through SPH-008 in [work_breakdown.md](work_breakdown.md).

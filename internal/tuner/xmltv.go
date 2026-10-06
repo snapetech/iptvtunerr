@@ -1201,6 +1201,13 @@ func (x *XMLTV) CatchupCapsulePreview(now time.Time, horizon time.Duration, limi
 }
 
 func BuildCatchupCapsulePreview(channels []catalog.LiveChannel, data []byte, now time.Time, horizon time.Duration, limit int) (CatchupCapsulePreview, error) {
+	return BuildCatchupCapsulePreviewFiltered(channels, data, now, horizon, limit, nil)
+}
+
+// BuildCatchupCapsulePreviewFiltered is BuildCatchupCapsulePreview with an
+// optional keep filter applied before the result limit, so a selective caller
+// (for example the rules-only recorder) is not starved by unrelated capsules.
+func BuildCatchupCapsulePreviewFiltered(channels []catalog.LiveChannel, data []byte, now time.Time, horizon time.Duration, limit int, keep func(CatchupCapsule) bool) (CatchupCapsulePreview, error) {
 	if horizon <= 0 {
 		horizon = 3 * time.Hour
 	}
@@ -1288,6 +1295,15 @@ func BuildCatchupCapsulePreview(channels []catalog.LiveChannel, data []byte, now
 		}
 	}
 	capsules = curateCatchupCapsules(capsules)
+	if keep != nil {
+		kept := capsules[:0]
+		for _, capsule := range capsules {
+			if keep(capsule) {
+				kept = append(kept, capsule)
+			}
+		}
+		capsules = kept
+	}
 	if len(capsules) > limit {
 		capsules = capsules[:limit]
 	}

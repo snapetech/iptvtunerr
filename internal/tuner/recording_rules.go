@@ -13,6 +13,13 @@ import (
 
 const recordingRulesVersion = 1
 
+// RecordingRuleFeatures are the rule capabilities API clients can rely on.
+// They are reported in rule responses and never persisted.
+//   - title_equals: exact (case-insensitive) title matching
+//   - start_window: start_after / start_before programme start bounds
+//   - rules_only_recorder: catchup-daemon -rules-only records only rule matches
+var RecordingRuleFeatures = []string{"rules_only_recorder", "start_window", "title_equals"}
+
 type RecordingRule struct {
 	ID                  string   `json:"id"`
 	Name                string   `json:"name"`
@@ -24,13 +31,21 @@ type RecordingRule struct {
 	IncludeCategories   []string `json:"include_categories,omitempty"`
 	States              []string `json:"states,omitempty"`
 	TitleContains       []string `json:"title_contains,omitempty"`
-	UpdatedAt           string   `json:"updated_at,omitempty"`
+	// TitleEquals matches the whole title, ignoring case and repeated spaces.
+	TitleEquals []string `json:"title_equals,omitempty"`
+	// StartAfter and StartBefore bound the programme start (RFC3339,
+	// inclusive). An unparsable bound matches nothing.
+	StartAfter  string `json:"start_after,omitempty"`
+	StartBefore string `json:"start_before,omitempty"`
+	UpdatedAt   string `json:"updated_at,omitempty"`
 }
 
 type RecordingRuleset struct {
 	Version   int             `json:"version"`
 	UpdatedAt string          `json:"updated_at,omitempty"`
 	Rules     []RecordingRule `json:"rules"`
+	// Features is set on API responses only; see RecordingRuleFeatures.
+	Features []string `json:"features,omitempty"`
 }
 
 type RecordingRulePreviewMatch struct {
@@ -86,12 +101,16 @@ func normalizeRecordingRule(rule RecordingRule) RecordingRule {
 	rule.IncludeCategories = dedupeSortedStrings(rule.IncludeCategories)
 	rule.States = dedupeSortedStrings(rule.States)
 	rule.TitleContains = dedupeSortedStrings(rule.TitleContains)
+	rule.TitleEquals = dedupeSortedStrings(rule.TitleEquals)
+	rule.StartAfter = strings.TrimSpace(rule.StartAfter)
+	rule.StartBefore = strings.TrimSpace(rule.StartBefore)
 	rule.UpdatedAt = time.Now().UTC().Format(time.RFC3339)
 	return rule
 }
 
 func normalizeRecordingRuleset(set RecordingRuleset) RecordingRuleset {
 	set.Version = recordingRulesVersion
+	set.Features = nil
 	seen := map[string]struct{}{}
 	out := make([]RecordingRule, 0, len(set.Rules))
 	for _, rule := range set.Rules {
@@ -130,6 +149,12 @@ func loadRecordingRulesFile(path string) (RecordingRuleset, error) {
 		return RecordingRuleset{}, err
 	}
 	return normalizeRecordingRuleset(set), nil
+}
+
+// LoadRecordingRulesFile reads and normalizes a recording rules file. A
+// missing file yields an empty ruleset.
+func LoadRecordingRulesFile(path string) (RecordingRuleset, error) {
+	return loadRecordingRulesFile(path)
 }
 
 func saveRecordingRulesFile(path string, set RecordingRuleset) (RecordingRuleset, error) {
@@ -229,6 +254,12 @@ func matchRecordingRuleCapsule(rule RecordingRule, capsule CatchupCapsule) bool 
 	if !matchesTitleContains(rule.TitleContains, capsule.Title) {
 		return false
 	}
+	if !matchesTitleEquals(rule.TitleEquals, capsule.Title) {
+		return false
+	}
+	if !matchesStartWindow(rule.StartAfter, rule.StartBefore, capsule.Start) {
+		return false
+	}
 	return true
 }
 
@@ -248,7 +279,29 @@ func matchRecordingRuleItem(rule RecordingRule, item CatchupRecorderItem) bool {
 	if !matchesTitleContains(rule.TitleContains, item.Title) {
 		return false
 	}
+	if !matchesTitleEquals(rule.TitleEquals, item.Title) {
+		return false
+	}
+	if !matchesStartWindow(rule.StartAfter, rule.StartBefore, item.Start) {
+		return false
+	}
 	return true
+}
+
+// MatchAnyRecordingRuleCapsule reports whether any enabled rule matches.
+func MatchAnyRecordingRuleCapsule(set RecordingRuleset, capsule CatchupCapsule) bool {
+	for _, rule := range set.Rules {
+		if matchRecordingRuleCapsule(rule, capsule) {
+			return true
+		}
+	}
+	return false
+}
+
+// withRecordingRuleFeatures returns a copy of set for API responses.
+func withRecordingRuleFeatures(set RecordingRuleset) RecordingRuleset {
+	set.Features = append([]string(nil), RecordingRuleFeatures...)
+	return set
 }
 
 func buildRecordingRulePreview(rules RecordingRuleset, preview CatchupCapsulePreview) RecordingRulePreviewReport {
@@ -396,6 +449,48 @@ func matchesTitleContains(filters []string, title string) bool {
 		}
 	}
 	return false
+}
+
+func normalizeTitleForEquals(title string) string {
+	return strings.ToLower(strings.Join(strings.Fields(title), " "))
+}
+
+func matchesTitleEquals(filters []string, title string) bool {
+	if len(filters) == 0 {
+		return true
+	}
+	title = normalizeTitleForEquals(title)
+	for _, filter := range filters {
+		if filter = normalizeTitleForEquals(filter); filter != "" && filter == title {
+			return true
+		}
+	}
+	return false
+}
+
+func matchesStartWindow(after, before, start string) bool {
+	after = strings.TrimSpace(after)
+	before = strings.TrimSpace(before)
+	if after == "" && before == "" {
+		return true
+	}
+	at, err := time.Parse(time.RFC3339, strings.TrimSpace(start))
+	if err != nil {
+		return false
+	}
+	if after != "" {
+		bound, err := time.Parse(time.RFC3339, after)
+		if err != nil || at.Before(bound) {
+			return false
+		}
+	}
+	if before != "" {
+		bound, err := time.Parse(time.RFC3339, before)
+		if err != nil || at.After(bound) {
+			return false
+		}
+	}
+	return true
 }
 
 func dedupeSortedStrings(in []string) []string {

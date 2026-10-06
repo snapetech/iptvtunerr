@@ -391,7 +391,7 @@ func streamAuthPrefix(rawURL string) string {
 	return prefix + path
 }
 
-func buildCatchupCapsulePreviewFromRef(path, xmltvRef string, horizon time.Duration, limit int, guidePolicy, streamBaseURL string, recordUpstreamFallback bool) (tuner.CatchupCapsulePreview, error) {
+func buildCatchupCapsulePreviewFromRef(path, xmltvRef string, horizon time.Duration, limit int, guidePolicy, streamBaseURL string, recordUpstreamFallback bool, keep func(tuner.CatchupCapsule) bool) (tuner.CatchupCapsulePreview, error) {
 	c := catalog.New()
 	if err := c.Load(path); err != nil {
 		return tuner.CatchupCapsulePreview{}, fmt.Errorf("load catalog %s: %w", path, err)
@@ -401,7 +401,7 @@ func buildCatchupCapsulePreviewFromRef(path, xmltvRef string, horizon time.Durat
 	if err != nil {
 		return tuner.CatchupCapsulePreview{}, fmt.Errorf("open guide/XMLTV %s: %w", xmltvRef, err)
 	}
-	rep, err := tuner.BuildCatchupCapsulePreview(live, data, time.Now(), horizon, limit)
+	rep, err := tuner.BuildCatchupCapsulePreviewFiltered(live, data, time.Now(), horizon, limit, keep)
 	if err != nil {
 		return tuner.CatchupCapsulePreview{}, fmt.Errorf("build catchup capsule preview: %w", err)
 	}

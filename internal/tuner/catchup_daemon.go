@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"log"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -42,7 +43,13 @@ type CatchupRecorderDaemonConfig struct {
 	IncludeChannels           []string
 	ExcludeChannels           []string
 	AllowRetryInterrupted     bool
-	OnPublished               func(CatchupRecordedPublishedItem) error
+	// RulesOnly limits recording to capsules matched by an enabled rule in
+	// RecordingRulesFile (re-read when the file changes). A missing file
+	// means no rules, so nothing is recorded; a read error records nothing
+	// until the file is valid again.
+	RulesOnly          bool
+	RecordingRulesFile string
+	OnPublished        func(CatchupRecordedPublishedItem) error
 	// OnManifestSaved runs after a successful recording and recorded-publish-manifest.json write, without holding the recorder mutex.
 	OnManifestSaved func(publishRootDir string) error
 	Once            bool
@@ -201,6 +208,59 @@ type catchupRecorderManager struct {
 	failedKeys    map[string]bool
 	retryAttempts map[string]int
 	wg            sync.WaitGroup
+	rules         recordingRulesCache
+}
+
+// recordingRulesCache reloads the rules file only when its size or mtime
+// changes, so a scheduler pass does not re-parse it for every capsule.
+type recordingRulesCache struct {
+	mu      sync.Mutex
+	path    string
+	modTime time.Time
+	size    int64
+	loaded  bool
+	set     RecordingRuleset
+	err     error
+	warned  string
+}
+
+func (c *recordingRulesCache) get(path string) (RecordingRuleset, error) {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	path = strings.TrimSpace(path)
+	info, statErr := os.Stat(path)
+	if statErr != nil && !os.IsNotExist(statErr) {
+		c.loaded = false
+		c.err = statErr
+		return RecordingRuleset{}, statErr
+	}
+	var modTime time.Time
+	var size int64 = -1
+	if statErr == nil {
+		modTime, size = info.ModTime(), info.Size()
+	}
+	if c.loaded && c.path == path && c.modTime.Equal(modTime) && c.size == size {
+		return c.set, c.err
+	}
+	set, err := loadRecordingRulesFile(path)
+	c.path, c.modTime, c.size, c.loaded, c.set, c.err = path, modTime, size, true, set, err
+	return set, err
+}
+
+// matchesRecordingRules reports whether the capsule is requested by a rule.
+// It fails closed: read errors record nothing.
+func (m *catchupRecorderManager) matchesRecordingRules(c CatchupCapsule) bool {
+	set, err := m.rules.get(m.cfg.RecordingRulesFile)
+	if err != nil {
+		m.rules.mu.Lock()
+		if msg := err.Error(); m.rules.warned != msg {
+			m.rules.warned = msg
+			log.Printf("catchup recorder: rules-only mode cannot read recording rules %q: %v", m.cfg.RecordingRulesFile, err)
+		}
+		m.rules.mu.Unlock()
+		return false
+	}
+	return MatchAnyRecordingRuleCapsule(set, c)
 }
 
 func newCatchupRecorderManager(cfg CatchupRecorderDaemonConfig, stateFile string, client *http.Client) (*catchupRecorderManager, error) {
@@ -353,6 +413,9 @@ func (m *catchupRecorderManager) schedule(preview CatchupCapsulePreview, now tim
 }
 
 func (m *catchupRecorderManager) eligibleCapsule(c CatchupCapsule, now time.Time) bool {
+	if m.cfg.RulesOnly && !m.matchesRecordingRules(c) {
+		return false
+	}
 	if !laneAllowed(c.Lane, m.cfg.IncludeLanes, m.cfg.ExcludeLanes) {
 		return false
 	}
