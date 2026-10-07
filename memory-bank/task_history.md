@@ -551,3 +551,9 @@
 - `/recordings/rules.json` responses now include `features` (`rules_only_recorder`, `start_window`, `title_equals`); the field is never persisted.
 - Added `catchup-daemon -rules-only` with `-recording-rules-file` (default `IPTV_TUNERR_RECORDING_RULES_FILE`). The daemon filters capsules by enabled rules before `-limit` via `BuildCatchupCapsulePreviewFiltered`, re-reads the rules file on change, and fails closed.
 - Verification: new focused tests in `internal/tuner/recording_rules_seerrng_test.go`, existing rule tests, `go vet` for touched packages, `go build ./...`, and `go test -count=1 ./...` passed. Local Go 1.27 `gofmt -s -l .` flags vendored files (untouched). Branch is local only; no push or release.
+
+## 2026-10-07 - Finish and push request-driven recording rules for SeerrNG
+
+- Updated the Tunerr council backlog count for the request-rule changes and made `scripts/ci-smoke.sh` portable across macOS and Linux by replacing GNU-only `sed -i` fixture edits.
+- Committed the council count and smoke portability fix as `4c38764` and `751ae6b`, then pushed `feat/seerrng-recording-rules` to `origin` without changing the pre-existing `AGENTS.md` edit.
+- Verification: the clean isolated `./scripts/verify` run passed release wiring, formatting, vet, shell syntax, council, Go tests, build, and binary smoke. GitHub Local Identity run `37630122249` passed. No real IPTV provider was available, so no live provider result is claimed.

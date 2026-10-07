@@ -3,7 +3,7 @@
 - **Goal:** let an external request app (SeerrNG) schedule exact recordings through recording rules, and make the recorder honor them.
 - **Scope:** `title_equals` and `start_after`/`start_before` rule fields (rule preview, history, and recorder matching); response-only `features` on `/recordings/rules.json`; `catchup-daemon -rules-only` / `-recording-rules-file` (`IPTV_TUNERR_RECORDER_RULES_ONLY`) that filters capsules by enabled rules before `-limit`; docs and a release-note fragment.
 - **Assumptions:** default recorder behavior is unchanged; rules-only fails closed (missing file = no rules, unreadable file = record nothing). SeerrNG reaches rules through the authenticated deck (`IPTV_TUNERR_WEBUI_ALLOW_LAN=1` + deck credentials), so no new tuner auth was added.
-- **Status:** implemented on local branch `feat/seerrng-recording-rules` (not pushed). Focused tests and `go test -count=1 ./...` passed. Not exercised against a real IPTV provider (none available on the dev laptop).
+- **Status:** complete and pushed on `feat/seerrng-recording-rules` at `751ae6b`. A clean isolated `./scripts/verify` passed, including release wiring, formatting, vet, script syntax, council, Go tests, build, and binary smoke. GitHub Local Identity run `37630122249` also passed. Not exercised against a real IPTV provider (none available on the dev laptop).
 
 ---
 
