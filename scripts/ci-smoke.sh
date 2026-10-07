@@ -102,6 +102,17 @@ if not data.startswith(prefix):
 PY
 }
 
+replace_file_text() {
+  local path="$1" before="$2" after="$3"
+  python3 - "$path" "$before" "$after" <<'PY'
+import pathlib
+import sys
+
+path = pathlib.Path(sys.argv[1])
+path.write_text(path.read_text().replace(sys.argv[2], sys.argv[3]))
+PY
+}
+
 PIDS=()
 
 # The smoke fixtures intentionally use tiny finite HLS playlists. Production
@@ -661,26 +672,28 @@ port_assets="$(pick_port)"
 run_asset_server "$port_assets"
 wait_http_code "http://127.0.0.1:$port_assets/movie.bin" "200" || fail "asset server not ready"
 for catalog_file in "$TMP_DIR/catalog-full.json" "$TMP_DIR/catalog-full-shuffled.json" "$TMP_DIR/catalog-vod.json"; do
-  sed -i "s|REPLACE_MOVIE_URL|http://127.0.0.1:$port_assets/movie.bin|g" "$catalog_file" 2>/dev/null || true
-  sed -i "s|REPLACE_EPISODE_URL|http://127.0.0.1:$port_assets/episode.bin|g" "$catalog_file" 2>/dev/null || true
+  replace_file_text "$catalog_file" REPLACE_MOVIE_URL "http://127.0.0.1:$port_assets/movie.bin" 2>/dev/null || true
+  replace_file_text "$catalog_file" REPLACE_EPISODE_URL "http://127.0.0.1:$port_assets/episode.bin" 2>/dev/null || true
 done
-sed -i "s|http://example.invalid/movie-1.mp4|http://127.0.0.1:$port_assets/movie.bin|g" "$TMP_DIR/catalog-full.json" "$TMP_DIR/catalog-full-shuffled.json"
-sed -i "s|http://example.invalid/series-1.mp4|http://127.0.0.1:$port_assets/episode.bin|g" "$TMP_DIR/catalog-full.json" "$TMP_DIR/catalog-full-shuffled.json"
+for catalog_file in "$TMP_DIR/catalog-full.json" "$TMP_DIR/catalog-full-shuffled.json"; do
+  replace_file_text "$catalog_file" "http://example.invalid/movie-1.mp4" "http://127.0.0.1:$port_assets/movie.bin"
+  replace_file_text "$catalog_file" "http://example.invalid/series-1.mp4" "http://127.0.0.1:$port_assets/episode.bin"
+done
 
 port_hls="$(pick_port)"
 run_slow_hls_server "$port_hls"
 wait_http_code "http://127.0.0.1:$port_hls/shared.m3u8" "200" || fail "slow hls server not ready"
-sed -i "s|REPLACE_SHARED_HLS_URL|http://127.0.0.1:$port_hls/shared.m3u8|g" "$TMP_DIR/catalog-shared.json"
-sed -i "s|REPLACE_ACCOUNT_U1_CH1|http://127.0.0.1:$port_hls/live/alpha01/pass1/ch1.m3u8|g" "$TMP_DIR/catalog-accounts.json"
-sed -i "s|REPLACE_ACCOUNT_U2_CH1|http://127.0.0.1:$port_hls/live/bravo02/pass2/ch1.m3u8|g" "$TMP_DIR/catalog-accounts.json"
-sed -i "s|REPLACE_ACCOUNT_U3_CH1|http://127.0.0.1:$port_hls/live/charly3/pass3/ch1.m3u8|g" "$TMP_DIR/catalog-accounts.json"
-sed -i "s|REPLACE_ACCOUNT_U1_CH2|http://127.0.0.1:$port_hls/live/alpha01/pass1/ch2.m3u8|g" "$TMP_DIR/catalog-accounts.json"
-sed -i "s|REPLACE_ACCOUNT_U2_CH2|http://127.0.0.1:$port_hls/live/bravo02/pass2/ch2.m3u8|g" "$TMP_DIR/catalog-accounts.json"
-sed -i "s|REPLACE_ACCOUNT_U3_CH2|http://127.0.0.1:$port_hls/live/charly3/pass3/ch2.m3u8|g" "$TMP_DIR/catalog-accounts.json"
-sed -i "s|REPLACE_ACCOUNT_U1_CH3|http://127.0.0.1:$port_hls/live/alpha01/pass1/ch3.m3u8|g" "$TMP_DIR/catalog-accounts.json"
-sed -i "s|REPLACE_ACCOUNT_U2_CH3|http://127.0.0.1:$port_hls/live/bravo02/pass2/ch3.m3u8|g" "$TMP_DIR/catalog-accounts.json"
-sed -i "s|REPLACE_ACCOUNT_U3_CH3|http://127.0.0.1:$port_hls/live/charly3/pass3/ch3.m3u8|g" "$TMP_DIR/catalog-accounts.json"
-sed -i "s|REPLACE_REMUX_HLS_URL|http://127.0.0.1:$port_hls/remux/channel1.m3u8|g" "$TMP_DIR/catalog-remux.json"
+replace_file_text "$TMP_DIR/catalog-shared.json" REPLACE_SHARED_HLS_URL "http://127.0.0.1:$port_hls/shared.m3u8"
+replace_file_text "$TMP_DIR/catalog-accounts.json" REPLACE_ACCOUNT_U1_CH1 "http://127.0.0.1:$port_hls/live/alpha01/pass1/ch1.m3u8"
+replace_file_text "$TMP_DIR/catalog-accounts.json" REPLACE_ACCOUNT_U2_CH1 "http://127.0.0.1:$port_hls/live/bravo02/pass2/ch1.m3u8"
+replace_file_text "$TMP_DIR/catalog-accounts.json" REPLACE_ACCOUNT_U3_CH1 "http://127.0.0.1:$port_hls/live/charly3/pass3/ch1.m3u8"
+replace_file_text "$TMP_DIR/catalog-accounts.json" REPLACE_ACCOUNT_U1_CH2 "http://127.0.0.1:$port_hls/live/alpha01/pass1/ch2.m3u8"
+replace_file_text "$TMP_DIR/catalog-accounts.json" REPLACE_ACCOUNT_U2_CH2 "http://127.0.0.1:$port_hls/live/bravo02/pass2/ch2.m3u8"
+replace_file_text "$TMP_DIR/catalog-accounts.json" REPLACE_ACCOUNT_U3_CH2 "http://127.0.0.1:$port_hls/live/charly3/pass3/ch2.m3u8"
+replace_file_text "$TMP_DIR/catalog-accounts.json" REPLACE_ACCOUNT_U1_CH3 "http://127.0.0.1:$port_hls/live/alpha01/pass1/ch3.m3u8"
+replace_file_text "$TMP_DIR/catalog-accounts.json" REPLACE_ACCOUNT_U2_CH3 "http://127.0.0.1:$port_hls/live/bravo02/pass2/ch3.m3u8"
+replace_file_text "$TMP_DIR/catalog-accounts.json" REPLACE_ACCOUNT_U3_CH3 "http://127.0.0.1:$port_hls/live/charly3/pass3/ch3.m3u8"
+replace_file_text "$TMP_DIR/catalog-remux.json" REPLACE_REMUX_HLS_URL "http://127.0.0.1:$port_hls/remux/channel1.m3u8"
 
 run_serve_ready "$TMP_DIR/catalog-full.json" port_full "full catalog"
 full_pid="${PIDS[${#PIDS[@]}-1]}"
