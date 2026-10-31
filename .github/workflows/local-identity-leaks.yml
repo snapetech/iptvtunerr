@@ -6,17 +6,6 @@ run-name: ${{ format('action:{0}:pool:{1}', inputs.action, inputs.runner_pool) }
 on:
   workflow_dispatch:
     inputs:
-      action_tag:
-        description: Action to run
-        type: choice
-        required: true
-        options: [local-identity-scan]
-      runner_pool_tag:
-        description: Private ephemeral JIT runner pool
-        type: choice
-        required: true
-        options: [private]
-
       action:
         description: Run the private security scan
         required: true
@@ -43,8 +32,7 @@ jobs:
         github.event_name != 'workflow_dispatch' ||
         (
           github.ref == 'refs/heads/main' &&
-          inputs.action_tag == 'local-identity-scan' &&
-          inputs.runner_pool_tag == 'private'
+          inputs.action == 'scan' && inputs.runner_pool == 'private'
         )
       ) &&
       (

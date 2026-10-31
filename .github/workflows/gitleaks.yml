@@ -9,16 +9,6 @@ run-name: ${{ format('action:{0}:pool:{1}', inputs.action, inputs.runner_pool) }
 on:
   workflow_dispatch:
     inputs:
-      action_tag:
-        description: Action to run
-        type: choice
-        required: true
-        options: [gitleaks]
-      runner_pool_tag:
-        description: Private ephemeral JIT runner pool
-        type: choice
-        required: true
-        options: [private]
       action:
         description: Run the private security scan
         required: true
@@ -41,7 +31,7 @@ concurrency:
 jobs:
   scan:
     if: >-
-      (github.event_name == 'workflow_dispatch' && inputs.action == 'scan' && inputs.runner_pool == 'private' && github.ref == 'refs/heads/main') && (inputs.action_tag == 'gitleaks' && inputs.runner_pool_tag == 'private')
+      (github.event_name == 'workflow_dispatch' && inputs.action == 'scan' && inputs.runner_pool == 'private' && github.ref == 'refs/heads/main')
     runs-on: ${{ fromJSON(format('{{"group":"ng-shared-main-jit","labels":["self-hosted","linux","x64","ng-shared-main-iptvtunerr","ng-main-run-{0}","gha-{0}-scan"]}}', github.run_id)) }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
