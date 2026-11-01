@@ -58,4 +58,3 @@ jobs:
           LOCAL_IDENTITY_SCAN_BASE: ''
           LOCAL_IDENTITY_SCAN_COMMIT_COUNT: '1'
         run: bash scripts/check-local-identity-leaks.sh
-
